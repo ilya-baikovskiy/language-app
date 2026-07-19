@@ -15,6 +15,14 @@ dist-ssr
 # Claude Code local (machine-specific) settings
 .claude/settings.local.json
 
+# Local secrets — never commit real API keys
+.env
+.env.*
+!.env.example
+
+# One-off local TTS comparison output (audio files, not part of the app)
+audio-samples/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
