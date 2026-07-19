@@ -1,0 +1,1906 @@
+{
+  "t1": {
+    "displayText": "Claire",
+    "lemma": "Claire",
+    "pronunciation": "klɛʁ",
+    "partOfSpeech": "nom propre",
+    "grammarLabel": "nom propre",
+    "shortTranslation": "Клэр",
+    "contextualMeaning": "В данном контексте 'Claire' — это имя человека, который прибыл на вокзал Сен-Лазар.",
+    "constructionExplanation": null,
+    "grammarSummary": "Имена собственные, такие как 'Claire', пишутся с заглавной буквы.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Claire aime les chats.",
+        "translation": "Клэр любит кошек."
+      },
+      {
+        "targetText": "Claire est partie en vacances.",
+        "translation": "Клэр уехала в отпуск."
+      }
+    ]
+  },
+  "t3": {
+    "displayText": "à",
+    "lemma": "à",
+    "pronunciation": "a",
+    "partOfSpeech": "preposition",
+    "grammarLabel": "préposition",
+    "shortTranslation": "в, на",
+    "contextualMeaning": "В данном предложении «à» указывает на направление или местоположение: «à la gare Saint-Lazare» означает «на вокзале Сен-Лазар».",
+    "constructionExplanation": null,
+    "grammarSummary": "«À» — это предлог, который часто используется для указания направления, местоположения или времени.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "к",
+        "note": "«À» также может означать направление к чему-то, например, «aller à la maison» — «идти домой»."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Je vais à l'école tous les jours.",
+        "translation": "Я хожу в школу каждый день."
+      },
+      {
+        "targetText": "Elle habite à Paris.",
+        "translation": "Она живёт в Париже."
+      }
+    ]
+  },
+  "t4": {
+    "displayText": "la",
+    "lemma": "le",
+    "pronunciation": "la",
+    "partOfSpeech": "article",
+    "grammarLabel": "article défini",
+    "shortTranslation": "эта",
+    "contextualMeaning": "Здесь 'la' используется для обозначения конкретного объекта, в данном случае это 'gare Saint-Lazare', то есть конкретная железнодорожная станция.",
+    "constructionExplanation": null,
+    "grammarSummary": "'La' — это определённый артикль женского рода единственного числа. Он указывает на конкретный объект или понятие.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La voiture est rouge.",
+        "translation": "Машина красная."
+      },
+      {
+        "targetText": "La maison est grande.",
+        "translation": "Дом большой."
+      }
+    ]
+  },
+  "t5": {
+    "displayText": "gare",
+    "lemma": "gare",
+    "pronunciation": "ɡaʁ",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "вокзал",
+    "contextualMeaning": "В этом предложении «gare» означает железнодорожный вокзал, где прибывают и отправляются поезда.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово «gare» — существительное женского рода. В единственном числе используется с артиклем «la».",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "осторожность",
+        "note": "В другом контексте «gare» может означать «осторожность», например, в выражении «gare à toi !»."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Je vais à la gare pour prendre le train.",
+        "translation": "Я иду на вокзал, чтобы сесть на поезд."
+      },
+      {
+        "targetText": "La gare est très grande et moderne.",
+        "translation": "Вокзал очень большой и современный."
+      }
+    ]
+  },
+  "t6": {
+    "displayText": "Saint-Lazare",
+    "lemma": "Saint-Lazare",
+    "pronunciation": null,
+    "partOfSpeech": "nom propre",
+    "grammarLabel": null,
+    "shortTranslation": "Сен-Лазар",
+    "contextualMeaning": "В этом предложении 'Saint-Lazare' — это название вокзала в Париже. Клэр приехала на вокзал Сен-Лазар, когда начался дождь.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это имя собственное, которое обозначает определённое место — вокзал в Париже.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Le train part de la gare Saint-Lazare.",
+        "translation": "Поезд отправляется с вокзала Сен-Лазар."
+      },
+      {
+        "targetText": "Je vais à la gare Saint-Lazare pour prendre le train.",
+        "translation": "Я иду на вокзал Сен-Лазар, чтобы сесть на поезд."
+      }
+    ]
+  },
+  "t7": {
+    "displayText": "quand",
+    "lemma": "quand",
+    "pronunciation": "kɑ̃",
+    "partOfSpeech": "conjonction",
+    "grammarLabel": null,
+    "shortTranslation": "когда",
+    "contextualMeaning": "Здесь \"quand\" используется для обозначения времени, когда одно действие произошло во время или после другого действия.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Quand\" — это союз, который связывает два предложения, показывая, что одно действие происходит в определённый момент относительно другого.",
+    "grammarDetails": "\"Quand\" может использоваться как для настоящего, так и для прошедшего времени, чтобы указать на временные отношения между действиями. В данном предложении он соединяет два прошедших действия.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Quand il pleut, je reste à la maison.",
+        "translation": "Когда идёт дождь, я остаюсь дома."
+      },
+      {
+        "targetText": "Elle sourit quand elle est heureuse.",
+        "translation": "Она улыбается, когда она счастлива."
+      }
+    ]
+  },
+  "t8": {
+    "displayText": "il",
+    "lemma": "il",
+    "pronunciation": "il",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "subject pronoun",
+    "shortTranslation": "он, оно",
+    "contextualMeaning": "В этом предложении \"il\" используется как безличное местоимение, обозначающее погоду, то есть \"идёт дождь\".",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Il\" — это местоимение, которое в данном контексте используется для обозначения погоды или времени, например, \"il pleut\" (идёт дождь).",
+    "grammarDetails": "Французский язык часто использует \"il\" как безличное местоимение для описания погодных условий. Это не связано с каким-либо конкретным лицом или предметом, а просто указывает на явление или состояние.",
+    "otherMeanings": [
+      {
+        "translation": "он",
+        "note": "\"Il\" также может означать \"он\", когда используется для обозначения мужчины или мужского рода."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Il pleut souvent en automne.",
+        "translation": "Осенью часто идёт дождь."
+      },
+      {
+        "targetText": "Il est arrivé à l'heure.",
+        "translation": "Он пришёл вовремя."
+      }
+    ]
+  },
+  "t14": {
+    "displayText": "Elle",
+    "lemma": "elle",
+    "pronunciation": "ɛl",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "pronoun",
+    "shortTranslation": "она",
+    "contextualMeaning": "В этом предложении \"elle\" означает \"она\" и относится к женщине, которая нуждается в нескольких минутах, чтобы найти тихое кафе.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Elle\" — это личное местоимение женского рода, используемое для обозначения женщины или девочки.",
+    "grammarDetails": "В отличие от русского языка, французские местоимения согласуются по роду и числу с существительными, которые они заменяют. \"Elle\" используется только для женского рода в единственном числе.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle est étudiante.",
+        "translation": "Она студентка."
+      },
+      {
+        "targetText": "Elle aime lire des livres.",
+        "translation": "Она любит читать книги."
+      }
+    ]
+  },
+  "t18": {
+    "displayText": "quelques",
+    "lemma": "quelques",
+    "pronunciation": "kɛlk",
+    "partOfSpeech": "déterminant",
+    "grammarLabel": "indéfini",
+    "shortTranslation": "несколько",
+    "contextualMeaning": "В этом предложении 'quelques' означает небольшое количество минут, которые нужны, чтобы найти тихое кафе.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Quelques' используется для обозначения небольшого количества чего-либо во множественном числе.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "J'ai acheté quelques pommes.",
+        "translation": "Я купил несколько яблок."
+      },
+      {
+        "targetText": "Il a besoin de quelques jours pour finir le travail.",
+        "translation": "Ему нужно несколько дней, чтобы закончить работу."
+      }
+    ]
+  },
+  "t19": {
+    "displayText": "minutes",
+    "lemma": "minute",
+    "pronunciation": "mi.nyt",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin pluriel",
+    "shortTranslation": "минуты",
+    "contextualMeaning": "В этом предложении \"minutes\" означает короткий промежуток времени, который нужен, чтобы найти спокойное кафе.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Minutes\" — это существительное во множественном числе женского рода.",
+    "grammarDetails": "Единственное число — \"minute\". Во французском языке существительные имеют род и число, что влияет на форму артиклей и прилагательных.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il reste cinq minutes avant le départ.",
+        "translation": "Осталось пять минут до отправления."
+      },
+      {
+        "targetText": "J'ai besoin de quelques minutes pour me préparer.",
+        "translation": "Мне нужно несколько минут, чтобы подготовиться."
+      }
+    ]
+  },
+  "t20": {
+    "displayText": "pour",
+    "lemma": "pour",
+    "pronunciation": "puʁ",
+    "partOfSpeech": "preposition",
+    "grammarLabel": "préposition",
+    "shortTranslation": "для, чтобы",
+    "contextualMeaning": "В этом предложении «pour» указывает цель, то есть зачем нужны несколько минут — чтобы найти тихое кафе.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Pour» — это предлог, который часто используется для обозначения цели или назначения.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Je vais à la bibliothèque pour étudier.",
+        "translation": "Я иду в библиотеку, чтобы учиться."
+      },
+      {
+        "targetText": "Il a acheté des fleurs pour sa mère.",
+        "translation": "Он купил цветы для своей мамы."
+      }
+    ]
+  },
+  "t22": {
+    "displayText": "un",
+    "lemma": "un",
+    "pronunciation": "œ̃",
+    "partOfSpeech": "article",
+    "grammarLabel": "article indéfini",
+    "shortTranslation": "один, какой-то",
+    "contextualMeaning": "Здесь «un» указывает на неопределённый объект — в данном случае, на какой-то конкретный, но не определённый заранее кафе.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Un» — это неопределённый артикль мужского рода в единственном числе. Он используется, когда мы говорим о чём-то, что не было упомянуто ранее.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il a acheté un livre.",
+        "translation": "Он купил книгу."
+      },
+      {
+        "targetText": "J'ai vu un chat dans le jardin.",
+        "translation": "Я видел кошку в саду."
+      }
+    ]
+  },
+  "t23": {
+    "displayText": "café",
+    "lemma": "café",
+    "pronunciation": "kafe",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin",
+    "shortTranslation": "кафе",
+    "contextualMeaning": "В этом предложении «café» означает место, где можно выпить кофе или перекусить, и она ищет спокойное такое место.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Café» — это существительное мужского рода. В данном контексте оно обозначает заведение.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "кофе",
+        "note": "«Café» также может означать напиток, приготовленный из кофейных зерен."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Je vais au café tous les matins.",
+        "translation": "Я хожу в кафе каждое утро."
+      },
+      {
+        "targetText": "Ce café sert un excellent espresso.",
+        "translation": "В этом кафе подают отличный эспрессо."
+      }
+    ]
+  },
+  "t26": {
+    "displayText": "Elle",
+    "lemma": "elle",
+    "pronunciation": "ɛl",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "pronoun",
+    "shortTranslation": "она",
+    "contextualMeaning": "В этом предложении \"elle\" означает \"она\", указывая на женщину, которая села у окна и заказала горячий шоколад.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Elle\" — это личное местоимение третьего лица единственного числа женского рода, обозначающее \"она\".",
+    "grammarDetails": "Местоимение \"elle\" используется для обозначения женского рода и согласуется с глаголами и прилагательными в женском роде. Например, \"elle est\" (она есть), \"elle a\" (она имеет).",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle est partie tôt ce matin.",
+        "translation": "Она ушла рано этим утром."
+      },
+      {
+        "targetText": "Elle aime lire des livres.",
+        "translation": "Она любит читать книги."
+      }
+    ]
+  },
+  "t31": {
+    "displayText": "la",
+    "lemma": "le",
+    "pronunciation": "la",
+    "partOfSpeech": "article",
+    "grammarLabel": "article défini",
+    "shortTranslation": "определённый артикль",
+    "contextualMeaning": "Здесь 'la' указывает на конкретное окно, возле которого села девушка.",
+    "constructionExplanation": null,
+    "grammarSummary": "'La' — это определённый артикль женского рода в единственном числе. Он ставится перед существительными женского рода.",
+    "grammarDetails": "Определённый артикль 'la' используется, когда говорим о чём-то конкретном или уже известном собеседнику. В отличие от неопределённого артикля, который используется для упоминания чего-то в первый раз, 'la' предполагает, что окно уже известно или упоминалось ранее.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La voiture est rouge.",
+        "translation": "Машина красная."
+      },
+      {
+        "targetText": "Elle aime la musique.",
+        "translation": "Она любит музыку."
+      }
+    ]
+  },
+  "t32": {
+    "displayText": "fenêtre",
+    "lemma": "fenêtre",
+    "pronunciation": "fɛ.nɛtʁ",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "окно",
+    "contextualMeaning": "В этом предложении 'fenêtre' означает окно, рядом с которым она села.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово 'fenêtre' — это существительное женского рода.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La fenêtre est ouverte.",
+        "translation": "Окно открыто."
+      },
+      {
+        "targetText": "Je regarde par la fenêtre.",
+        "translation": "Я смотрю в окно."
+      }
+    ]
+  },
+  "t33": {
+    "displayText": "et",
+    "lemma": "et",
+    "pronunciation": "e",
+    "partOfSpeech": "conjunction",
+    "grammarLabel": null,
+    "shortTranslation": "и",
+    "contextualMeaning": "В данном предложении «et» связывает две части предложения, указывая, что обе действия выполняются одним и тем же человеком.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Et» — это союз, который используется для соединения слов или предложений, как в русском «и».",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il aime les pommes et les oranges.",
+        "translation": "Он любит яблоки и апельсины."
+      },
+      {
+        "targetText": "Marie lit un livre et écoute de la musique.",
+        "translation": "Мари читает книгу и слушает музыку."
+      }
+    ]
+  },
+  "t34": {
+    "displayText": "elle",
+    "lemma": "elle",
+    "pronunciation": "ɛl",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "pronoun",
+    "shortTranslation": "она",
+    "contextualMeaning": "В этом предложении «elle» означает «она» и указывает на женщину, которая села и заказала горячий шоколад.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Elle» — это личное местоимение, используемое для обозначения женского рода в третьем лице единственного числа.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle est partie tôt ce matin.",
+        "translation": "Она ушла рано этим утром."
+      },
+      {
+        "targetText": "Elle aime lire des livres.",
+        "translation": "Она любит читать книги."
+      }
+    ]
+  },
+  "t37": {
+    "displayText": "un",
+    "lemma": "un",
+    "pronunciation": "œ̃",
+    "partOfSpeech": "article",
+    "grammarLabel": "article indéfini",
+    "shortTranslation": "один, какой-то",
+    "contextualMeaning": "В данном контексте «un» используется для обозначения неопределенного количества или типа напитка, в данном случае это «chocolat chaud» (горячий шоколад).",
+    "constructionExplanation": null,
+    "grammarSummary": "«Un» — это неопределенный артикль мужского рода в единственном числе. Он используется, когда мы говорим о чем-то, что не было упомянуто ранее.",
+    "grammarDetails": "Артикль «un» используется для обозначения одного предмета или вещи мужского рода, которая еще не была упомянута или не является известной слушателю. Это противоположность определенному артиклю «le».",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il a acheté un livre.",
+        "translation": "Он купил книгу."
+      },
+      {
+        "targetText": "J'ai besoin d'un stylo.",
+        "translation": "Мне нужна ручка."
+      }
+    ]
+  },
+  "t38": {
+    "displayText": "chocolat",
+    "lemma": "chocolat",
+    "pronunciation": "ʃɔ.kɔ.la",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin",
+    "shortTranslation": "шоколад",
+    "contextualMeaning": "В данном предложении «chocolat» означает напиток, сделанный из шоколада, то есть горячий шоколад.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Chocolat» — это существительное мужского рода.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "шоколад (плитка)",
+        "note": "Слово «chocolat» также может означать плитку шоколада или шоколад в виде десерта."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "J'aime le chocolat noir.",
+        "translation": "Я люблю чёрный шоколад."
+      },
+      {
+        "targetText": "Elle a acheté une tablette de chocolat.",
+        "translation": "Она купила плитку шоколада."
+      }
+    ]
+  },
+  "t39": {
+    "displayText": "chaud",
+    "lemma": "chaud",
+    "pronunciation": "ʃo",
+    "partOfSpeech": "adjective",
+    "grammarLabel": "adjectif",
+    "shortTranslation": "горячий",
+    "contextualMeaning": "В этом предложении «chaud» описывает температуру шоколада, который она заказала. Это значит, что шоколад горячий.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово «chaud» — это прилагательное, которое описывает существительное. Оно изменяется в зависимости от рода и числа существительного.",
+    "grammarDetails": "Прилагательное «chaud» изменяется с существительными: «chaude» для женского рода единственного числа, «chauds» для мужского рода множественного числа и «chaudes» для женского рода множественного числа.",
+    "otherMeanings": [
+      {
+        "translation": "жарко",
+        "note": "«Chaud» также может означать, что температура воздуха высокая или что кому-то жарко."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Le café est chaud.",
+        "translation": "Кофе горячий."
+      },
+      {
+        "targetText": "Elle porte un manteau chaud en hiver.",
+        "translation": "Она носит тёплое пальто зимой."
+      }
+    ]
+  },
+  "t41": {
+    "displayText": "Dehors",
+    "lemma": "dehors",
+    "pronunciation": "dəɔʁ",
+    "partOfSpeech": "adverbe",
+    "grammarLabel": null,
+    "shortTranslation": "снаружи, на улице",
+    "contextualMeaning": "В данном предложении \"dehors\" означает \"на улице\", то есть люди идут по улице под своими зонтиками.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Dehors\" указывает на местоположение снаружи или вне чего-то.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "вне дома",
+        "note": "Также может означать \"вне дома\", например, когда кто-то вышел на улицу из дома."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Il fait froid dehors.",
+        "translation": "На улице холодно."
+      },
+      {
+        "targetText": "Dehors, les enfants jouent dans le parc.",
+        "translation": "На улице дети играют в парке."
+      }
+    ]
+  },
+  "t43": {
+    "displayText": "les",
+    "lemma": "le",
+    "pronunciation": "le",
+    "partOfSpeech": "article",
+    "grammarLabel": "article défini pluriel",
+    "shortTranslation": "эти, те",
+    "contextualMeaning": "Указывает на конкретные предметы во множественном числе, в данном случае на людей, которые идут под зонтиками.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Les\" — это определённый артикль во множественном числе. Указывает на конкретные предметы или людей.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Les chats dorment sur le canapé.",
+        "translation": "Кошки спят на диване."
+      },
+      {
+        "targetText": "Les enfants jouent dans le parc.",
+        "translation": "Дети играют в парке."
+      }
+    ]
+  },
+  "t44": {
+    "displayText": "gens",
+    "lemma": "gens",
+    "pronunciation": "ʒɑ̃",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin pluriel",
+    "shortTranslation": "люди",
+    "contextualMeaning": "В этом предложении \"gens\" означает \"люди\", которые идут по улице.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Gens\" — это существительное во множественном числе, обозначающее группу людей.",
+    "grammarDetails": "Хотя \"gens\" всегда во множественном числе, прилагательные, стоящие перед ним, могут согласовываться в женском роде, например, \"bonnes gens\".",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Les gens aiment se promener le dimanche.",
+        "translation": "Люди любят гулять по воскресеньям."
+      },
+      {
+        "targetText": "Il y a beaucoup de gens au marché aujourd'hui.",
+        "translation": "Сегодня на рынке много людей."
+      }
+    ]
+  },
+  "t46": {
+    "displayText": "vite",
+    "lemma": "vite",
+    "pronunciation": "vit",
+    "partOfSpeech": "adverb",
+    "grammarLabel": "adverbe",
+    "shortTranslation": "быстро",
+    "contextualMeaning": "В этом предложении «vite» описывает, как быстро люди шли под дождём.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Vite» — это наречие, которое описывает, как выполняется действие. В данном случае, оно описывает скорость движения.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "скоро",
+        "note": "«Vite» также может означать «скоро», когда речь идет о времени."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Il parle vite.",
+        "translation": "Он говорит быстро."
+      },
+      {
+        "targetText": "Nous devons finir vite.",
+        "translation": "Нам нужно закончить быстро."
+      }
+    ]
+  },
+  "t47": {
+    "displayText": "sous",
+    "lemma": "sous",
+    "pronunciation": "su",
+    "partOfSpeech": "préposition",
+    "grammarLabel": null,
+    "shortTranslation": "под",
+    "contextualMeaning": "В этом предложении \"sous\" означает, что люди находятся под защитой своих зонтов от дождя.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Sous\" — это предлог, который указывает на нахождение под чем-либо.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "в течение",
+        "note": "Может также использоваться для обозначения времени, например, \"sous la pluie\" — \"в течение дождя\"."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Le chat dort sous la table.",
+        "translation": "Кот спит под столом."
+      },
+      {
+        "targetText": "Il y a un trésor caché sous la mer.",
+        "translation": "Под морем спрятан клад."
+      }
+    ]
+  },
+  "t48": {
+    "displayText": "leurs",
+    "lemma": "leur",
+    "pronunciation": "lœʁ",
+    "partOfSpeech": "adjective possessif",
+    "grammarLabel": null,
+    "shortTranslation": "их",
+    "contextualMeaning": "В этом предложении 'leurs' указывает на то, что зонтики принадлежат людям. Это множественное число, используется, когда предметы принадлежат нескольким людям.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Leurs' — это притяжательное прилагательное во множественном числе, используется с существительными во множественном числе.",
+    "grammarDetails": "'Leurs' используется, когда у нескольких людей есть несколько предметов. Не путайте с 'leur', которое используется в единственном числе, когда у нескольких людей есть один предмет.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Leurs amis sont arrivés.",
+        "translation": "Их друзья приехали."
+      },
+      {
+        "targetText": "Ils ont perdu leurs clés.",
+        "translation": "Они потеряли свои ключи."
+      }
+    ]
+  },
+  "t49": {
+    "displayText": "parapluies",
+    "lemma": "parapluie",
+    "pronunciation": "paʁapɥi",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin, pluriel",
+    "shortTranslation": "зонты",
+    "contextualMeaning": "В этом предложении 'parapluies' означает зонты, которые люди держат над собой, чтобы защититься от дождя.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Parapluies' — это существительное во множественном числе.",
+    "grammarDetails": "Единственное число этого слова — 'parapluie'. Во французском языке многие существительные образуют множественное число добавлением '-s', как и в этом случае.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "J'ai oublié mon parapluie à la maison.",
+        "translation": "Я забыл свой зонт дома."
+      },
+      {
+        "targetText": "Elle a acheté de nouveaux parapluies pour ses enfants.",
+        "translation": "Она купила новые зонты для своих детей."
+      }
+    ]
+  },
+  "t51": {
+    "displayText": "Après",
+    "lemma": "après",
+    "pronunciation": "apʁɛ",
+    "partOfSpeech": "préposition",
+    "grammarLabel": null,
+    "shortTranslation": "после",
+    "contextualMeaning": "В этом предложении «après» означает «после», указывая на то, что действие (прогулка) произошло после дождя.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Après» — это предлог, который используется для обозначения времени или последовательности событий.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "позади",
+        "note": "Может также означать «позади» в пространственном смысле, например, «après la maison» — «позади дома»."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Après le dîner, nous irons au cinéma.",
+        "translation": "После ужина мы пойдём в кино."
+      },
+      {
+        "targetText": "Il est arrivé après toi.",
+        "translation": "Он пришёл после тебя."
+      }
+    ]
+  },
+  "t52": {
+    "displayText": "la",
+    "lemma": "le",
+    "pronunciation": "la",
+    "partOfSpeech": "article",
+    "grammarLabel": "article défini",
+    "shortTranslation": "определённый артикль",
+    "contextualMeaning": "В этом предложении «la» указывает на конкретную реку, Сена, вдоль которой Клэр продолжает свою прогулку.",
+    "constructionExplanation": null,
+    "grammarSummary": "«La» — это определённый артикль женского рода в единственном числе. Указывает на конкретный предмет или понятие.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La voiture est rouge.",
+        "translation": "Машина красная."
+      },
+      {
+        "targetText": "La maison est grande.",
+        "translation": "Дом большой."
+      }
+    ]
+  },
+  "t53": {
+    "displayText": "pluie",
+    "lemma": "pluie",
+    "pronunciation": "plɥi",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "дождь",
+    "contextualMeaning": "В этом предложении \"pluie\" означает дождь, который прошёл, после которого Клэр решила продолжить свою прогулку.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово \"pluie\" — это существительное женского рода, обозначающее атмосферные осадки в виде дождя.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La pluie a cessé et le soleil est revenu.",
+        "translation": "Дождь прекратился, и солнце вернулось."
+      },
+      {
+        "targetText": "J'aime écouter la pluie tomber sur le toit.",
+        "translation": "Мне нравится слушать, как дождь стучит по крыше."
+      }
+    ]
+  },
+  "t55": {
+    "displayText": "Claire",
+    "lemma": "Claire",
+    "pronunciation": "klɛʁ",
+    "partOfSpeech": "nom propre",
+    "grammarLabel": null,
+    "shortTranslation": "Клэр",
+    "contextualMeaning": "В этом предложении 'Claire' — это имя человека, который решил продолжить прогулку вдоль Сены после дождя.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Claire' — это имя собственное, поэтому оно всегда пишется с заглавной буквы.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Claire aime lire des livres.",
+        "translation": "Клэр любит читать книги."
+      },
+      {
+        "targetText": "Claire est partie en vacances.",
+        "translation": "Клэр уехала в отпуск."
+      }
+    ]
+  },
+  "t59": {
+    "displayText": "continuer",
+    "lemma": "continuer",
+    "pronunciation": "kɔ̃.ti.nɥe",
+    "partOfSpeech": "verb",
+    "grammarLabel": "infinitif",
+    "shortTranslation": "продолжать",
+    "contextualMeaning": "Claire решила не прекращать прогулку после дождя, а идти дальше.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это глагол в инфинитиве, который используется после глагола 'décider de'.",
+    "grammarDetails": "Глагол 'continuer' часто используется с предлогами 'à' или 'de', в зависимости от контекста. В данном случае он стоит после 'décider de', что является устойчивой конструкцией.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il veut continuer à apprendre le français.",
+        "translation": "Он хочет продолжать учить французский."
+      },
+      {
+        "targetText": "Nous allons continuer notre voyage demain.",
+        "translation": "Мы продолжим наше путешествие завтра."
+      }
+    ]
+  },
+  "t60": {
+    "displayText": "sa",
+    "lemma": "son",
+    "pronunciation": "sa",
+    "partOfSpeech": "adjectif possessif",
+    "grammarLabel": "féminin singulier",
+    "shortTranslation": "её",
+    "contextualMeaning": "В данном предложении «sa» означает, что прогулка принадлежит Клэр, то есть это её прогулка.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Sa» — это притяжательное прилагательное, указывающее на принадлежность. Оно используется перед существительными женского рода в единственном числе.",
+    "grammarDetails": "Притяжательное прилагательное «sa» согласуется с существительным по роду и числу, а не с владельцем. Если существительное мужского рода, используется «son», а если множественного числа — «ses».",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle a perdu sa clé.",
+        "translation": "Она потеряла свой ключ."
+      },
+      {
+        "targetText": "Il cherche sa montre.",
+        "translation": "Он ищет свои часы."
+      }
+    ]
+  },
+  "t61": {
+    "displayText": "promenade",
+    "lemma": "promenade",
+    "pronunciation": "pʁɔ.mə.nad",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "прогулка",
+    "contextualMeaning": "В этом предложении «promenade» означает прогулку, которую Клэр решила продолжить после дождя.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово «promenade» — это существительное женского рода. Оно обозначает действие прогулки.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "пешеходная дорожка",
+        "note": "«Promenade» также может означать место для прогулок, например, набережная или аллея."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Nous faisons une promenade tous les dimanches.",
+        "translation": "Мы гуляем каждое воскресенье."
+      },
+      {
+        "targetText": "La promenade au bord de la mer est très agréable.",
+        "translation": "Прогулка по берегу моря очень приятная."
+      }
+    ]
+  },
+  "t65": {
+    "displayText": "la",
+    "lemma": "le",
+    "pronunciation": "la",
+    "partOfSpeech": "article",
+    "grammarLabel": "défini, féminin singulier",
+    "shortTranslation": "определённый артикль",
+    "contextualMeaning": "Указывает на конкретное существительное в женском роде, единственном числе — «la Seine» (Сена).",
+    "constructionExplanation": null,
+    "grammarSummary": "«La» — определённый артикль для существительных женского рода в единственном числе.",
+    "grammarDetails": "Форма «la» используется перед существительными, начинающимися на согласную. Перед гласной или немой 'h' используется форма «l'».",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La maison est grande.",
+        "translation": "Дом большой."
+      },
+      {
+        "targetText": "La voiture rouge est à Paul.",
+        "translation": "Красная машина принадлежит Полю."
+      }
+    ]
+  },
+  "t66": {
+    "displayText": "Seine",
+    "lemma": "Seine",
+    "pronunciation": "sɛn",
+    "partOfSpeech": "nom propre",
+    "grammarLabel": "nom propre",
+    "shortTranslation": "Сена",
+    "contextualMeaning": "В этом предложении «Seine» относится к реке Сена, которая протекает через Париж и является известной достопримечательностью.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это имя собственное, обозначающее название реки во Франции.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La Seine traverse Paris.",
+        "translation": "Сена протекает через Париж."
+      },
+      {
+        "targetText": "Nous avons fait une croisière sur la Seine.",
+        "translation": "Мы совершили круиз по Сене."
+      }
+    ]
+  },
+  "t68": {
+    "displayText": "Elle",
+    "lemma": "elle",
+    "pronunciation": "ɛl",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "pronoun",
+    "shortTranslation": "она",
+    "contextualMeaning": "В этом предложении 'elle' означает 'она' и указывает на женщину или девочку, о которой идет речь.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это личное местоимение третьего лица единственного числа женского рода.",
+    "grammarDetails": "'Elle' используется для обозначения женского рода в единственном числе. В отличие от русского, где местоимения могут изменяться в зависимости от падежа, 'elle' остается неизменным в разных падежах.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle est très gentille.",
+        "translation": "Она очень добрая."
+      },
+      {
+        "targetText": "Elle habite à Paris.",
+        "translation": "Она живет в Париже."
+      }
+    ]
+  },
+  "t70": {
+    "displayText": "beaucoup",
+    "lemma": "beaucoup",
+    "pronunciation": "bo.kup",
+    "partOfSpeech": "adverbe",
+    "grammarLabel": null,
+    "shortTranslation": "много",
+    "contextualMeaning": "В этом предложении «beaucoup» означает, что она очень любила эту часть города. Это усиливает степень её симпатии.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Beaucoup» используется для усиления глаголов, прилагательных или других наречий.",
+    "grammarDetails": "Часто используется с глаголами, чтобы показать интенсивность действия. Например, «aimer beaucoup» означает «очень любить».",
+    "otherMeanings": [
+      {
+        "translation": "много",
+        "note": "Также может использоваться для обозначения количества, например, «beaucoup de livres» — «много книг»."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Il travaille beaucoup.",
+        "translation": "Он много работает."
+      },
+      {
+        "targetText": "Elle mange beaucoup de fruits.",
+        "translation": "Она ест много фруктов."
+      }
+    ]
+  },
+  "t71": {
+    "displayText": "cette",
+    "lemma": "ce",
+    "pronunciation": "sɛt",
+    "partOfSpeech": "déterminant",
+    "grammarLabel": "démonstratif",
+    "shortTranslation": "эта",
+    "contextualMeaning": "Указывает на конкретную часть города, о которой идет речь.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Cette\" используется перед существительными женского рода в единственном числе.",
+    "grammarDetails": "\"Ce\" имеет разные формы в зависимости от рода и числа: \"ce\" (мужской род, единственное число), \"cet\" (мужской род, единственное число перед гласной или немым 'h'), \"cette\" (женский род, единственное число), \"ces\" (множественное число).",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "J'aime cette robe.",
+        "translation": "Мне нравится это платье."
+      },
+      {
+        "targetText": "Cette maison est très ancienne.",
+        "translation": "Этот дом очень старый."
+      }
+    ]
+  },
+  "t72": {
+    "displayText": "partie",
+    "lemma": "partie",
+    "pronunciation": "paʁ.ti",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "часть",
+    "contextualMeaning": "В данном предложении \"partie\" означает \"часть\" города, которую она особенно любила.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Partie\" — это существительное женского рода, обозначающее часть чего-либо.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "игра",
+        "note": "\"Partie\" также может означать \"игра\", например, в шахматы или карты."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "La première partie du film était ennuyeuse.",
+        "translation": "Первая часть фильма была скучной."
+      },
+      {
+        "targetText": "Nous avons joué une partie d'échecs.",
+        "translation": "Мы сыграли партию в шахматы."
+      }
+    ]
+  },
+  "t73": {
+    "displayText": "de",
+    "lemma": "de",
+    "pronunciation": "də",
+    "partOfSpeech": "préposition",
+    "grammarLabel": null,
+    "shortTranslation": "из",
+    "contextualMeaning": "В этом предложении 'de' указывает на принадлежность или часть чего-то. Здесь 'partie de la ville' означает 'часть города'.",
+    "constructionExplanation": null,
+    "grammarSummary": "'De' — это предлог, который часто указывает на принадлежность или происхождение.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il vient de Paris.",
+        "translation": "Он из Парижа."
+      },
+      {
+        "targetText": "C'est le livre de Marie.",
+        "translation": "Это книга Марии."
+      }
+    ]
+  },
+  "t74": {
+    "displayText": "la",
+    "lemma": "le",
+    "pronunciation": "la",
+    "partOfSpeech": "article",
+    "grammarLabel": "défini, féminin singulier",
+    "shortTranslation": "эта",
+    "contextualMeaning": "Указывает на конкретную часть города, которую она любит.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"La\" — это определённый артикль женского рода в единственном числе.",
+    "grammarDetails": "В отличие от неопределённого артикля \"une\", определённый артикль \"la\" используется, когда говорим о чём-то конкретном или уже известном.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "La maison est grande.",
+        "translation": "Дом большой."
+      },
+      {
+        "targetText": "Elle a vu la voiture rouge.",
+        "translation": "Она видела красную машину."
+      }
+    ]
+  },
+  "t75": {
+    "displayText": "ville",
+    "lemma": "ville",
+    "pronunciation": "vil",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "город",
+    "contextualMeaning": "Здесь \"ville\" означает \"город\", то есть населённый пункт, где живут люди, с домами, улицами и т.д.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Ville\" — это существительное женского рода. Используется для обозначения населённого пункта.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "городская администрация",
+        "note": "\"Ville\" также может означать городскую администрацию или муниципалитет."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Paris est une grande ville.",
+        "translation": "Париж — это большой город."
+      },
+      {
+        "targetText": "La ville est animée le week-end.",
+        "translation": "Город оживлён в выходные."
+      }
+    ]
+  },
+  "t77": {
+    "displayText": "surtout",
+    "lemma": "surtout",
+    "pronunciation": "syʁ.tu",
+    "partOfSpeech": "adverb",
+    "grammarLabel": null,
+    "shortTranslation": "особенно",
+    "contextualMeaning": "В этом предложении \"surtout\" означает, что что-то выделяется или нравится больше всего. Здесь говорится, что особенно вечером эта часть города нравится.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Surtout\" — это наречие, которое используется для выделения чего-то особенного или наиболее важного.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "J'aime surtout le chocolat noir.",
+        "translation": "Я особенно люблю чёрный шоколад."
+      },
+      {
+        "targetText": "Il aime surtout écouter de la musique classique.",
+        "translation": "Он особенно любит слушать классическую музыку."
+      }
+    ]
+  },
+  "t78": {
+    "displayText": "le",
+    "lemma": "le",
+    "pronunciation": "lə",
+    "partOfSpeech": "article",
+    "grammarLabel": "article défini",
+    "shortTranslation": "определённый артикль",
+    "contextualMeaning": "Указывает на конкретное время суток — вечер.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Le\" — это определённый артикль мужского рода в единственном числе.",
+    "grammarDetails": "Артикль \"le\" используется перед существительными мужского рода, чтобы указать на что-то конкретное или уже известное из контекста.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Le chat dort sur le canapé.",
+        "translation": "Кот спит на диване."
+      },
+      {
+        "targetText": "Il aime le chocolat.",
+        "translation": "Он любит шоколад."
+      }
+    ]
+  },
+  "t79": {
+    "displayText": "soir",
+    "lemma": "soir",
+    "pronunciation": "swaʁ",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin singulier",
+    "shortTranslation": "вечер",
+    "contextualMeaning": "В данном предложении \"soir\" означает время суток после полудня, когда начинает темнеть.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово \"soir\" — это существительное мужского рода в единственном числе.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Je vais au cinéma ce soir.",
+        "translation": "Я иду в кино сегодня вечером."
+      },
+      {
+        "targetText": "Le soir, il aime lire un livre.",
+        "translation": "Вечером он любит читать книгу."
+      }
+    ]
+  },
+  "t83": {
+    "displayText": "elle",
+    "lemma": "elle",
+    "pronunciation": "ɛl",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "pronoun",
+    "shortTranslation": "она",
+    "contextualMeaning": "В этом предложении 'elle' означает 'она' и относится к женщине, которая узнала свою подругу детства.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Elle' — это личное местоимение, используемое для обозначения женского рода в третьем лице единственного числа.",
+    "grammarDetails": "'Elle' используется, когда говорим о женщине или девочке. В отличие от русского, где можно опустить местоимение, во французском его нужно использовать.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle aime lire des livres.",
+        "translation": "Она любит читать книги."
+      },
+      {
+        "targetText": "Marie est là ? Oui, elle est dans le jardin.",
+        "translation": "Мария здесь? Да, она в саду."
+      }
+    ]
+  },
+  "t86": {
+    "displayText": "une",
+    "lemma": "un",
+    "pronunciation": "yn",
+    "partOfSpeech": "article",
+    "grammarLabel": "article indéfini",
+    "shortTranslation": "одна",
+    "contextualMeaning": "Здесь \"une\" указывает на неопределённость, то есть это некая подруга детства, а не конкретная, известная заранее.",
+    "constructionExplanation": null,
+    "grammarSummary": "Неопределённый артикль женского рода в единственном числе.",
+    "grammarDetails": "Артикль \"une\" используется перед существительными женского рода в единственном числе, когда речь идёт о чём-то неопределённом или впервые упоминаемом.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle a acheté une robe.",
+        "translation": "Она купила платье."
+      },
+      {
+        "targetText": "J'ai vu une étoile filante.",
+        "translation": "Я видел падающую звезду."
+      }
+    ]
+  },
+  "t87": {
+    "displayText": "amie",
+    "lemma": "ami",
+    "pronunciation": "a.mi",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "подруга",
+    "contextualMeaning": "В этом предложении «amie» означает подругу, которую она узнала. Это женская форма слова «ami», что означает друг.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Amie» — это существительное женского рода, означающее подругу.",
+    "grammarDetails": "Форма «amie» используется для обозначения женского друга, в отличие от мужской формы «ami». В зависимости от контекста, окончание -e указывает на женский род.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Marie est une bonne amie.",
+        "translation": "Мари — хорошая подруга."
+      },
+      {
+        "targetText": "J'ai rencontré une vieille amie hier.",
+        "translation": "Вчера я встретил старую подругу."
+      }
+    ]
+  },
+  "t88": {
+    "displayText": "d'enfance",
+    "lemma": "enfance",
+    "pronunciation": "ɑ̃.fɑ̃s",
+    "partOfSpeech": "nom",
+    "grammarLabel": "locution prépositionnelle",
+    "shortTranslation": "детства",
+    "contextualMeaning": "Здесь 'd'enfance' означает, что подруга из детства. Это уточняет, что она знала её, когда они были детьми.",
+    "constructionExplanation": null,
+    "grammarSummary": "'D'enfance' — это сокращение от 'de l'enfance', что означает 'из детства'.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il a retrouvé son jouet d'enfance.",
+        "translation": "Он нашёл свою игрушку из детства."
+      },
+      {
+        "targetText": "Elle garde des souvenirs d'enfance précieux.",
+        "translation": "Она хранит ценные воспоминания из детства."
+      }
+    ]
+  },
+  "t89": {
+    "displayText": "assise",
+    "lemma": "assis",
+    "pronunciation": "a.si.z",
+    "partOfSpeech": "adjective",
+    "grammarLabel": "féminin singulier",
+    "shortTranslation": "сидящая",
+    "contextualMeaning": "В этом предложении «assise» означает, что подруга сидит на скамейке.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Assise» — это форма прилагательного «assis», означающего «сидящий». Здесь оно согласуется с существительным женского рода в единственном числе — «amie».",
+    "grammarDetails": "Прилагательное «assis» имеет формы для мужского и женского рода: «assis» для мужского и «assise» для женского. Важно согласовывать прилагательное с существительным по роду и числу.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle est assise sur le canapé.",
+        "translation": "Она сидит на диване."
+      },
+      {
+        "targetText": "Les enfants sont assis par terre.",
+        "translation": "Дети сидят на полу."
+      }
+    ]
+  },
+  "t90": {
+    "displayText": "sur",
+    "lemma": "sur",
+    "pronunciation": "syʁ",
+    "partOfSpeech": "preposition",
+    "grammarLabel": null,
+    "shortTranslation": "на",
+    "contextualMeaning": "В этом предложении 'sur' указывает на местоположение: подруга сидит на скамейке.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Sur' — это предлог, который используется для обозначения положения или местоположения.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Le livre est sur la table.",
+        "translation": "Книга на столе."
+      },
+      {
+        "targetText": "Il a posé sa main sur mon épaule.",
+        "translation": "Он положил руку на моё плечо."
+      }
+    ]
+  },
+  "t91": {
+    "displayText": "un",
+    "lemma": "un",
+    "pronunciation": "œ̃",
+    "partOfSpeech": "article",
+    "grammarLabel": "article indéfini",
+    "shortTranslation": "один, некий",
+    "contextualMeaning": "В данном предложении «un» используется как неопределённый артикль перед существительным «banc» (скамейка). Он указывает на то, что речь идёт о какой-то одной конкретной скамейке, но не о какой-то определённой, известной ранее.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Un» — это неопределённый артикль мужского рода в единственном числе. Указывает на то, что предмет упоминается впервые или не является определённым.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il a acheté un livre.",
+        "translation": "Он купил книгу."
+      },
+      {
+        "targetText": "J'ai vu un chat dans le jardin.",
+        "translation": "Я видел кота в саду."
+      }
+    ]
+  },
+  "t92": {
+    "displayText": "banc",
+    "lemma": "banc",
+    "pronunciation": "bɑ̃",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin",
+    "shortTranslation": "скамейка",
+    "contextualMeaning": "В этом предложении «banc» означает скамейку, на которой сидела подруга из детства.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Banc» — это существительное мужского рода, означающее скамейку или лавочку.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "банк",
+        "note": "В другом контексте «banc» может означать банк, но это значение редко используется."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Il s'est assis sur le banc pour se reposer.",
+        "translation": "Он сел на скамейку, чтобы отдохнуть."
+      },
+      {
+        "targetText": "Les enfants jouent autour du banc dans le parc.",
+        "translation": "Дети играют вокруг скамейки в парке."
+      }
+    ]
+  },
+  "t94": {
+    "displayText": "Les",
+    "lemma": "le",
+    "pronunciation": "le",
+    "partOfSpeech": "article",
+    "grammarLabel": "défini pluriel",
+    "shortTranslation": "определённый артикль",
+    "contextualMeaning": "Здесь 'les' используется как определённый артикль во множественном числе перед существительным 'femmes', чтобы указать на конкретных женщин, о которых идёт речь.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Les' — это определённый артикль во множественном числе. Используется перед существительными во множественном числе.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Les enfants jouent dans le parc.",
+        "translation": "Дети играют в парке."
+      },
+      {
+        "targetText": "Les livres sont sur la table.",
+        "translation": "Книги на столе."
+      }
+    ]
+  },
+  "t95": {
+    "displayText": "deux",
+    "lemma": "deux",
+    "pronunciation": "dø",
+    "partOfSpeech": "numéral",
+    "grammarLabel": null,
+    "shortTranslation": "два",
+    "contextualMeaning": "В этом предложении «deux» означает количество женщин, то есть их две.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Deux» — это числительное, которое обозначает количество. Оно не изменяется по родам и числам.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "J'ai deux chats.",
+        "translation": "У меня два кота."
+      },
+      {
+        "targetText": "Elle a deux frères.",
+        "translation": "У неё два брата."
+      }
+    ]
+  },
+  "t96": {
+    "displayText": "femmes",
+    "lemma": "femme",
+    "pronunciation": "fam",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin, pluriel",
+    "shortTranslation": "женщины",
+    "contextualMeaning": "В данном предложении «femmes» означает «женщины». Это те, кто участвуют в разговоре.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово «femmes» — это существительное во множественном числе женского рода.",
+    "grammarDetails": "Форма множественного числа существительных обычно образуется добавлением -s к форме единственного числа, но произношение не меняется. Например, «femme» (женщина) становится «femmes» (женщины).",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Les femmes discutent dans le parc.",
+        "translation": "Женщины разговаривают в парке."
+      },
+      {
+        "targetText": "Ces femmes sont très courageuses.",
+        "translation": "Эти женщины очень смелые."
+      }
+    ]
+  },
+  "t101": {
+    "displayText": "parler",
+    "lemma": "parler",
+    "pronunciation": "paʁ.le",
+    "partOfSpeech": "verb",
+    "grammarLabel": "infinitif",
+    "shortTranslation": "говорить",
+    "contextualMeaning": "В этом предложении «parler» означает «говорить» или «разговаривать». Две женщины начали разговор, который длился долго.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это инфинитив глагола, который означает действие говорить или разговаривать.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il aime parler avec ses amis.",
+        "translation": "Он любит разговаривать со своими друзьями."
+      },
+      {
+        "targetText": "Parler une langue étrangère peut être difficile.",
+        "translation": "Говорить на иностранном языке может быть трудно."
+      }
+    ]
+  },
+  "t102": {
+    "displayText": "pendant",
+    "lemma": "pendant",
+    "pronunciation": "pɑ̃.dɑ̃",
+    "partOfSpeech": "préposition",
+    "grammarLabel": null,
+    "shortTranslation": "в течение",
+    "contextualMeaning": "В этом предложении «pendant» означает, что женщины говорили в течение длительного времени.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Pendant» используется для обозначения продолжительности действия или времени.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "во время",
+        "note": "Может также означать \"во время\", когда речь идет о конкретном моменте или событии."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "J'ai lu un livre pendant le voyage.",
+        "translation": "Я читал книгу во время поездки."
+      },
+      {
+        "targetText": "Il a dormi pendant huit heures.",
+        "translation": "Он спал в течение восьми часов."
+      }
+    ]
+  },
+  "t103": {
+    "displayText": "longtemps",
+    "lemma": "longtemps",
+    "pronunciation": "lɔ̃.tɑ̃",
+    "partOfSpeech": "adverb",
+    "grammarLabel": "adverbe",
+    "shortTranslation": "долго",
+    "contextualMeaning": "В этом предложении \"longtemps\" означает, что женщины говорили в течение длительного времени.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Longtemps\" — это наречие, которое описывает продолжительность времени.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il a attendu longtemps avant de partir.",
+        "translation": "Он долго ждал, прежде чем уйти."
+      },
+      {
+        "targetText": "Nous avons marché longtemps dans le parc.",
+        "translation": "Мы долго гуляли в парке."
+      }
+    ]
+  },
+  "t107": {
+    "displayText": "le",
+    "lemma": "le",
+    "pronunciation": "lə",
+    "partOfSpeech": "article",
+    "grammarLabel": "article défini",
+    "shortTranslation": "этот, тот",
+    "contextualMeaning": "Указывает на определённое время, которое женщины не замечают.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это определённый артикль мужского рода в единственном числе.",
+    "grammarDetails": "Артикль 'le' используется перед существительными мужского рода в единственном числе, чтобы указать на что-то конкретное или известное.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Le chat dort sur le canapé.",
+        "translation": "Кот спит на диване."
+      },
+      {
+        "targetText": "Le livre est sur la table.",
+        "translation": "Книга на столе."
+      }
+    ]
+  },
+  "t108": {
+    "displayText": "temps",
+    "lemma": "temps",
+    "pronunciation": "tɑ̃",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin singulier",
+    "shortTranslation": "время",
+    "contextualMeaning": "В этом предложении \"temps\" означает время, которое проходит, пока женщины разговаривают.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово \"temps\" — это существительное мужского рода в единственном числе.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "погода",
+        "note": "\"Temps\" также может означать погоду, например, \"le temps est beau\" (погода хорошая)."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Je n'ai pas eu le temps de finir.",
+        "translation": "У меня не было времени закончить."
+      },
+      {
+        "targetText": "Le temps est magnifique aujourd'hui.",
+        "translation": "Сегодня погода великолепная."
+      }
+    ]
+  },
+  "t109": {
+    "displayText": "qui",
+    "lemma": "qui",
+    "pronunciation": "ki",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "pronoun relatif",
+    "shortTranslation": "который, кто",
+    "contextualMeaning": "В этом предложении \"qui\" относится к \"le temps\" и вводит придаточное предложение, описывающее время, которое проходит.",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Qui\" — это относительное местоимение, которое связывает главную часть предложения с придаточным.",
+    "grammarDetails": "\"Qui\" используется для замены субъекта в придаточном предложении. Оно может относиться как к людям, так и к вещам.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "C'est l'homme qui a gagné le concours.",
+        "translation": "Это человек, который выиграл конкурс."
+      },
+      {
+        "targetText": "La maison qui est au coin est à vendre.",
+        "translation": "Дом, который на углу, продается."
+      }
+    ]
+  },
+  "t128": {
+    "displayText": "Elle",
+    "lemma": "elle",
+    "pronunciation": "ɛl",
+    "partOfSpeech": "pronoun",
+    "grammarLabel": "personal pronoun",
+    "shortTranslation": "она",
+    "contextualMeaning": "В этом предложении «elle» относится к женщине, которая чувствует себя счастливой после неожиданной встречи.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Elle» — это личное местоимение, используемое для обозначения женского рода в единственном числе.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Elle aime lire des livres.",
+        "translation": "Она любит читать книги."
+      },
+      {
+        "targetText": "Elle est partie en vacances.",
+        "translation": "Она уехала в отпуск."
+      }
+    ]
+  },
+  "t131": {
+    "displayText": "vers",
+    "lemma": "vers",
+    "pronunciation": "vɛʁ",
+    "partOfSpeech": "preposition",
+    "grammarLabel": null,
+    "shortTranslation": "к",
+    "contextualMeaning": "В этом предложении «vers» указывает направление, в котором она идет — к метро.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Vers» — это предлог, который используется для указания направления или приближения к чему-то.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il marche vers la maison.",
+        "translation": "Он идет к дому."
+      },
+      {
+        "targetText": "Elle se dirige vers le nord.",
+        "translation": "Она направляется на север."
+      }
+    ]
+  },
+  "t142": {
+    "displayText": "rencontre",
+    "lemma": "rencontre",
+    "pronunciation": "ʁɑ̃.kɔ̃tʁ",
+    "partOfSpeech": "nom",
+    "grammarLabel": "féminin",
+    "shortTranslation": "встреча",
+    "contextualMeaning": "В данном предложении «rencontre» означает случайную встречу с кем-то, что вызвало положительные эмоции у человека.",
+    "constructionExplanation": null,
+    "grammarSummary": "Слово «rencontre» — это существительное женского рода, обозначающее акт встречи или собрания.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "матч, игра",
+        "note": "«Rencontre» также может обозначать спортивное соревнование или матч."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "J'ai eu une rencontre intéressante avec un ancien collègue.",
+        "translation": "У меня была интересная встреча с бывшим коллегой."
+      },
+      {
+        "targetText": "La rencontre de football commence à 20 heures.",
+        "translation": "Футбольный матч начинается в 20 часов."
+      }
+    ]
+  },
+  "t106": {
+    "displayText": "remarquer",
+    "lemma": "remarquer",
+    "pronunciation": "ʁə.maʁ.ke",
+    "partOfSpeech": "verb",
+    "grammarLabel": null,
+    "shortTranslation": "замечать",
+    "contextualMeaning": "В этом предложении «remarquer» значит «замечать» или «обращать внимание». Женщины не заметили, как прошло время.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это инфинитив глагола. Используется, когда действие не произошло или в отрицательных конструкциях.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il a remarqué un détail important.",
+        "translation": "Он заметил важную деталь."
+      },
+      {
+        "targetText": "Tu n'as pas remarqué le changement?",
+        "translation": "Ты не заметил изменения?"
+      }
+    ]
+  },
+  "t112": {
+    "displayText": "Quand",
+    "lemma": "quand",
+    "pronunciation": "kɑ̃",
+    "partOfSpeech": "conjunction",
+    "grammarLabel": "conjonction",
+    "shortTranslation": "когда",
+    "contextualMeaning": "В этом предложении \"quand\" используется для указания времени, когда произошло событие: \"Когда солнце начало садиться, Клэр поняла, что ей нужно возвращаться.\"",
+    "constructionExplanation": null,
+    "grammarSummary": "\"Quand\" соединяет две части предложения, указывая на время или условие.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "когда",
+        "note": "Может использоваться в вопросительных предложениях для запроса времени: \"Quand arrives-tu?\" (Когда ты приедешь?)"
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Quand il pleut, je reste à la maison.",
+        "translation": "Когда идёт дождь, я остаюсь дома."
+      },
+      {
+        "targetText": "Je me demande quand il arrivera.",
+        "translation": "Я интересуюсь, когда он приедет."
+      }
+    ]
+  },
+  "t113": {
+    "displayText": "le",
+    "lemma": "le",
+    "pronunciation": "lə",
+    "partOfSpeech": "article",
+    "grammarLabel": "article défini",
+    "shortTranslation": "определённый артикль",
+    "contextualMeaning": "Здесь 'le' используется как определённый артикль перед существительным 'soleil' (солнце), чтобы показать, что речь идёт о конкретном солнце, которое все знают.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Le' — это определённый артикль мужского рода в единственном числе. Используется перед существительными, чтобы указать на что-то конкретное.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Le chat dort sur le canapé.",
+        "translation": "Кот спит на диване."
+      },
+      {
+        "targetText": "Le livre est sur la table.",
+        "translation": "Книга на столе."
+      }
+    ]
+  },
+  "t114": {
+    "displayText": "soleil",
+    "lemma": "soleil",
+    "pronunciation": "sɔ.lɛj",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin singulier",
+    "shortTranslation": "солнце",
+    "contextualMeaning": "В этом предложении «soleil» означает небесное светило, которое светит днём и заходит вечером.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это существительное мужского рода в единственном числе.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "солнечный свет",
+        "note": "Также может означать свет, который исходит от солнца."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Le soleil brille dans le ciel.",
+        "translation": "Солнце светит в небе."
+      },
+      {
+        "targetText": "J'aime me promener au soleil.",
+        "translation": "Мне нравится гулять на солнце."
+      }
+    ]
+  },
+  "t121": {
+    "displayText": "Claire",
+    "lemma": "Claire",
+    "pronunciation": "klɛʁ",
+    "partOfSpeech": "nom propre",
+    "grammarLabel": null,
+    "shortTranslation": "Клэр",
+    "contextualMeaning": "В этом предложении 'Claire' — это имя человека, который понял, что нужно возвращаться домой, когда солнце начало садиться.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Claire' — это собственное имя, поэтому оно пишется с заглавной буквы.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Claire aime lire des livres.",
+        "translation": "Клэр любит читать книги."
+      },
+      {
+        "targetText": "Demain, Claire ira à la plage.",
+        "translation": "Завтра Клэр поедет на пляж."
+      }
+    ]
+  },
+  "t124": {
+    "displayText": "qu'elle",
+    "lemma": "que",
+    "pronunciation": "kɛl",
+    "partOfSpeech": "conjunction",
+    "grammarLabel": "conjonction + pronom",
+    "shortTranslation": "что она",
+    "contextualMeaning": "В этом предложении 'qu'elle' означает 'что она'. Это вводит придаточное предложение, объясняющее, что поняла Клэр.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Qu'elle' состоит из союза 'que' и местоимения 'elle'. Используется, чтобы соединить два предложения.",
+    "grammarDetails": "'Que' часто сокращается до 'qu'' перед гласной. Это сокращение происходит для облегчения произношения.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Je sais qu'elle est là.",
+        "translation": "Я знаю, что она там."
+      },
+      {
+        "targetText": "Il pense qu'elle viendra demain.",
+        "translation": "Он думает, что она придет завтра."
+      }
+    ]
+  },
+  "t126": {
+    "displayText": "rentrer",
+    "lemma": "rentrer",
+    "pronunciation": "ʁɑ̃tʁe",
+    "partOfSpeech": "verb",
+    "grammarLabel": null,
+    "shortTranslation": "вернуться",
+    "contextualMeaning": "В этом предложении «rentrer» означает, что Клер поняла, что ей нужно вернуться домой.",
+    "constructionExplanation": null,
+    "grammarSummary": "Это инфинитив глагола, который часто используется, чтобы говорить о возвращении домой или в другое место.",
+    "grammarDetails": "Глагол «rentrer» спрягается как обычный глагол первой группы во временах, таких как présent (je rentre) и passé composé (je suis rentré(e)).",
+    "otherMeanings": [
+      {
+        "translation": "войти",
+        "note": "Может также означать «войти» в помещение или здание."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Je dois rentrer avant la nuit.",
+        "translation": "Я должен вернуться до наступления ночи."
+      },
+      {
+        "targetText": "Elle rentre chez elle après l'école.",
+        "translation": "Она возвращается домой после школы."
+      }
+    ]
+  },
+  "t132": {
+    "displayText": "le",
+    "lemma": "le",
+    "pronunciation": "lə",
+    "partOfSpeech": "article",
+    "grammarLabel": "défini masculin singulier",
+    "shortTranslation": "определённый артикль",
+    "contextualMeaning": "В данном случае 'le' используется как определённый артикль перед существительным 'métro', чтобы указать на конкретный объект, известный собеседникам.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Le' — это определённый артикль, который используется перед существительными мужского рода в единственном числе.",
+    "grammarDetails": "Определённый артикль 'le' используется для обозначения конкретного объекта или понятия, которое уже известно или упоминалось ранее. В отличие от неопределённого артикля, он указывает на что-то определённое.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Le chat dort sur le canapé.",
+        "translation": "Кот спит на диване."
+      },
+      {
+        "targetText": "Il a oublié le livre à la maison.",
+        "translation": "Он забыл книгу дома."
+      }
+    ]
+  },
+  "t133": {
+    "displayText": "métro",
+    "lemma": "métro",
+    "pronunciation": "metʁo",
+    "partOfSpeech": "nom",
+    "grammarLabel": "masculin",
+    "shortTranslation": "метро",
+    "contextualMeaning": "В этом предложении «métro» означает подземный городской транспорт, на который она направляется после встречи.",
+    "constructionExplanation": null,
+    "grammarSummary": "«Métro» — это существительное мужского рода, обозначающее вид транспорта.",
+    "grammarDetails": null,
+    "otherMeanings": [
+      {
+        "translation": "метрополитен",
+        "note": "«Métro» также может означать метрополитен в более общем смысле."
+      }
+    ],
+    "examples": [
+      {
+        "targetText": "Je prends le métro tous les jours.",
+        "translation": "Я езжу на метро каждый день."
+      },
+      {
+        "targetText": "Le métro est rapide et pratique.",
+        "translation": "Метро быстрое и удобное."
+      }
+    ]
+  },
+  "t138": {
+    "displayText": "et",
+    "lemma": "et",
+    "pronunciation": "e",
+    "partOfSpeech": "conjunction",
+    "grammarLabel": null,
+    "shortTranslation": "и",
+    "contextualMeaning": "В этом предложении 'et' соединяет два прилагательных, описывающих, как она себя чувствует: 'le cœur léger' и 'heureuse'.",
+    "constructionExplanation": null,
+    "grammarSummary": "'Et' — это союз, который используется для соединения слов или предложений.",
+    "grammarDetails": null,
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "Il aime les pommes et les oranges.",
+        "translation": "Он любит яблоки и апельсины."
+      },
+      {
+        "targetText": "Elle chante et danse.",
+        "translation": "Она поёт и танцует."
+      }
+    ]
+  },
+  "t141": {
+    "displayText": "cette",
+    "lemma": "ce",
+    "pronunciation": "sɛt",
+    "partOfSpeech": "déterminant",
+    "grammarLabel": "démonstratif",
+    "shortTranslation": "эта",
+    "contextualMeaning": "Указывает на конкретную встречу, о которой идет речь.",
+    "constructionExplanation": null,
+    "grammarSummary": "Указывает на существительное женского рода в единственном числе.",
+    "grammarDetails": "\"Cette\" используется перед существительными женского рода в единственном числе, чтобы указать на что-то конкретное. Это форма указательного прилагательного, которая согласуется с родом и числом существительного.",
+    "otherMeanings": null,
+    "examples": [
+      {
+        "targetText": "J'aime bien cette robe.",
+        "translation": "Мне нравится это платье."
+      },
+      {
+        "targetText": "Cette maison est très jolie.",
+        "translation": "Этот дом очень красивый."
+      }
+    ]
+  }
+}

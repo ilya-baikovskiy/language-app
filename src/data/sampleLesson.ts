@@ -1,5 +1,6 @@
 import type { Annotation, Lesson, Paragraph, Sentence, Token } from '../types/lesson';
 import lessonTimestamps from './lessonTimestamps.json';
+import generatedAnnotations from './generatedAnnotations.json';
 
 // Раздел 22 ТЗ: полная разметка есть не у каждого слова — только у
 // содержательных единиц (глаголы, конструкции, идиомы, ключевая грамматика).
@@ -727,6 +728,87 @@ function withTimestamps(paragraphs: Paragraph[]): Paragraph[] {
   }));
 }
 
+// Объяснения для слов, не размеченных вручную (src/data/generatedAnnotations.json,
+// генерируются scripts/generate-annotations.ts по шаблону из AI_PIPELINE.md —
+// полное предложение как контекст). Остаются отдельным слоем поверх 26 аннотаций,
+// написанных вручную, а не подмешаны в них — так их проще перегенерировать или
+// заменить ручной правкой позже.
+type GeneratedAnnotationContent = Omit<Annotation, 'id' | 'type' | 'tokenIds'>;
+
+// Скрипт генерации пишет JSON-schema-ответ модели как есть — необязательные
+// поля приходят как null, а не отсутствуют, как того хочет наш Annotation-тип.
+type RawGeneratedAnnotationContent = {
+  displayText: string;
+  lemma: string;
+  pronunciation: string | null;
+  partOfSpeech: string | null;
+  grammarLabel: string | null;
+  shortTranslation: string;
+  contextualMeaning: string;
+  constructionExplanation: string | null;
+  grammarSummary: string | null;
+  grammarDetails: string | null;
+  otherMeanings: { translation: string; note: string | null }[] | null;
+  examples: { targetText: string; translation: string }[];
+};
+
+function normalizeGenerated(raw: RawGeneratedAnnotationContent): GeneratedAnnotationContent {
+  return {
+    displayText: raw.displayText,
+    lemma: raw.lemma,
+    pronunciation: raw.pronunciation ?? undefined,
+    partOfSpeech: raw.partOfSpeech ?? undefined,
+    grammarLabel: raw.grammarLabel ?? undefined,
+    shortTranslation: raw.shortTranslation,
+    contextualMeaning: raw.contextualMeaning,
+    constructionExplanation: raw.constructionExplanation ?? undefined,
+    grammarSummary: raw.grammarSummary ?? undefined,
+    grammarDetails: raw.grammarDetails ?? undefined,
+    otherMeanings: raw.otherMeanings?.map((m) => ({ translation: m.translation, note: m.note ?? undefined })),
+    examples: raw.examples,
+  };
+}
+
+const generatedByToken = generatedAnnotations as unknown as Record<string, RawGeneratedAnnotationContent>;
+
+function withGeneratedAnnotations(
+  paragraphs: Paragraph[],
+  baseAnnotations: Annotation[],
+): { paragraphs: Paragraph[]; annotations: Annotation[] } {
+  const extraAnnotations: Annotation[] = [];
+  const nextParagraphs = paragraphs.map((paragraph) => ({
+    ...paragraph,
+    sentences: paragraph.sentences.map((sentence) => ({
+      ...sentence,
+      tokens: sentence.tokens.map((token) => {
+        if (token.type !== 'word' || token.annotationId) return token;
+        const generated = generatedByToken[token.id];
+        if (!generated) return token;
+        const annotationId = `gen-${token.id}`;
+        extraAnnotations.push({
+          id: annotationId,
+          type: 'word',
+          tokenIds: [token.id],
+          ...normalizeGenerated(generated),
+        });
+        return { ...token, annotationId };
+      }),
+    })),
+  }));
+  return { paragraphs: nextParagraphs, annotations: [...baseAnnotations, ...extraAnnotations] };
+}
+
+const { paragraphs: paragraphsWithAnnotations, annotations: allAnnotations } = withGeneratedAnnotations(
+  [
+    { id: 'p1', sentences: [s1, s2] },
+    { id: 'p2', sentences: [s3, s4] },
+    { id: 'p3', sentences: [s5, s6] },
+    { id: 'p4', sentences: [s7, s8] },
+    { id: 'p5', sentences: [s9, s10] },
+  ],
+  annotations,
+);
+
 export const sampleLesson: Lesson = {
   id: 'une-promenade-a-paris',
   language: 'French',
@@ -735,12 +817,6 @@ export const sampleLesson: Lesson = {
   title: 'Une promenade à Paris',
   translatedTitle: 'Прогулка по Парижу',
   estimatedMinutes: 4,
-  paragraphs: withTimestamps([
-    { id: 'p1', sentences: [s1, s2] },
-    { id: 'p2', sentences: [s3, s4] },
-    { id: 'p3', sentences: [s5, s6] },
-    { id: 'p4', sentences: [s7, s8] },
-    { id: 'p5', sentences: [s9, s10] },
-  ]),
-  annotations,
+  paragraphs: withTimestamps(paragraphsWithAnnotations),
+  annotations: allAnnotations,
 };
