@@ -1,67 +1,81 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { sampleLesson } from '../data/sampleLesson';
 import { useReaderPreferences } from '../hooks/useReaderPreferences';
 import { useSelectedAnnotation } from '../hooks/useSelectedAnnotation';
-import type { ReaderState } from '../types/reader';
+import { useNarration } from '../hooks/useNarration';
+import { orderedWordTokenIds } from '../lib/lessonText';
 import { ReaderHeader } from './ReaderHeader';
 import { ArticleContent } from './ArticleContent';
 import { NarrationPlayer } from './NarrationPlayer';
 import { ExplanationSheet } from './ExplanationSheet';
 
-const INITIAL_READER_STATE: ReaderState = {
-  playbackStatus: 'idle',
-  activeTokenId: null,
-  playbackAnchorTokenId: null,
+type SelectionState = {
+  selectedTokenId: string | null;
+  selectedAnnotationId: string | null;
+  isSheetOpen: boolean;
+};
+
+const INITIAL_SELECTION: SelectionState = {
   selectedTokenId: null,
   selectedAnnotationId: null,
-  rate: 1,
   isSheetOpen: false,
-  isGrammarExpanded: false,
 };
+
+const SPEAKING_STATUSES = new Set(['playing', 'paused']);
+const FAB_STATUSES = new Set(['idle', 'stopped']);
+const PLAYER_STATUSES = new Set(['playing', 'paused', 'completed']);
 
 export function ReaderPage() {
   const { theme, setTheme, fontSize, setFontSize } = useReaderPreferences();
-  const [readerState, setReaderState] = useState<ReaderState>(INITIAL_READER_STATE);
+  const narration = useNarration(sampleLesson);
+  const [selection, setSelection] = useState<SelectionState>(INITIAL_SELECTION);
 
-  const sheetSelection = useSelectedAnnotation(
-    sampleLesson,
-    readerState.selectedTokenId,
-    readerState.selectedAnnotationId,
+  const wordTokenIds = useMemo(() => orderedWordTokenIds(sampleLesson), []);
+  const progress = narration.activeTokenId
+    ? (wordTokenIds.indexOf(narration.activeTokenId) + 1) / wordTokenIds.length
+    : 0;
+
+  const sheetSelection = useSelectedAnnotation(sampleLesson, selection.selectedTokenId, selection.selectedAnnotationId);
+
+  const handleSelectGroup = useCallback(
+    (tokenId: string, annotationId: string | null) => {
+      narration.inspectToken(tokenId);
+      setSelection({ selectedTokenId: tokenId, selectedAnnotationId: annotationId, isSheetOpen: true });
+    },
+    [narration],
   );
 
-  // Раздел 17 ТЗ (handleTokenClick), без паузы озвучки — она появится в Этапе 3
-  // вместе с самой озвучкой (пока паузить нечего).
-  const handleSelectGroup = useCallback((tokenId: string, annotationId: string | null) => {
-    setReaderState((prev) => ({
-      ...prev,
-      selectedTokenId: tokenId,
-      selectedAnnotationId: annotationId,
-      playbackAnchorTokenId: tokenId,
-      isSheetOpen: true,
-    }));
+  const closeSheet = useCallback(() => {
+    setSelection((prev) => ({ ...prev, isSheetOpen: false }));
   }, []);
 
-  const closeSheet = useCallback(() => {
-    setReaderState((prev) => ({ ...prev, isSheetOpen: false }));
-  }, []);
+  const handleContinueFromSelection = useCallback(() => {
+    if (selection.selectedTokenId) narration.continueFrom(selection.selectedTokenId);
+    closeSheet();
+  }, [selection.selectedTokenId, narration, closeSheet]);
+
+  const handleTogglePlay = useCallback(() => {
+    if (narration.playbackStatus === 'playing') narration.pause();
+    else narration.play();
+  }, [narration]);
 
   useEffect(() => {
-    if (!readerState.isSheetOpen) return;
+    if (!selection.isSheetOpen) return;
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') closeSheet();
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [readerState.isSheetOpen, closeSheet]);
+  }, [selection.isSheetOpen, closeSheet]);
 
   useEffect(() => {
-    if (!readerState.isSheetOpen) return;
+    if (!selection.isSheetOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [readerState.isSheetOpen]);
+  }, [selection.isSheetOpen]);
 
   return (
     <div className="app">
@@ -75,26 +89,44 @@ export function ReaderPage() {
 
       <ArticleContent
         lesson={sampleLesson}
-        selectedAnnotationId={readerState.selectedAnnotationId}
-        selectedTokenId={readerState.selectedTokenId}
+        selectedAnnotationId={selection.selectedAnnotationId}
+        selectedTokenId={selection.selectedTokenId}
+        activeTokenId={SPEAKING_STATUSES.has(narration.playbackStatus) ? narration.activeTokenId : null}
         onSelectGroup={handleSelectGroup}
       />
 
-      {readerState.playbackStatus === 'idle' ? (
-        <button className="fab-play" type="button" aria-label="Слушать">
+      {FAB_STATUSES.has(narration.playbackStatus) && (
+        <button className="fab-play" type="button" aria-label="Слушать" onClick={narration.play}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7z" />
           </svg>
         </button>
-      ) : (
-        <NarrationPlayer />
+      )}
+
+      {narration.playbackStatus === 'error' && (
+        <p className="tts-error-note" role="status">
+          Озвучивание недоступно в этом браузере — текст и объяснения по-прежнему доступны.
+        </p>
+      )}
+
+      {PLAYER_STATUSES.has(narration.playbackStatus) && (
+        <NarrationPlayer
+          status={narration.playbackStatus}
+          progress={progress}
+          rate={narration.rate}
+          onTogglePlay={handleTogglePlay}
+          onStop={narration.stop}
+          onCycleRate={narration.cycleRate}
+          onReplay={narration.replay}
+        />
       )}
 
       <ExplanationSheet
         selection={sheetSelection}
-        isOpen={readerState.isSheetOpen}
+        isOpen={selection.isSheetOpen}
         onClose={closeSheet}
-        onContinue={closeSheet}
+        onContinue={handleContinueFromSelection}
+        onSpeak={narration.speakSelection}
       />
     </div>
   );

@@ -6,10 +6,17 @@ type Props = {
   lesson: Lesson;
   selectedAnnotationId: string | null;
   selectedTokenId: string | null;
+  activeTokenId: string | null;
   onSelectGroup: (tokenId: string, annotationId: string | null) => void;
 };
 
-export function ArticleContent({ lesson, selectedAnnotationId, selectedTokenId, onSelectGroup }: Props) {
+export function ArticleContent({
+  lesson,
+  selectedAnnotationId,
+  selectedTokenId,
+  activeTokenId,
+  onSelectGroup,
+}: Props) {
   const annotationsById = useMemo(
     () => new Map(lesson.annotations.map((annotation) => [annotation.id, annotation])),
     [lesson.annotations],
@@ -27,6 +34,7 @@ export function ArticleContent({ lesson, selectedAnnotationId, selectedTokenId, 
                 annotationsById={annotationsById}
                 selectedAnnotationId={selectedAnnotationId}
                 selectedTokenId={selectedTokenId}
+                activeTokenId={activeTokenId}
                 onSelectGroup={onSelectGroup}
               />
             </Fragment>

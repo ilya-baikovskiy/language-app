@@ -1,24 +1,25 @@
 type Props = {
   variant: 'word' | 'phrase' | 'fallback';
+  onSpeakWord: () => void;
+  onSpeakPhrase?: () => void;
+  onSpeakSentence?: () => void;
   onContinue: () => void;
 };
 
-// Этап 2: реально работает только «Продолжить отсюда» (закрывает Bottom Sheet).
-// Прослушивание слова/фразы/предложения подключится вместе с озвучкой в Этапе 3.
-export function AudioActionButtons({ variant, onContinue }: Props) {
+export function AudioActionButtons({ variant, onSpeakWord, onSpeakPhrase, onSpeakSentence, onContinue }: Props) {
   return (
     <>
       <div className="sheet-actions">
-        <button className="act-btn" type="button">
+        <button className="act-btn" type="button" onClick={onSpeakWord}>
           ▶ Слово
         </button>
-        {variant === 'phrase' && (
-          <button className="act-btn" type="button">
+        {variant === 'phrase' && onSpeakPhrase && (
+          <button className="act-btn" type="button" onClick={onSpeakPhrase}>
             ▶ Фраза
           </button>
         )}
-        {variant !== 'fallback' && (
-          <button className="act-btn" type="button">
+        {variant !== 'fallback' && onSpeakSentence && (
+          <button className="act-btn" type="button" onClick={onSpeakSentence}>
             ▶ Предложение
           </button>
         )}

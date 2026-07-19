@@ -28,6 +28,7 @@ type Props = {
   annotationsById: Map<string, Annotation>;
   selectedAnnotationId: string | null;
   selectedTokenId: string | null;
+  activeTokenId: string | null;
   onSelectGroup: (tokenId: string, annotationId: string | null) => void;
 };
 
@@ -36,6 +37,7 @@ export function InteractiveSentence({
   annotationsById,
   selectedAnnotationId,
   selectedTokenId,
+  activeTokenId,
   onSelectGroup,
 }: Props) {
   const groups = groupTokens(sentence.tokens, annotationsById);
@@ -45,31 +47,48 @@ export function InteractiveSentence({
       {groups.map((group, index) => {
         const isPunctuation = group.tokens.length === 1 && group.tokens[0].type === 'punctuation';
         const needsLeadingSpace = index > 0 && !isPunctuation;
-        const text = group.tokens.map((t) => t.text).join(' ');
         const anchorTokenId = group.tokens[0].id;
         const isSelected = group.annotation
           ? selectedAnnotationId === group.annotation.id
           : selectedTokenId === anchorTokenId;
 
-        return (
-          <Fragment key={anchorTokenId}>
-            {needsLeadingSpace ? ' ' : null}
-            {isPunctuation ? (
-              text
-            ) : group.tokens.length > 1 ? (
+        if (isPunctuation) {
+          return <Fragment key={anchorTokenId}>{group.tokens[0].text}</Fragment>;
+        }
+
+        if (group.tokens.length > 1) {
+          // Фраза — единая кликабельная область, но подсветка произносимого
+          // слова всё равно должна быть точечной (раздел 8.4 ТЗ), поэтому
+          // внутри рендерим отдельные некликабельные под-span'ы на слово.
+          return (
+            <Fragment key={anchorTokenId}>
+              {needsLeadingSpace ? ' ' : null}
               <span
                 className={`phrase${isSelected ? ' is-selected' : ''}`}
                 onClick={() => onSelectGroup(anchorTokenId, group.annotation?.id ?? null)}
               >
-                {text}
+                {group.tokens.map((token, tokenIndex) => (
+                  <Fragment key={token.id}>
+                    {tokenIndex > 0 ? ' ' : null}
+                    <span className={`tok-inline${activeTokenId === token.id ? ' is-speaking' : ''}`}>
+                      {token.text}
+                    </span>
+                  </Fragment>
+                ))}
               </span>
-            ) : (
-              <InteractiveToken
-                token={group.tokens[0]}
-                isSelected={isSelected}
-                onSelect={() => onSelectGroup(anchorTokenId, group.annotation?.id ?? null)}
-              />
-            )}
+            </Fragment>
+          );
+        }
+
+        return (
+          <Fragment key={anchorTokenId}>
+            {needsLeadingSpace ? ' ' : null}
+            <InteractiveToken
+              token={group.tokens[0]}
+              isSelected={isSelected}
+              isSpeaking={activeTokenId === anchorTokenId}
+              onSelect={() => onSelectGroup(anchorTokenId, group.annotation?.id ?? null)}
+            />
           </Fragment>
         );
       })}

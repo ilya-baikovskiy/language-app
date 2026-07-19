@@ -9,19 +9,16 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onContinue: () => void;
+  onSpeak: (text: string) => void;
 };
 
 // Раздел 6.4 и 11 ТЗ. Контент не размонтируется при закрытии (иначе во время
 // анимации сворачивания панель на миг станет пустой) — только isOpen переключает
 // видимость через CSS-класс.
-export function ExplanationSheet({ selection, isOpen, onClose, onContinue }: Props) {
+export function ExplanationSheet({ selection, isOpen, onClose, onContinue, onSpeak }: Props) {
   return (
     <>
-      <div
-        className={`sheet-overlay${isOpen ? ' is-open' : ''}`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className={`sheet-overlay${isOpen ? ' is-open' : ''}`} onClick={onClose} aria-hidden="true" />
       <div
         className={`sheet${isOpen ? ' is-open' : ''}`}
         role="dialog"
@@ -62,6 +59,17 @@ export function ExplanationSheet({ selection, isOpen, onClose, onContinue }: Pro
               <ExampleList examples={selection.annotation.examples} />
               <AudioActionButtons
                 variant={selection.annotation.type === 'phrase' ? 'phrase' : 'word'}
+                onSpeakWord={() =>
+                  onSpeak(
+                    selection.annotation.type === 'phrase'
+                      ? selection.annotation.displayText.split(' ')[0]
+                      : selection.annotation.displayText,
+                  )
+                }
+                onSpeakPhrase={
+                  selection.annotation.type === 'phrase' ? () => onSpeak(selection.annotation.displayText) : undefined
+                }
+                onSpeakSentence={() => onSpeak(selection.sentenceText)}
                 onContinue={onContinue}
               />
             </>
@@ -83,7 +91,7 @@ export function ExplanationSheet({ selection, isOpen, onClose, onContinue }: Pro
                 <p className="fallback-note">Подробное объяснение пока не добавлено.</p>
               </div>
 
-              <AudioActionButtons variant="fallback" onContinue={onContinue} />
+              <AudioActionButtons variant="fallback" onSpeakWord={() => onSpeak(selection.word)} onContinue={onContinue} />
             </>
           )}
         </div>

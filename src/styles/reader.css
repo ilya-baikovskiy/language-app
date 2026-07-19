@@ -143,6 +143,12 @@
 .phrase:hover {
   background: var(--surface-2);
 }
+.tok-inline.is-speaking {
+  background: var(--marker);
+  border-radius: 4px;
+  padding: 0 1px;
+  margin: 0 -1px;
+}
 
 /* ---------- idle FAB ---------- */
 .fab-play {
@@ -165,6 +171,22 @@
 }
 .fab-play:hover {
   transform: scale(1.05);
+}
+
+.tts-error-note {
+  position: fixed;
+  right: 22px;
+  bottom: 26px;
+  z-index: 40;
+  max-width: 240px;
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  font-size: 12.5px;
+  color: var(--ink-soft);
 }
 
 /* ---------- sticky player ---------- */
@@ -191,6 +213,10 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
+}
+.player-completed-note {
+  font-size: 13px;
+  color: var(--ink-soft);
 }
 .player-btn {
   border: none;
