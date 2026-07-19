@@ -1,0 +1,78 @@
+:root {
+  --bg: #f3f0e8;
+  --surface: #fffdf8;
+  --surface-2: #ece8dc;
+  --ink: #24211c;
+  --ink-soft: #6f6a5f;
+  --ink-faint: #a49d8d;
+  --border: rgba(36, 33, 28, 0.12);
+  --accent: #4b3fd6;
+  --accent-soft: rgba(75, 63, 214, 0.11);
+  --accent-underline: rgba(75, 63, 214, 0.55);
+  --marker: rgba(224, 158, 66, 0.38);
+  --marker-strong: #a5691c;
+  --overlay: rgba(24, 22, 18, 0.4);
+  --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35);
+
+  --font-article: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  --sheet-radius: 20px;
+
+  /* text size steps, controlled by reader preferences */
+  --article-font-size: 21px;
+  --article-line-height: 1.72;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1a17;
+    --surface: #262320;
+    --surface-2: #2f2b26;
+    --ink: #f1ede3;
+    --ink-soft: #b6ae9e;
+    --ink-faint: #766f60;
+    --border: rgba(241, 237, 227, 0.13);
+    --accent: #9186ff;
+    --accent-soft: rgba(145, 134, 255, 0.16);
+    --accent-underline: rgba(145, 134, 255, 0.6);
+    --marker: rgba(232, 178, 90, 0.3);
+    --marker-strong: #e8b25a;
+    --overlay: rgba(0, 0, 0, 0.6);
+    --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6);
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #1c1a17;
+  --surface: #262320;
+  --surface-2: #2f2b26;
+  --ink: #f1ede3;
+  --ink-soft: #b6ae9e;
+  --ink-faint: #766f60;
+  --border: rgba(241, 237, 227, 0.13);
+  --accent: #9186ff;
+  --accent-soft: rgba(145, 134, 255, 0.16);
+  --accent-underline: rgba(145, 134, 255, 0.6);
+  --marker: rgba(232, 178, 90, 0.3);
+  --marker-strong: #e8b25a;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme='light'] {
+  --bg: #f3f0e8;
+  --surface: #fffdf8;
+  --surface-2: #ece8dc;
+  --ink: #24211c;
+  --ink-soft: #6f6a5f;
+  --ink-faint: #a49d8d;
+  --border: rgba(36, 33, 28, 0.12);
+  --accent: #4b3fd6;
+  --accent-soft: rgba(75, 63, 214, 0.11);
+  --accent-underline: rgba(75, 63, 214, 0.55);
+  --marker: rgba(224, 158, 66, 0.38);
+  --marker-strong: #a5691c;
+  --overlay: rgba(24, 22, 18, 0.4);
+  --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35);
+}
