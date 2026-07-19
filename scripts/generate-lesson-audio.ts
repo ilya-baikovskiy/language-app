@@ -32,13 +32,12 @@ async function generateSpeech(text: string, apiKey: string): Promise<Buffer> {
       voice: process.env.OPENAI_TTS_VOICE || 'marin',
       input: text,
       response_format: 'mp3',
-      // Чуть медленнее нормального темпа по умолчанию — для языкового ридера
-      // важнее разборчивость, чем естественная скорость носителя. 1.0 = обычный
-      // темп; UI-регулятор скорости (0.6–1.5×) применяется поверх этого при
-      // воспроизведении, а не при генерации.
-      speed: 0.85,
+      // Не использовать числовой speed — это постобработка/тайм-стретч поверх
+      // обычного темпа и звучит неестественно (артефакты). Медленный темп
+      // просим у самой модели через instructions, чтобы это была настоящая
+      // медленная речь, а не растянутая обычная.
       instructions:
-        'Speak as a native French narrator reading a short story aloud: natural French rhythm, intonation and pacing, warm and calm, not rushed, not robotic.',
+        'Speak as a native French narrator reading a short story aloud, deliberately a bit slower and more clearly-articulated than normal conversational pace — the audience is language learners. Natural French rhythm and intonation, warm and calm, not rushed, not robotic, not exaggeratedly slow either.',
     }),
   });
   if (!res.ok) throw new Error(`TTS error ${res.status}: ${await res.text()}`);
