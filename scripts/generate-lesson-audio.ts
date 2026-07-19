@@ -32,6 +32,11 @@ async function generateSpeech(text: string, apiKey: string): Promise<Buffer> {
       voice: process.env.OPENAI_TTS_VOICE || 'marin',
       input: text,
       response_format: 'mp3',
+      // Чуть медленнее нормального темпа по умолчанию — для языкового ридера
+      // важнее разборчивость, чем естественная скорость носителя. 1.0 = обычный
+      // темп; UI-регулятор скорости (0.6–1.5×) применяется поверх этого при
+      // воспроизведении, а не при генерации.
+      speed: 0.85,
       instructions:
         'Speak as a native French narrator reading a short story aloud: natural French rhythm, intonation and pacing, warm and calm, not rushed, not robotic.',
     }),
