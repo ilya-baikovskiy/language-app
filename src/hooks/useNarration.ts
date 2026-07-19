@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Lesson } from '../types/lesson';
 import type { PlaybackStatus } from '../types/reader';
-import { BrowserSpeechAdapter } from '../services/narration/BrowserSpeechAdapter';
+import { PrecomputedAudioAdapter } from '../services/narration/PrecomputedAudioAdapter';
 import type { NarrationAdapter } from '../services/narration/NarrationAdapter';
 import { firstWordTokenId } from '../lib/lessonText';
+
+// Раздел 14 ТЗ: React ничего не знает о конкретном провайдере озвучки —
+// сейчас это заранее сгенерированный аудиофайл + word-level timestamps
+// (PrecomputedAudioAdapter). BrowserSpeechAdapter (Web Speech API) остаётся
+// в кодовой базе как рабочий запасной вариант с тем же интерфейсом — можно
+// вернуть однострочной заменой импорта, если понадобится.
 
 export const NARRATION_RATE_STEPS = [0.6, 0.8, 1, 1.2, 1.5] as const;
 
@@ -16,7 +22,7 @@ export function useNarration(lesson: Lesson) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const adapter = new BrowserSpeechAdapter(lesson);
+    const adapter = new PrecomputedAudioAdapter(lesson);
     adapter.onTokenChange((tokenId) => {
       setActiveTokenId(tokenId);
       setPlaybackAnchorTokenId(tokenId);

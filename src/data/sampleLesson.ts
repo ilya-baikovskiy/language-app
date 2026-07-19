@@ -1,4 +1,5 @@
-import type { Annotation, Lesson, Sentence, Token } from '../types/lesson';
+import type { Annotation, Lesson, Paragraph, Sentence, Token } from '../types/lesson';
+import lessonTimestamps from './lessonTimestamps.json';
 
 // Раздел 22 ТЗ: полная разметка есть не у каждого слова — только у
 // содержательных единиц (глаголы, конструкции, идиомы, ключевая грамматика).
@@ -707,6 +708,25 @@ const annotations: Annotation[] = [
   },
 ];
 
+// Таймкоды слов (src/data/lessonTimestamps.json) генерируются отдельным
+// скриптом (scripts/generate-lesson-audio.ts) по озвучке в public/audio/ —
+// не хранятся в самой разметке урока, чтобы переозвучка не требовала
+// переписывать текст/аннотации руками.
+const timestampsById = lessonTimestamps as Record<string, { startTime: number; endTime: number }>;
+
+function withTimestamps(paragraphs: Paragraph[]): Paragraph[] {
+  return paragraphs.map((paragraph) => ({
+    ...paragraph,
+    sentences: paragraph.sentences.map((sentence) => ({
+      ...sentence,
+      tokens: sentence.tokens.map((token) => {
+        const timing = timestampsById[token.id];
+        return timing ? { ...token, startTime: timing.startTime, endTime: timing.endTime } : token;
+      }),
+    })),
+  }));
+}
+
 export const sampleLesson: Lesson = {
   id: 'une-promenade-a-paris',
   language: 'French',
@@ -715,12 +735,12 @@ export const sampleLesson: Lesson = {
   title: 'Une promenade à Paris',
   translatedTitle: 'Прогулка по Парижу',
   estimatedMinutes: 4,
-  paragraphs: [
+  paragraphs: withTimestamps([
     { id: 'p1', sentences: [s1, s2] },
     { id: 'p2', sentences: [s3, s4] },
     { id: 'p3', sentences: [s5, s6] },
     { id: 'p4', sentences: [s7, s8] },
     { id: 'p5', sentences: [s9, s10] },
-  ],
+  ]),
   annotations,
 };

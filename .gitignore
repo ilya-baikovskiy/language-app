@@ -33,3 +33,6 @@ audio-samples/
 *.njsproj
 *.sln
 *.sw?
+
+# Local intermediate artifact from scripts/generate-lesson-audio.ts
+scripts/.whisper-cache.json
