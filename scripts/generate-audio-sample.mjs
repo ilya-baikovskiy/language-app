@@ -48,6 +48,9 @@ async function generateOpenAI() {
     return;
   }
   const voice = process.env.OPENAI_TTS_VOICE || 'alloy';
+  // gpt-4o-mini-tts (в отличие от tts-1/tts-1-hd) понимает instructions —
+  // это единственный способ подсказать модели про естественный французский
+  // ритм произношения, а не только выбрать голос.
   const res = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: {
@@ -55,10 +58,12 @@ async function generateOpenAI() {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'tts-1-hd',
+      model: 'gpt-4o-mini-tts',
       voice,
       input: SAMPLE_TEXT,
       response_format: 'mp3',
+      instructions:
+        'Speak as a native French narrator reading a short story aloud: natural French rhythm, intonation and pacing, warm and calm, not rushed, not robotic.',
     }),
   });
   if (!res.ok) {
