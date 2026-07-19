@@ -4,9 +4,12 @@ import { InteractiveSentence } from './InteractiveSentence';
 
 type Props = {
   lesson: Lesson;
+  selectedAnnotationId: string | null;
+  selectedTokenId: string | null;
+  onSelectGroup: (tokenId: string, annotationId: string | null) => void;
 };
 
-export function ArticleContent({ lesson }: Props) {
+export function ArticleContent({ lesson, selectedAnnotationId, selectedTokenId, onSelectGroup }: Props) {
   const annotationsById = useMemo(
     () => new Map(lesson.annotations.map((annotation) => [annotation.id, annotation])),
     [lesson.annotations],
@@ -19,7 +22,13 @@ export function ArticleContent({ lesson }: Props) {
           {paragraph.sentences.map((sentence, index) => (
             <Fragment key={sentence.id}>
               {index > 0 ? ' ' : null}
-              <InteractiveSentence sentence={sentence} annotationsById={annotationsById} />
+              <InteractiveSentence
+                sentence={sentence}
+                annotationsById={annotationsById}
+                selectedAnnotationId={selectedAnnotationId}
+                selectedTokenId={selectedTokenId}
+                onSelectGroup={onSelectGroup}
+              />
             </Fragment>
           ))}
         </p>

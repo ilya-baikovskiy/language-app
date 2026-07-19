@@ -26,9 +26,18 @@ function groupTokens(tokens: Token[], annotationsById: Map<string, Annotation>):
 type Props = {
   sentence: Sentence;
   annotationsById: Map<string, Annotation>;
+  selectedAnnotationId: string | null;
+  selectedTokenId: string | null;
+  onSelectGroup: (tokenId: string, annotationId: string | null) => void;
 };
 
-export function InteractiveSentence({ sentence, annotationsById }: Props) {
+export function InteractiveSentence({
+  sentence,
+  annotationsById,
+  selectedAnnotationId,
+  selectedTokenId,
+  onSelectGroup,
+}: Props) {
   const groups = groupTokens(sentence.tokens, annotationsById);
 
   return (
@@ -37,14 +46,29 @@ export function InteractiveSentence({ sentence, annotationsById }: Props) {
         const isPunctuation = group.tokens.length === 1 && group.tokens[0].type === 'punctuation';
         const needsLeadingSpace = index > 0 && !isPunctuation;
         const text = group.tokens.map((t) => t.text).join(' ');
+        const anchorTokenId = group.tokens[0].id;
+        const isSelected = group.annotation
+          ? selectedAnnotationId === group.annotation.id
+          : selectedTokenId === anchorTokenId;
 
         return (
-          <Fragment key={group.tokens[0].id}>
+          <Fragment key={anchorTokenId}>
             {needsLeadingSpace ? ' ' : null}
-            {isPunctuation ? text : group.tokens.length > 1 ? (
-              <span className="phrase">{text}</span>
+            {isPunctuation ? (
+              text
+            ) : group.tokens.length > 1 ? (
+              <span
+                className={`phrase${isSelected ? ' is-selected' : ''}`}
+                onClick={() => onSelectGroup(anchorTokenId, group.annotation?.id ?? null)}
+              >
+                {text}
+              </span>
             ) : (
-              <InteractiveToken token={group.tokens[0]} />
+              <InteractiveToken
+                token={group.tokens[0]}
+                isSelected={isSelected}
+                onSelect={() => onSelectGroup(anchorTokenId, group.annotation?.id ?? null)}
+              />
             )}
           </Fragment>
         );

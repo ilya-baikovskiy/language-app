@@ -1,52 +1,101 @@
-import type { Annotation } from '../types/lesson';
+import type { SheetSelection } from '../hooks/useSelectedAnnotation';
 import { ContextMeaning } from './ContextMeaning';
 import { GrammarSummary } from './GrammarSummary';
 import { ExampleList } from './ExampleList';
 import { AudioActionButtons } from './AudioActionButtons';
 
 type Props = {
-  annotation: Annotation;
+  selection: SheetSelection | null;
   isOpen: boolean;
+  onClose: () => void;
+  onContinue: () => void;
 };
 
-// Этап 1: статическая вёрстка Bottom Sheet (раздел 6.4 и 11 ТЗ) с контентом
-// одной заготовленной аннотации. isOpen сейчас захардкожен на false в
-// ReaderPage — открытие по клику на слово появится в Этапе 2.
-export function ExplanationSheet({ annotation, isOpen }: Props) {
+// Раздел 6.4 и 11 ТЗ. Контент не размонтируется при закрытии (иначе во время
+// анимации сворачивания панель на миг станет пустой) — только isOpen переключает
+// видимость через CSS-класс.
+export function ExplanationSheet({ selection, isOpen, onClose, onContinue }: Props) {
   return (
     <>
-      <div className={`sheet-overlay${isOpen ? ' is-open' : ''}`} />
-      <div className={`sheet${isOpen ? ' is-open' : ''}`}>
+      <div
+        className={`sheet-overlay${isOpen ? ' is-open' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className={`sheet${isOpen ? ' is-open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Объяснение слова"
+      >
         <div className="sheet-panel">
           <div className="sheet-handle" />
 
-          <div className="sheet-top">
-            <div>
-              <div className="sheet-head">{annotation.displayText}</div>
-              {annotation.pronunciation && <p className="sheet-pron">{annotation.pronunciation}</p>}
-            </div>
-            <button className="sheet-close" type="button" aria-label="Закрыть">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
+          {selection?.kind === 'annotation' && (
+            <>
+              <div className="sheet-top">
+                <div>
+                  <div className="sheet-head">{selection.annotation.displayText}</div>
+                  {selection.annotation.pronunciation && (
+                    <p className="sheet-pron">{selection.annotation.pronunciation}</p>
+                  )}
+                </div>
+                <button className="sheet-close" type="button" aria-label="Закрыть" onClick={onClose}>
+                  <CloseIcon />
+                </button>
+              </div>
+              <p className="sheet-lemma">
+                от <b>{selection.annotation.lemma}</b>
+                {selection.annotation.partOfSpeech && (
+                  <span className="sheet-tag">{selection.annotation.partOfSpeech}</span>
+                )}
+                {selection.annotation.grammarLabel && (
+                  <span className="sheet-tag">{selection.annotation.grammarLabel}</span>
+                )}
+              </p>
+              <p className="sheet-translation">{selection.annotation.shortTranslation}</p>
 
-          <p className="sheet-lemma">
-            от <b>{annotation.lemma}</b>
-            {annotation.partOfSpeech && <span className="sheet-tag">{annotation.partOfSpeech}</span>}
-            {annotation.grammarLabel && <span className="sheet-tag">{annotation.grammarLabel}</span>}
-          </p>
-          <p className="sheet-translation">{annotation.shortTranslation}</p>
+              <hr className="sheet-divider" />
 
-          <hr className="sheet-divider" />
+              <ContextMeaning annotation={selection.annotation} />
+              <GrammarSummary annotation={selection.annotation} />
+              <ExampleList examples={selection.annotation.examples} />
+              <AudioActionButtons
+                variant={selection.annotation.type === 'phrase' ? 'phrase' : 'word'}
+                onContinue={onContinue}
+              />
+            </>
+          )}
 
-          <ContextMeaning annotation={annotation} />
-          <GrammarSummary annotation={annotation} />
-          <ExampleList examples={annotation.examples} />
-          <AudioActionButtons hasPhrase={annotation.type === 'phrase'} />
+          {selection?.kind === 'fallback' && (
+            <>
+              <div className="sheet-top">
+                <div className="sheet-head">{selection.word}</div>
+                <button className="sheet-close" type="button" aria-label="Закрыть" onClick={onClose}>
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <hr className="sheet-divider" />
+
+              <div className="sheet-body">
+                <p>Встречается в предложении: «{selection.sentenceText}»</p>
+                <p className="fallback-note">Подробное объяснение пока не добавлено.</p>
+              </div>
+
+              <AudioActionButtons variant="fallback" onContinue={onContinue} />
+            </>
+          )}
         </div>
       </div>
     </>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }
