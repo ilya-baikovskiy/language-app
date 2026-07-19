@@ -7,13 +7,13 @@ type Props = {
   rate: number;
   onTogglePlay: () => void;
   onStop: () => void;
-  onCycleRate: () => void;
+  onRateChange: (rate: number) => void;
   onReplay: () => void;
 };
 
 // Раздел 6.3 и 7.6 ТЗ. Смонтирован только пока playbackStatus !== 'idle'/'stopped'
 // (см. ReaderPage) — до старта чтения плеер не виден.
-export function NarrationPlayer({ status, progress, rate, onTogglePlay, onStop, onCycleRate, onReplay }: Props) {
+export function NarrationPlayer({ status, progress, rate, onTogglePlay, onStop, onRateChange, onReplay }: Props) {
   if (status === 'completed') {
     return (
       <div className="player">
@@ -47,7 +47,7 @@ export function NarrationPlayer({ status, progress, rate, onTogglePlay, onStop, 
         <div className="progress" aria-hidden="true">
           <span style={{ inset: `0 ${100 - progressPercent}% 0 0` }} />
         </div>
-        <SpeedControl rate={rate} onCycle={onCycleRate} />
+        <SpeedControl rate={rate} onChange={onRateChange} />
       </div>
     </div>
   );

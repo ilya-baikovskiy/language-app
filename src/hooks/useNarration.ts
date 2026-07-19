@@ -64,12 +64,6 @@ export function useNarration(lesson: Lesson) {
     [playbackStatus, activeTokenId, playbackAnchorTokenId],
   );
 
-  const cycleRate = useCallback(() => {
-    const currentIndex = NARRATION_RATE_STEPS.indexOf(rate as (typeof NARRATION_RATE_STEPS)[number]);
-    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % NARRATION_RATE_STEPS.length;
-    setRate(NARRATION_RATE_STEPS[nextIndex]);
-  }, [rate, setRate]);
-
   // Раздел 7.4/8.5 ТЗ: клик по слову ставит чтение на паузу (если оно шло) и
   // сдвигает точку старта на выбранное слово — реальный Play продолжит отсюда.
   const inspectToken = useCallback((tokenId: string) => {
@@ -116,7 +110,6 @@ export function useNarration(lesson: Lesson) {
     pause,
     stop,
     setRate,
-    cycleRate,
     inspectToken,
     continueFrom,
     replay,

@@ -4,16 +4,13 @@ import type { NarrationAdapter } from './NarrationAdapter';
 
 // Средняя скорость чтения для приблизительной синхронизации, симв/сек при rate=1.
 const FALLBACK_CHARS_PER_SECOND = 15;
-// Если реальное boundary-событие сработало недавно, синтетический тик того же
-// окна пропускается — реальные события всегда приоритетнее приближения.
-const REAL_BOUNDARY_GRACE_MS = 400;
 
 export class BrowserSpeechAdapter implements NarrationAdapter {
   private readonly text: string;
   private readonly spans: TokenSpan[];
   private rate = 1;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
-  private lastRealBoundaryAt = 0;
+  private hasRealBoundaryForCurrentUtterance = false;
   private fallbackTimers: number[] = [];
   private tokenChangeCb: ((tokenId: string) => void) | null = null;
   private completeCb: (() => void) | null = null;
@@ -92,6 +89,7 @@ export class BrowserSpeechAdapter implements NarrationAdapter {
 
     this.clearFallbackTimers();
     this.currentUtterance = null;
+    this.hasRealBoundaryForCurrentUtterance = false;
     window.speechSynthesis.cancel();
     this.rate = rate;
 
@@ -108,7 +106,13 @@ export class BrowserSpeechAdapter implements NarrationAdapter {
     utterance.onboundary = (event) => {
       if (this.currentUtterance !== utterance) return; // событие от уже сменённого утеранса
       if (event.name && event.name !== 'word') return;
-      this.lastRealBoundaryAt = performance.now();
+      if (!this.hasRealBoundaryForCurrentUtterance) {
+        // Реальные события пошли — резервный таймер больше не нужен и не
+        // должен вмешиваться (иначе устаревший тик может отбросить подсветку
+        // на пару слов назад на долю секунды).
+        this.hasRealBoundaryForCurrentUtterance = true;
+        this.clearFallbackTimers();
+      }
       const token = findTokenAtOffset(this.spans, startOffset + event.charIndex);
       if (token) this.tokenChangeCb?.(token.tokenId);
     };
@@ -145,7 +149,7 @@ export class BrowserSpeechAdapter implements NarrationAdapter {
       const estimatedMs = ((span.start - startOffset) / charsPerSecond) * 1000;
       const timerId = window.setTimeout(() => {
         if (this.currentUtterance !== utterance) return;
-        if (performance.now() - this.lastRealBoundaryAt < REAL_BOUNDARY_GRACE_MS) return;
+        if (this.hasRealBoundaryForCurrentUtterance) return;
         this.tokenChangeCb?.(span.tokenId);
       }, estimatedMs);
       this.fallbackTimers.push(timerId);

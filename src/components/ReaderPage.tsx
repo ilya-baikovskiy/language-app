@@ -116,7 +116,7 @@ export function ReaderPage() {
           rate={narration.rate}
           onTogglePlay={handleTogglePlay}
           onStop={narration.stop}
-          onCycleRate={narration.cycleRate}
+          onRateChange={narration.setRate}
           onReplay={narration.replay}
         />
       )}
