@@ -9,9 +9,7 @@ import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
 
 export const maxDuration = 60;
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
-
+export async function POST(request: Request): Promise<Response> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return new Response('Server misconfigured: OPENAI_API_KEY missing', { status: 500 });
 

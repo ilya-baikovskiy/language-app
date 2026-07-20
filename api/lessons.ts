@@ -5,9 +5,7 @@ import { list } from '@vercel/blob';
 
 export const maxDuration = 15;
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
-
+export async function GET(): Promise<Response> {
   try {
     const { blobs } = await list({ prefix: 'lessons/index.json', limit: 1 });
     if (blobs.length === 0) return Response.json([]);
