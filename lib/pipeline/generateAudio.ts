@@ -3,12 +3,12 @@
 // дефисов (общий алгоритм, специфики под конкретный текст в нём нет).
 
 import type { LanguageConfig } from './languageConfig.ts';
-import { buildLessonText, findTokenAtOffset, type TokenSpan } from '../../../src/lib/lessonText.ts';
-import type { Lesson, Token } from '../../../src/types/lesson.ts';
+import { buildLessonText, findTokenAtOffset, type TokenSpan } from '../../src/lib/lessonText.ts';
+import type { Lesson, Token } from '../../src/types/lesson.ts';
 
 type WhisperWord = { word: string; start: number; end: number };
 
-async function generateSpeech(text: string, languageConfig: LanguageConfig, apiKey: string): Promise<Buffer> {
+export async function generateSpeech(text: string, languageConfig: LanguageConfig, apiKey: string): Promise<Buffer> {
   const res = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -146,6 +146,26 @@ function alignTokensToWhisper(tokens: Token[], whisperWords: WhisperWord[]) {
   return { result, unmatched };
 }
 
+// Раздельно от TTS — так каждый HTTP-вызов (api/generate-audio.ts делает TTS,
+// api/align-audio.ts делает это) короче и безопаснее по таймауту serverless-функции.
+export async function transcribeAndAlign(
+  audioBuffer: Buffer,
+  wordTokens: Token[],
+  languageConfig: LanguageConfig,
+  apiKey: string,
+): Promise<{ timestampsByToken: Record<string, { startTime: number; endTime: number }>; unmatched: string[] }> {
+  const whisperWords = await transcribeWithTimestamps(audioBuffer, languageConfig, apiKey);
+  const { result, unmatched } = alignTokensToWhisper(wordTokens, whisperWords);
+
+  const rounded: Record<string, { startTime: number; endTime: number }> = {};
+  for (const [id, v] of Object.entries(result)) {
+    rounded[id] = { startTime: Math.round(v.startTime * 1000) / 1000, endTime: Math.round(v.endTime * 1000) / 1000 };
+  }
+
+  return { timestampsByToken: rounded, unmatched };
+}
+
+// Удобная обёртка для CLI (весь урок целиком, локально, без разделения на два HTTP-вызова).
 export async function generateAudioAndTimestamps(
   lesson: Lesson,
   languageConfig: LanguageConfig,
@@ -157,17 +177,12 @@ export async function generateAudioAndTimestamps(
 }> {
   const { text } = buildLessonText(lesson);
   const audioBuffer = await generateSpeech(text, languageConfig, apiKey);
-  const whisperWords = await transcribeWithTimestamps(audioBuffer, languageConfig, apiKey);
   const wordTokens = collectWordTokens(lesson);
-  const { result, unmatched } = alignTokensToWhisper(wordTokens, whisperWords);
-
-  const rounded: Record<string, { startTime: number; endTime: number }> = {};
-  for (const [id, v] of Object.entries(result)) {
-    rounded[id] = { startTime: Math.round(v.startTime * 1000) / 1000, endTime: Math.round(v.endTime * 1000) / 1000 };
-  }
-
-  return { audioBuffer, timestampsByToken: rounded, unmatched };
+  const { timestampsByToken, unmatched } = await transcribeAndAlign(audioBuffer, wordTokens, languageConfig, apiKey);
+  return { audioBuffer, timestampsByToken, unmatched };
 }
+
+export { collectWordTokens };
 
 // Реэкспорт — используется CLI для сборки текста урока при необходимости.
 export type { TokenSpan };

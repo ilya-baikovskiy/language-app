@@ -2,8 +2,6 @@ import type { Lesson } from '../../types/lesson';
 import { buildLessonText, findTokenAtOffset, type TokenSpan } from '../../lib/lessonText';
 import type { NarrationAdapter } from './NarrationAdapter';
 
-const AUDIO_SRC = '/audio/lesson-fr.mp3';
-
 type TimedSpan = { tokenId: string; startTime: number; endTime: number };
 
 // Production-путь из раздела 14 ТЗ: заранее сгенерированный аудиофайл +
@@ -22,8 +20,8 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
   private mode: 'reading' | 'selection' = 'reading';
   private selectionEndTime: number | null = null;
 
-  constructor(lesson: Lesson) {
-    this.audio = new Audio(AUDIO_SRC);
+  constructor(lesson: Lesson, audioSrc: string) {
+    this.audio = new Audio(audioSrc);
     const built = buildLessonText(lesson);
     this.lessonText = built.text;
     this.textSpans = built.spans;

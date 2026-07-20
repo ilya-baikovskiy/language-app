@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { sampleLesson } from '../data/sampleLesson';
 import { useReaderPreferences } from '../hooks/useReaderPreferences';
 import { useSelectedAnnotation } from '../hooks/useSelectedAnnotation';
 import { useNarration } from '../hooks/useNarration';
 import { orderedWordTokenIds } from '../lib/lessonText';
+import type { Lesson } from '../types/lesson';
 import { ReaderHeader } from './ReaderHeader';
 import { ArticleContent } from './ArticleContent';
 import { NarrationPlayer } from './NarrationPlayer';
@@ -25,17 +25,23 @@ const SPEAKING_STATUSES = new Set(['playing', 'paused']);
 const FAB_STATUSES = new Set(['idle', 'stopped']);
 const PLAYER_STATUSES = new Set(['playing', 'paused', 'completed']);
 
-export function ReaderPage() {
+type Props = {
+  lesson: Lesson;
+  audioSrc: string;
+  onBack?: () => void;
+};
+
+export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
   const { theme, setTheme, fontSize, setFontSize } = useReaderPreferences();
-  const narration = useNarration(sampleLesson);
+  const narration = useNarration(lesson, audioSrc);
   const [selection, setSelection] = useState<SelectionState>(INITIAL_SELECTION);
 
-  const wordTokenIds = useMemo(() => orderedWordTokenIds(sampleLesson), []);
+  const wordTokenIds = useMemo(() => orderedWordTokenIds(lesson), [lesson]);
   const progress = narration.activeTokenId
     ? (wordTokenIds.indexOf(narration.activeTokenId) + 1) / wordTokenIds.length
     : 0;
 
-  const sheetSelection = useSelectedAnnotation(sampleLesson, selection.selectedTokenId, selection.selectedAnnotationId);
+  const sheetSelection = useSelectedAnnotation(lesson, selection.selectedTokenId, selection.selectedAnnotationId);
 
   const handleSelectGroup = useCallback(
     (tokenId: string, annotationId: string | null) => {
@@ -77,18 +83,25 @@ export function ReaderPage() {
     };
   }, [selection.isSheetOpen]);
 
+  // Смена урока (например, из библиотеки) — состояние выбора слова не должно
+  // тянуться из предыдущего урока.
+  useEffect(() => {
+    setSelection(INITIAL_SELECTION);
+  }, [lesson]);
+
   return (
     <div className="app">
       <ReaderHeader
-        lesson={sampleLesson}
+        lesson={lesson}
         theme={theme}
         onThemeChange={setTheme}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
+        onBack={onBack}
       />
 
       <ArticleContent
-        lesson={sampleLesson}
+        lesson={lesson}
         selectedAnnotationId={selection.selectedAnnotationId}
         selectedTokenId={selection.selectedTokenId}
         activeTokenId={SPEAKING_STATUSES.has(narration.playbackStatus) ? narration.activeTokenId : null}

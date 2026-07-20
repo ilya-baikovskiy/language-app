@@ -9,12 +9,12 @@
 //   npx tsx --env-file=.env scripts/generate-new-lesson.ts --input-file=./scripts/output/source.txt --level=B1 --words=250 --slug=my-article
 
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
-import { getLanguageConfig } from './lib/pipeline/languageConfig.ts';
-import { generateText, type InputSource } from './lib/pipeline/generateText.ts';
-import { tokenizeParagraphs } from './lib/pipeline/tokenize.ts';
-import { markPhrasesForLesson } from './lib/pipeline/markPhrases.ts';
-import { generateAnnotationsForLesson } from './lib/pipeline/generateAnnotations.ts';
-import { generateAudioAndTimestamps } from './lib/pipeline/generateAudio.ts';
+import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
+import { generateText, type InputSource } from '../lib/pipeline/generateText.ts';
+import { tokenizeParagraphs } from '../lib/pipeline/tokenize.ts';
+import { markPhrasesForLesson } from '../lib/pipeline/markPhrases.ts';
+import { generateAnnotationsForLesson } from '../lib/pipeline/generateAnnotations.ts';
+import { generateAudioAndTimestamps } from '../lib/pipeline/generateAudio.ts';
 import type { Lesson } from '../src/types/lesson.ts';
 
 function parseArgs() {
@@ -44,6 +44,7 @@ async function resolveInputSource(opts: ReturnType<typeof parseArgs>): Promise<I
 async function main() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY не задан (запускай с --env-file=.env)');
+  const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o';
 
   const opts = parseArgs();
   if (!opts.slug) throw new Error('Нужен --slug=имя-файла (латиницей, для выходных файлов)');
@@ -55,7 +56,13 @@ async function main() {
   console.log(`[1/6] Вход: ${input.kind}`);
 
   console.log(`[2/6] Генерирую текст (уровень ${opts.level}, ~${opts.words} слов)...`);
-  const generated = await generateText(input, { level: opts.level, targetWords: opts.words, sourceLanguage }, languageConfig, apiKey);
+  const generated = await generateText(
+    input,
+    { level: opts.level, targetWords: opts.words, sourceLanguage },
+    languageConfig,
+    apiKey,
+    model,
+  );
   console.log(`  ✓ «${generated.title}» — ${generated.paragraphs.length} абзацев`);
 
   console.log('[3/6] Токенизация...');
@@ -64,7 +71,7 @@ async function main() {
   console.log(`  ✓ ${paragraphs.length} абзацев, ${wordCount} слов`);
 
   console.log('[4/6] Разметка фраз...');
-  const phraseGroups = await markPhrasesForLesson(paragraphs, languageConfig, apiKey);
+  const phraseGroups = await markPhrasesForLesson(paragraphs, languageConfig, apiKey, model);
   console.log(`  ✓ найдено ${phraseGroups.length} фразовых групп`);
 
   console.log('[5/6] Генерация объяснений (это займёт несколько минут)...');
@@ -79,6 +86,7 @@ async function main() {
       onProgress: (done, total, failed) => process.stdout.write(`\r  ${done + failed}/${total} (ok: ${done}, fail: ${failed})`),
     },
     apiKey,
+    model,
   );
   console.log(`\n  ✓ ${annotations.length} аннотаций`);
 

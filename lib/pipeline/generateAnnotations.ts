@@ -6,11 +6,11 @@
 
 import type { LanguageConfig } from './languageConfig.ts';
 import type { PhraseGroup } from './markPhrases.ts';
-import type { Annotation, Paragraph, Token } from '../../../src/types/lesson.ts';
+import type { Annotation, Paragraph, Token } from '../../src/types/lesson.ts';
 
 export type AnnotationContent = Omit<Annotation, 'id' | 'type' | 'tokenIds'>;
 
-type AnnotationTarget = {
+export type AnnotationTarget = {
   tokenIds: string[];
   displayText: string;
   sentenceText: string;
@@ -83,7 +83,7 @@ Rules:
 - Output strictly the JSON object per the schema.`;
 }
 
-function collectAnnotationTargets(paragraphs: Paragraph[], phraseGroups: PhraseGroup[]): AnnotationTarget[] {
+export function collectAnnotationTargets(paragraphs: Paragraph[], phraseGroups: PhraseGroup[]): AnnotationTarget[] {
   const tokensById = new Map<string, { token: Token; sentenceText: string }>();
   for (const paragraph of paragraphs) {
     for (const sentence of paragraph.sentences) {
@@ -121,7 +121,7 @@ function collectAnnotationTargets(paragraphs: Paragraph[], phraseGroups: PhraseG
   return targets;
 }
 
-async function generateOne(
+export async function generateAnnotationContent(
   target: AnnotationTarget,
   languageConfig: LanguageConfig,
   level: string,
@@ -178,37 +178,18 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
   return results;
 }
 
-export async function generateAnnotationsForLesson(
+export type AnnotationResult = { target: AnnotationTarget; content: AnnotationContent };
+
+// Чистая функция, без сети/секретов — переиспользуется и CLI (generateAnnotationsForLesson
+// ниже), и клиентским оркестратором (src/services/generation/), который сам дёргает
+// api/generate-annotation.ts по одной единице за раз и потом мёржит результаты этой же
+// функцией. ВАЖНО: у фразовой аннотации несколько tokenIds — каждый из них должен получить
+// один и тот же annotationId, иначе группировка в UI (InteractiveSentence.tsx схлопывает
+// соседние токены с одинаковым annotationId) не соберёт фразу целиком.
+export function mergeAnnotationResults(
   paragraphs: Paragraph[],
-  phraseGroups: PhraseGroup[],
-  languageConfig: LanguageConfig,
-  options: { level: string; sourceLanguage: string; concurrency?: number; onProgress?: (done: number, total: number, failed: number) => void },
-  apiKey: string,
-  model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o',
-): Promise<{ paragraphs: Paragraph[]; annotations: Annotation[] }> {
-  const targets = collectAnnotationTargets(paragraphs, phraseGroups);
-  const concurrency = options.concurrency ?? 2;
-
-  let done = 0;
-  let failed = 0;
-  const results = await mapWithConcurrency(targets, concurrency, async (target) => {
-    try {
-      const content = await generateOne(target, languageConfig, options.level, options.sourceLanguage, apiKey, model);
-      done++;
-      options.onProgress?.(done, targets.length, failed);
-      return { target, content };
-    } catch (err) {
-      failed++;
-      options.onProgress?.(done, targets.length, failed);
-      console.error(`\n✗ "${target.displayText}":`, err instanceof Error ? err.message : err);
-      return null;
-    }
-  });
-
-  // ВАЖНО: у фразовой аннотации несколько tokenIds — каждый из них должен
-  // получить один и тот же annotationId, иначе группировка в UI
-  // (InteractiveSentence.tsx схлопывает соседние токены с одинаковым
-  // annotationId) не соберёт фразу целиком.
+  results: (AnnotationResult | null)[],
+): { paragraphs: Paragraph[]; annotations: Annotation[] } {
   const annotationIdByTokenId = new Map<string, string>();
   const annotations: Annotation[] = [];
   for (const r of results) {
@@ -231,4 +212,34 @@ export async function generateAnnotationsForLesson(
   }));
 
   return { paragraphs: nextParagraphs, annotations };
+}
+
+export async function generateAnnotationsForLesson(
+  paragraphs: Paragraph[],
+  phraseGroups: PhraseGroup[],
+  languageConfig: LanguageConfig,
+  options: { level: string; sourceLanguage: string; concurrency?: number; onProgress?: (done: number, total: number, failed: number) => void },
+  apiKey: string,
+  model: string,
+): Promise<{ paragraphs: Paragraph[]; annotations: Annotation[] }> {
+  const targets = collectAnnotationTargets(paragraphs, phraseGroups);
+  const concurrency = options.concurrency ?? 2;
+
+  let done = 0;
+  let failed = 0;
+  const results = await mapWithConcurrency(targets, concurrency, async (target) => {
+    try {
+      const content = await generateAnnotationContent(target, languageConfig, options.level, options.sourceLanguage, apiKey, model);
+      done++;
+      options.onProgress?.(done, targets.length, failed);
+      return { target, content };
+    } catch (err) {
+      failed++;
+      options.onProgress?.(done, targets.length, failed);
+      console.error(`\n✗ "${target.displayText}":`, err instanceof Error ? err.message : err);
+      return null;
+    }
+  });
+
+  return mergeAnnotationResults(paragraphs, results);
 }

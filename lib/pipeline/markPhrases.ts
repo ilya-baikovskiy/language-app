@@ -4,7 +4,7 @@
 // контент генерирует шаг 5 (generateAnnotations.ts) уже поверх этих групп.
 
 import type { LanguageConfig } from './languageConfig.ts';
-import type { Paragraph, Sentence } from '../../../src/types/lesson.ts';
+import type { Paragraph, Sentence } from '../../src/types/lesson.ts';
 
 export type PhraseGroup = { tokenIds: string[] };
 
@@ -62,7 +62,7 @@ function isConsecutiveWordSpan(sentence: Sentence, tokenIds: string[]): boolean 
   return true;
 }
 
-async function markPhrasesForSentence(
+export async function markPhrasesForSentence(
   sentence: Sentence,
   languageConfig: LanguageConfig,
   apiKey: string,
@@ -106,7 +106,7 @@ export async function markPhrasesForLesson(
   paragraphs: Paragraph[],
   languageConfig: LanguageConfig,
   apiKey: string,
-  model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o',
+  model: string,
 ): Promise<PhraseGroup[]> {
   const allGroups: PhraseGroup[] = [];
   // Последовательно, не параллельно — сентенс-за-сентенсом, чтобы не упереться

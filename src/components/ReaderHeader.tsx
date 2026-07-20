@@ -9,9 +9,10 @@ type Props = {
   onThemeChange: (theme: ReaderTheme) => void;
   fontSize: ArticleFontSize;
   onFontSizeChange: (size: ArticleFontSize) => void;
+  onBack?: () => void;
 };
 
-export function ReaderHeader({ lesson, theme, onThemeChange, fontSize, onFontSizeChange }: Props) {
+export function ReaderHeader({ lesson, theme, onThemeChange, fontSize, onFontSizeChange, onBack }: Props) {
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +38,7 @@ export function ReaderHeader({ lesson, theme, onThemeChange, fontSize, onFontSiz
 
   return (
     <header className="header">
-      <button className="icon-btn" type="button" aria-label="Назад">
+      <button className="icon-btn" type="button" aria-label="Назад" onClick={onBack} disabled={!onBack}>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
           <path
             d="M15 18l-6-6 6-6"

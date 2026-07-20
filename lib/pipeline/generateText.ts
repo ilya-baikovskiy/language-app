@@ -69,7 +69,7 @@ export async function generateText(
   options: { level: string; targetWords: number; sourceLanguage: string },
   languageConfig: LanguageConfig,
   apiKey: string,
-  model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o',
+  model: string,
 ): Promise<GeneratedText> {
   const userPrompt = buildUserPrompt(input, options.level, options.targetWords, languageConfig, options.sourceLanguage);
 

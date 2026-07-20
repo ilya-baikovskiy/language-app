@@ -13,7 +13,7 @@ import { firstWordTokenId } from '../lib/lessonText';
 
 export const NARRATION_RATE_STEPS = [0.6, 0.8, 1, 1.2, 1.5] as const;
 
-export function useNarration(lesson: Lesson) {
+export function useNarration(lesson: Lesson, audioSrc: string) {
   const adapterRef = useRef<NarrationAdapter | null>(null);
   const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>('idle');
   const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export function useNarration(lesson: Lesson) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const adapter = new PrecomputedAudioAdapter(lesson);
+    const adapter = new PrecomputedAudioAdapter(lesson, audioSrc);
     adapter.onTokenChange((tokenId) => {
       setActiveTokenId(tokenId);
       setPlaybackAnchorTokenId(tokenId);
@@ -34,7 +34,7 @@ export function useNarration(lesson: Lesson) {
     });
     adapterRef.current = adapter;
     return () => adapter.stop();
-  }, [lesson]);
+  }, [lesson, audioSrc]);
 
   const play = useCallback(() => {
     const startTokenId = playbackAnchorTokenId ?? firstWordTokenId(lesson);
