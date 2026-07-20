@@ -2,9 +2,9 @@
 // TTS (api/generate-audio.ts). Скачивает аудио по уже загруженному в Blob
 // URL, а не принимает байты в теле запроса.
 
-import { transcribeAndAlign } from '../lib/pipeline/generateAudio.ts';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
-import type { Token } from '../src/types/lesson.ts';
+import { transcribeAndAlign } from '../lib/pipeline/generateAudio.js';
+import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
+import type { Token } from '../src/types/lesson.js';
 
 export const maxDuration = 60;
 

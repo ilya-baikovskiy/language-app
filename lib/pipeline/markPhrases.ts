@@ -3,8 +3,8 @@
 // см. AI_PIPELINE.md). Отдаёт только границы (id токенов), без контента —
 // контент генерирует шаг 5 (generateAnnotations.ts) уже поверх этих групп.
 
-import type { LanguageConfig } from './languageConfig.ts';
-import type { Paragraph, Sentence } from '../../src/types/lesson.ts';
+import type { LanguageConfig } from './languageConfig.js';
+import type { Paragraph, Sentence } from '../../src/types/lesson.js';
 
 export type PhraseGroup = { tokenIds: string[] };
 

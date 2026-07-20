@@ -2,8 +2,8 @@
 // слова/фразы — клиент вызывает это в цикле (с ограниченным параллелизмом)
 // по всем единицам урока, обновляя пошаговый прогресс.
 
-import { generateAnnotationContent, type AnnotationTarget } from '../lib/pipeline/generateAnnotations.ts';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
+import { generateAnnotationContent, type AnnotationTarget } from '../lib/pipeline/generateAnnotations.js';
+import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
 
 export const maxDuration = 30;
 

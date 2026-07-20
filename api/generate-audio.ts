@@ -4,8 +4,8 @@
 // возвращает публичный URL — клиенту не нужно самому грузить аудио.
 
 import { put } from '@vercel/blob';
-import { generateSpeech } from '../lib/pipeline/generateAudio.ts';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
+import { generateSpeech } from '../lib/pipeline/generateAudio.js';
+import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
 
 export const maxDuration = 60;
 

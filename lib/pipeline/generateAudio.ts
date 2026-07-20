@@ -2,9 +2,9 @@
 // word-level таймкоды через Whisper, с тем же merge-recovery для элизий/
 // дефисов (общий алгоритм, специфики под конкретный текст в нём нет).
 
-import type { LanguageConfig } from './languageConfig.ts';
-import { buildLessonText, findTokenAtOffset, type TokenSpan } from '../../src/lib/lessonText.ts';
-import type { Lesson, Token } from '../../src/types/lesson.ts';
+import type { LanguageConfig } from './languageConfig.js';
+import { buildLessonText, findTokenAtOffset, type TokenSpan } from '../../src/lib/lessonText.js';
+import type { Lesson, Token } from '../../src/types/lesson.js';
 
 type WhisperWord = { word: string; start: number; end: number };
 

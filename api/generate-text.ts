@@ -1,8 +1,8 @@
 // Шаг 2 пайплайна как HTTP-эндпоинт. Один вызов = один AI-запрос — короткий,
 // безопасный по таймауту serverless-функции (см. AI_PIPELINE.md/план).
 
-import { generateText, type InputSource } from '../lib/pipeline/generateText.ts';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
+import { generateText, type InputSource } from '../lib/pipeline/generateText.js';
+import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
 
 export const maxDuration = 30;
 

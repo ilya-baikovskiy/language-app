@@ -9,13 +9,13 @@
 //   npx tsx --env-file=.env scripts/generate-new-lesson.ts --input-file=./scripts/output/source.txt --level=B1 --words=250 --slug=my-article
 
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
-import { generateText, type InputSource } from '../lib/pipeline/generateText.ts';
-import { tokenizeParagraphs } from '../lib/pipeline/tokenize.ts';
-import { markPhrasesForLesson } from '../lib/pipeline/markPhrases.ts';
-import { generateAnnotationsForLesson } from '../lib/pipeline/generateAnnotations.ts';
-import { generateAudioAndTimestamps } from '../lib/pipeline/generateAudio.ts';
-import type { Lesson } from '../src/types/lesson.ts';
+import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
+import { generateText, type InputSource } from '../lib/pipeline/generateText.js';
+import { tokenizeParagraphs } from '../lib/pipeline/tokenize.js';
+import { markPhrasesForLesson } from '../lib/pipeline/markPhrases.js';
+import { generateAnnotationsForLesson } from '../lib/pipeline/generateAnnotations.js';
+import { generateAudioAndTimestamps } from '../lib/pipeline/generateAudio.js';
+import type { Lesson } from '../src/types/lesson.js';
 
 function parseArgs() {
   const args = process.argv.slice(2);

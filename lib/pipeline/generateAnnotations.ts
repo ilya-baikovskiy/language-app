@@ -4,9 +4,9 @@
 // которые ни в одну группу не попали — а не только по «оставшимся после
 // ручной разметки» токенам, как было в scripts/generate-annotations.ts.
 
-import type { LanguageConfig } from './languageConfig.ts';
-import type { PhraseGroup } from './markPhrases.ts';
-import type { Annotation, Paragraph, Token } from '../../src/types/lesson.ts';
+import type { LanguageConfig } from './languageConfig.js';
+import type { PhraseGroup } from './markPhrases.js';
+import type { Annotation, Paragraph, Token } from '../../src/types/lesson.js';
 
 export type AnnotationContent = Omit<Annotation, 'id' | 'type' | 'tokenIds'>;
 

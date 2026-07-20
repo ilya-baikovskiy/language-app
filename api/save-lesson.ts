@@ -3,7 +3,7 @@
 // библиотеки. Без отдельной базы данных — индекс сам по себе просто Blob.
 
 import { put, list } from '@vercel/blob';
-import type { Lesson } from '../src/types/lesson.ts';
+import type { Lesson } from '../src/types/lesson.js';
 
 export const maxDuration = 30;
 

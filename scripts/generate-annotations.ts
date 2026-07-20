@@ -13,8 +13,8 @@
 
 import { writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { sampleLesson } from '../src/data/sampleLesson.ts';
-import type { Lesson, Token } from '../src/types/lesson.ts';
+import { sampleLesson } from '../src/data/sampleLesson.js';
+import type { Lesson, Token } from '../src/types/lesson.js';
 
 const OUT = new URL('../src/data/generatedAnnotations.json', import.meta.url);
 const MODEL = process.env.OPENAI_TEXT_MODEL || 'gpt-4o';

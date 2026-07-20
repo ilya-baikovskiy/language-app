@@ -1,7 +1,7 @@
 // Шаг 2 пайплайна — AI пишет/адаптирует текст урока. Ещё не токенизирован —
 // это отдельный (не-AI) шаг 3, tokenize.ts.
 
-import type { LanguageConfig } from './languageConfig.ts';
+import type { LanguageConfig } from './languageConfig.js';
 
 export type InputSource =
   | { kind: 'text'; content: string }

@@ -11,9 +11,9 @@
 
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { sampleLesson } from '../src/data/sampleLesson.ts';
-import { buildLessonText } from '../src/lib/lessonText.ts';
-import type { Lesson, Token } from '../src/types/lesson.ts';
+import { sampleLesson } from '../src/data/sampleLesson.js';
+import { buildLessonText } from '../src/lib/lessonText.js';
+import type { Lesson, Token } from '../src/types/lesson.js';
 
 const AUDIO_OUT = new URL('../public/audio/lesson-fr.mp3', import.meta.url);
 const TIMESTAMPS_OUT = new URL('../src/data/lessonTimestamps.json', import.meta.url);

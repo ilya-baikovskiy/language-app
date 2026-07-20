@@ -1,9 +1,9 @@
 // Шаг 4 пайплайна как HTTP-эндпоинт. Один вызов = разметка фраз в ОДНОМ
 // предложении — клиент вызывает это в цикле по всем предложениям урока.
 
-import { markPhrasesForSentence } from '../lib/pipeline/markPhrases.ts';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.ts';
-import type { Sentence } from '../src/types/lesson.ts';
+import { markPhrasesForSentence } from '../lib/pipeline/markPhrases.js';
+import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
+import type { Sentence } from '../src/types/lesson.js';
 
 export const maxDuration = 30;
 
