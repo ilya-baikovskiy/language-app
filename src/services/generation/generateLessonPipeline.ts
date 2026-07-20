@@ -3,23 +3,30 @@
 // сервере). Каждый await здесь — то, что видно как прогресс в GenerationProgress.
 
 import { tokenizeParagraphs } from '../../../lib/pipeline/tokenize';
-import { collectAnnotationTargets, mergeAnnotationResults, type AnnotationResult } from '../../../lib/pipeline/generateAnnotations';
+import { collectAnnotationTargets, stampAnnotationTargets } from '../../../lib/pipeline/generateAnnotations';
 import type { InputSource } from '../../../lib/pipeline/generateText';
 import { buildLessonText } from '../../lib/lessonText';
 import type { Lesson, Paragraph, Token } from '../../types/lesson';
 import {
   fetchGeneratedText,
   fetchPhraseGroups,
-  fetchAnnotationContent,
   fetchGeneratedAudio,
   fetchAudioAlignment,
   saveLesson,
 } from './lessonsApi';
 
+// Аннотации больше не генерируются на этапе создания урока (CLAUDE.md) — это
+// было доминирующей статьёй времени генерации (90-150 вызовов OpenAI, по
+// одному на слово/фразу). Разметка фраз (stage 'phrases') остаётся: она
+// дешёвая (~1 вызов на предложение) и структурно необходима — именно она
+// говорит читалке, что несколько токенов подряд («s'est levé») — одна
+// кликабельная единица. Сам текст объяснения подгружается лениво по клику
+// (см. useSelectedAnnotation.ts), поэтому здесь только stampAnnotationTargets
+// (чистая функция, без сети) — lesson.annotations стартует пустым массивом.
+
 export type GenerationProgress =
   | { stage: 'text' }
   | { stage: 'phrases'; done: number; total: number }
-  | { stage: 'annotations'; done: number; total: number; failed: number }
   | { stage: 'audio' }
   | { stage: 'align' }
   | { stage: 'saving' };
@@ -32,19 +39,6 @@ function slugify(title: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
   return `${base || 'lesson'}-${Date.now().toString(36)}`;
-}
-
-async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let cursor = 0;
-  async function worker() {
-    while (cursor < items.length) {
-      const idx = cursor++;
-      results[idx] = await fn(items[idx]);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  return results;
 }
 
 export async function generateLesson(
@@ -66,27 +60,7 @@ export async function generateLesson(
   onProgress({ stage: 'phrases', done: sentences.length, total: sentences.length });
 
   const targets = collectAnnotationTargets(paragraphs, phraseGroups);
-  let annotated = 0;
-  let annotationsFailed = 0;
-  const results = await mapWithConcurrency<(typeof targets)[number], AnnotationResult | null>(
-    targets,
-    2,
-    async (target) => {
-      try {
-        const content = await fetchAnnotationContent(target, options.level);
-        annotated++;
-        onProgress({ stage: 'annotations', done: annotated, total: targets.length, failed: annotationsFailed });
-        return { target, content };
-      } catch (err) {
-        annotationsFailed++;
-        onProgress({ stage: 'annotations', done: annotated, total: targets.length, failed: annotationsFailed });
-        console.error(`Не удалось объяснить "${target.displayText}":`, err);
-        return null;
-      }
-    },
-  );
-
-  const merged = mergeAnnotationResults(paragraphs, results);
+  const stampedParagraphs = stampAnnotationTargets(paragraphs, targets);
   const slug = slugify(generated.title);
 
   const lessonForAudio: Lesson = {
@@ -97,8 +71,8 @@ export async function generateLesson(
     title: generated.title,
     translatedTitle: generated.translatedTitle,
     estimatedMinutes: generated.estimatedMinutes,
-    paragraphs: merged.paragraphs,
-    annotations: merged.annotations,
+    paragraphs: stampedParagraphs,
+    annotations: [],
   };
 
   onProgress({ stage: 'audio' });
@@ -106,7 +80,7 @@ export async function generateLesson(
   const { audioUrl } = await fetchGeneratedAudio(text, slug);
 
   onProgress({ stage: 'align' });
-  const wordTokens: Token[] = merged.paragraphs
+  const wordTokens: Token[] = stampedParagraphs
     .flatMap((p) => p.sentences)
     .flatMap((s) => s.tokens)
     .filter((t) => t.type === 'word');

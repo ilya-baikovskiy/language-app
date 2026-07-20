@@ -1,3 +1,4 @@
+import type { AnnotationTarget } from '../../lib/pipeline/generateAnnotations';
 import type { Lesson } from '../types/lesson';
 
 export type TokenSpan = { tokenId: string; start: number; end: number };
@@ -38,6 +39,29 @@ export function firstWordTokenId(lesson: Lesson): string | null {
       for (const token of sentence.tokens) {
         if (token.type === 'word') return token.id;
       }
+    }
+  }
+  return null;
+}
+
+// Восстанавливает AnnotationTarget по одному annotationId — нужно для ленивой
+// подгрузки контента объяснения (useSelectedAnnotation.ts): на этапе
+// генерации токены уже помечены annotationId (stampAnnotationTargets в
+// lib/pipeline/generateAnnotations.ts), а сама цель для запроса
+// /api/generate-annotation восстанавливается прямо из сохранённого урока —
+// отдельно её нигде хранить не нужно. По построению все токены с одним
+// annotationId соседние и лежат в одном предложении.
+export function resolveAnnotationTarget(lesson: Lesson, annotationId: string): AnnotationTarget | null {
+  for (const paragraph of lesson.paragraphs) {
+    for (const sentence of paragraph.sentences) {
+      const tokens = sentence.tokens.filter((token) => token.annotationId === annotationId);
+      if (tokens.length === 0) continue;
+      return {
+        tokenIds: tokens.map((token) => token.id),
+        displayText: tokens.map((token) => token.text).join(' '),
+        sentenceText: sentence.text,
+        type: tokens.length > 1 ? 'phrase' : 'word',
+      };
     }
   }
   return null;

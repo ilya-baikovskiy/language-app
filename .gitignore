@@ -40,3 +40,5 @@ scripts/.whisper-cache.json
 # Черновые результаты локального прогона scripts/generate-new-lesson.ts —
 # для ручной проверки, не часть приложения, пока не "усыновлены"
 scripts/output/
+.vercel
+.env*

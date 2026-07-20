@@ -178,6 +178,34 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
   return results;
 }
 
+// Ленивая генерация контента (см. CLAUDE.md/PROGRESS.md): на этапе создания
+// урока OpenAI больше не вызывается для каждого слова/фразы — только эта
+// чистая функция, которая проставляет annotationId по той же id-схеме, что и
+// mergeAnnotationResults, но без сети и без объектов Annotation.
+// lesson.annotations стартует пустым — фразовая группировка в UI
+// (InteractiveSentence.tsx схлопывает соседние токены с одинаковым
+// annotationId) работает сразу, а сам текст объяснения дозапрашивается по
+// клику (см. useSelectedAnnotation.ts) и резолвится обратно в AnnotationTarget
+// через resolveAnnotationTarget (src/lib/lessonText.ts).
+export function stampAnnotationTargets(paragraphs: Paragraph[], targets: AnnotationTarget[]): Paragraph[] {
+  const annotationIdByTokenId = new Map<string, string>();
+  for (const target of targets) {
+    const annotationId = `gen-${target.tokenIds.join('-')}`;
+    target.tokenIds.forEach((id) => annotationIdByTokenId.set(id, annotationId));
+  }
+
+  return paragraphs.map((paragraph) => ({
+    ...paragraph,
+    sentences: paragraph.sentences.map((sentence) => ({
+      ...sentence,
+      tokens: sentence.tokens.map((token) => {
+        const annotationId = annotationIdByTokenId.get(token.id);
+        return annotationId ? { ...token, annotationId } : token;
+      }),
+    })),
+  }));
+}
+
 export type AnnotationResult = { target: AnnotationTarget; content: AnnotationContent };
 
 // Чистая функция, без сети/секретов — переиспользуется и CLI (generateAnnotationsForLesson

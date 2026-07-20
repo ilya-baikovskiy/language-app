@@ -41,7 +41,11 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
     ? (wordTokenIds.indexOf(narration.activeTokenId) + 1) / wordTokenIds.length
     : 0;
 
-  const sheetSelection = useSelectedAnnotation(lesson, selection.selectedTokenId, selection.selectedAnnotationId);
+  const { selection: sheetSelection, retry: retryAnnotation } = useSelectedAnnotation(
+    lesson,
+    selection.selectedTokenId,
+    selection.selectedAnnotationId,
+  );
 
   const handleSelectGroup = useCallback(
     (tokenId: string, annotationId: string | null) => {
@@ -140,6 +144,7 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
         onClose={closeSheet}
         onContinue={handleContinueFromSelection}
         onSpeak={narration.speakSelection}
+        onRetry={retryAnnotation}
       />
     </div>
   );

@@ -1,4 +1,7 @@
 {
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "dist",
   "functions": {
     "api/generate-audio.ts": { "maxDuration": 60 },
     "api/align-audio.ts": { "maxDuration": 60 },

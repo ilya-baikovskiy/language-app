@@ -1,11 +1,14 @@
 import type { GenerationProgress as Progress } from '../services/generation/generateLessonPipeline';
 
-type StepKey = 'text' | 'phrases' | 'annotations' | 'audio' | 'align' | 'saving';
+type StepKey = 'text' | 'phrases' | 'audio' | 'align' | 'saving';
 
+// Шаг «Объясняем слова» убран — объяснения слов/фраз теперь подгружаются лениво,
+// по клику читателя (см. CLAUDE.md/PROGRESS.md), а не для всего урока на этапе
+// генерации. Разметка фраз (phrases) остаётся: она дешёвая и структурно нужна
+// сразу, чтобы клики по фразам работали как единое целое.
 const STEPS: { key: StepKey; label: string }[] = [
   { key: 'text', label: 'Пишем текст' },
   { key: 'phrases', label: 'Размечаем фразы' },
-  { key: 'annotations', label: 'Объясняем слова' },
   { key: 'audio', label: 'Озвучиваем' },
   { key: 'align', label: 'Синхронизируем аудио' },
   { key: 'saving', label: 'Сохраняем' },
@@ -27,9 +30,6 @@ export function GenerationProgress({ progress }: Props) {
 
         let count: string | null = null;
         if (isActive && progress.stage === 'phrases') count = `${progress.done}/${progress.total}`;
-        if (isActive && progress.stage === 'annotations') {
-          count = `${progress.done}/${progress.total}`;
-        }
 
         return (
           <div className={className} key={step.key}>
@@ -41,12 +41,6 @@ export function GenerationProgress({ progress }: Props) {
           </div>
         );
       })}
-      {progress.stage === 'annotations' && progress.failed > 0 && (
-        <p className="progress-warning">
-          {progress.failed} объяснени{progress.failed === 1 ? 'е' : 'я'} не удалось сгенерировать — урок всё равно
-          будет готов, эти слова покажут короткую заглушку.
-        </p>
-      )}
     </div>
   );
 }

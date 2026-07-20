@@ -578,6 +578,19 @@ details.sheet-more .sheet-more-body p:last-child {
   font-style: italic;
   margin-top: 2px;
 }
+.sheet-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-soft);
+}
+.sheet-loading-spinner {
+  display: flex;
+  color: var(--accent);
+}
+.sheet-loading-spinner svg {
+  animation: spin 0.9s linear infinite;
+}
 
 /* ---------- desktop ---------- */
 @media (min-width: 720px) {
@@ -612,5 +625,8 @@ details.sheet-more .sheet-more-body p:last-child {
   .tok,
   .fab-play {
     transition: none !important;
+  }
+  .sheet-loading-spinner svg {
+    animation: none;
   }
 }

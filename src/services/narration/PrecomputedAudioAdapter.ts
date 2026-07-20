@@ -105,14 +105,27 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
       }
       return; // не двигаем подсветку основного чтения во время предпрослушивания
     }
-    const current = this.timedSpans.find(
-      (s) => this.audio.currentTime >= s.startTime && this.audio.currentTime < s.endTime,
-    );
+    // Не ищем токен, строго содержащий currentTime — короткие служебные слова
+    // (de, un, et…) иногда короче интервала между двумя событиями timeupdate
+    // (браузер шлёт их не на каждый кадр), и такое окно проматывается целиком
+    // между двумя тиками, слово никогда не подсвечивается. Вместо этого берём
+    // последнее слово, чьё startTime уже наступило — так у каждого слова есть
+    // момент, когда оно становится «текущим», даже если endTime уже проехали.
+    const current = findLastStartedSpan(this.timedSpans, this.audio.currentTime);
     if (current && current.tokenId !== this.lastReportedTokenId) {
       this.lastReportedTokenId = current.tokenId;
       this.tokenChangeCb?.(current.tokenId);
     }
   };
+}
+
+// timedSpans отсортирован по startTime по построению (порядок чтения ==
+// порядок таймкодов), поэтому достаточно один раз пройти с конца.
+function findLastStartedSpan(spans: TimedSpan[], time: number): TimedSpan | undefined {
+  for (let i = spans.length - 1; i >= 0; i--) {
+    if (spans[i].startTime <= time) return spans[i];
+  }
+  return undefined;
 }
 
 function collectTimedSpans(lesson: Lesson): TimedSpan[] {

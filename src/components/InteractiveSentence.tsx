@@ -4,20 +4,29 @@ import { InteractiveToken } from './InteractiveToken';
 
 type TokenGroup = {
   tokens: Token[];
+  annotationId?: string;
   annotation?: Annotation;
 };
 
-// Соседние токены одной фразовой аннотации (напр. "avait besoin de") схлопываются
+// Соседние токены одной фразовой группы (напр. "avait besoin de") схлопываются
 // в одну группу — вся фраза получает единое визуальное/интерактивное состояние (раздел 10 ТЗ).
+// Группировка идёт по token.annotationId, а не по наличию объекта Annotation:
+// с ленивой генерацией контента (CLAUDE.md) annotationId проставляется на
+// этапе создания урока (stampAnnotationTargets), а сам Annotation с текстом
+// объяснения может появиться позже, по клику — фраза должна схлопываться в
+// одну кликабельную область уже сейчас, до того как контент подгружен.
 function groupTokens(tokens: Token[], annotationsById: Map<string, Annotation>): TokenGroup[] {
   const groups: TokenGroup[] = [];
   for (const token of tokens) {
-    const annotation = token.annotationId ? annotationsById.get(token.annotationId) : undefined;
     const lastGroup = groups[groups.length - 1];
-    if (annotation?.type === 'phrase' && lastGroup?.annotation?.id === annotation.id) {
+    if (token.annotationId && lastGroup?.annotationId === token.annotationId) {
       lastGroup.tokens.push(token);
     } else {
-      groups.push({ tokens: [token], annotation });
+      groups.push({
+        tokens: [token],
+        annotationId: token.annotationId,
+        annotation: token.annotationId ? annotationsById.get(token.annotationId) : undefined,
+      });
     }
   }
   return groups;
@@ -48,8 +57,8 @@ export function InteractiveSentence({
         const isPunctuation = group.tokens.length === 1 && group.tokens[0].type === 'punctuation';
         const needsLeadingSpace = index > 0 && !isPunctuation;
         const anchorTokenId = group.tokens[0].id;
-        const isSelected = group.annotation
-          ? selectedAnnotationId === group.annotation.id
+        const isSelected = group.annotationId
+          ? selectedAnnotationId === group.annotationId
           : selectedTokenId === anchorTokenId;
 
         if (isPunctuation) {
@@ -65,7 +74,7 @@ export function InteractiveSentence({
               {needsLeadingSpace ? ' ' : null}
               <span
                 className={`phrase${isSelected ? ' is-selected' : ''}`}
-                onClick={() => onSelectGroup(anchorTokenId, group.annotation?.id ?? null)}
+                onClick={() => onSelectGroup(anchorTokenId, group.annotationId ?? null)}
               >
                 {group.tokens.map((token, tokenIndex) => (
                   <Fragment key={token.id}>

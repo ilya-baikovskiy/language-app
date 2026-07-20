@@ -8,6 +8,7 @@ type Props = {
   onClose: () => void;
   onContinue: () => void;
   onSpeak: (text: string) => void;
+  onRetry: () => void;
 };
 
 // Раздел 6.4 и 11 ТЗ. Контент не размонтируется при закрытии (иначе во время
@@ -15,7 +16,11 @@ type Props = {
 // видимость через CSS-класс. Прослушивание слова/фразы — иконка рядом с текстом,
 // а не отдельная кнопка внизу: объяснение может быть длинным и прокручиваться,
 // поэтому основное действие («Продолжить отсюда») закреплено в футере панели.
-export function ExplanationSheet({ selection, isOpen, onClose, onContinue, onSpeak }: Props) {
+//
+// kind: 'loading'/'error' — с ленивой генерацией объяснений (CLAUDE.md)
+// контент слова/фразы может быть ещё не запрошен в момент клика; useSelectedAnnotation
+// сама запускает запрос и возвращает эти состояния, пока он в процессе/если упал.
+export function ExplanationSheet({ selection, isOpen, onClose, onContinue, onSpeak, onRetry }: Props) {
   return (
     <>
       <div className={`sheet-overlay${isOpen ? ' is-open' : ''}`} onClick={onClose} aria-hidden="true" />
@@ -91,6 +96,50 @@ export function ExplanationSheet({ selection, isOpen, onClose, onContinue, onSpe
               </>
             )}
 
+            {selection?.kind === 'loading' && (
+              <>
+                <div className="sheet-top">
+                  <div className="sheet-head-row">
+                    <div className="sheet-head">{selection.displayText}</div>
+                  </div>
+                  <button className="sheet-close" type="button" aria-label="Закрыть" onClick={onClose}>
+                    <CloseIcon />
+                  </button>
+                </div>
+
+                <hr className="sheet-divider" />
+
+                <div className="sheet-body sheet-loading" role="status" aria-live="polite">
+                  <span className="sheet-loading-spinner" aria-hidden="true">
+                    <SpinnerIcon />
+                  </span>
+                  <p>Готовим объяснение…</p>
+                </div>
+              </>
+            )}
+
+            {selection?.kind === 'error' && (
+              <>
+                <div className="sheet-top">
+                  <div className="sheet-head-row">
+                    <div className="sheet-head">{selection.displayText}</div>
+                  </div>
+                  <button className="sheet-close" type="button" aria-label="Закрыть" onClick={onClose}>
+                    <CloseIcon />
+                  </button>
+                </div>
+
+                <hr className="sheet-divider" />
+
+                <div className="sheet-body">
+                  <p className="fallback-note">Не удалось загрузить объяснение — попробуй ещё раз.</p>
+                  <button className="act-btn" type="button" onClick={onRetry}>
+                    Повторить
+                  </button>
+                </div>
+              </>
+            )}
+
             {selection?.kind === 'fallback' && (
               <>
                 <div className="sheet-top">
@@ -140,6 +189,14 @@ function CloseIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
       <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SpinnerIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 100" />
     </svg>
   );
 }
