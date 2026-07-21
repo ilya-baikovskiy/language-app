@@ -5,9 +5,19 @@ export type TokenSpan = { tokenId: string; start: number; end: number };
 
 // Строит цельный текст урока и диапазон символов каждого токена в нём —
 // нужно, чтобы озвучивать "с этого слова и до конца" и обратно сопоставлять
-// boundary-события синтезатора с конкретным токеном. Пробелы расставляются
-// по тем же правилам, что и в InteractiveSentence (иначе разметка слов и
-// текст для TTS разойдутся).
+// boundary-события синтезатора с конкретным токеном.
+//
+// Текст — это настоящий sentence.text (не пересборка из токенов по
+// эвристике "пробел перед каждым словом, кроме пунктуации"): для ручного
+// sample-урока текст и токены согласованы вручную, и эвристика случайно
+// давала тот же результат, но для AI-сгенерированного текста реальные
+// пробелы вокруг кавычек/цифр/двоеточий не обязаны следовать этому правилу
+// (см. tokenize.ts — цифры токенизируются как "пунктуация", не "слово").
+// Расхождение накапливалось по ходу урока и ломало поиск текста в
+// speakSelection (PrecomputedAudioAdapter) — сильнее к концу урока.
+// Позиция каждого токена ищется последовательным indexOf с продвигающимся
+// курсором внутри sentence.text — токены получены той же строкой, что и
+// текст, поэтому их подстроки всегда точно находятся, включая повторы.
 export function buildLessonText(lesson: Lesson): { text: string; spans: TokenSpan[] } {
   let text = '';
   const spans: TokenSpan[] = [];
@@ -16,12 +26,16 @@ export function buildLessonText(lesson: Lesson): { text: string; spans: TokenSpa
     if (pIndex > 0) text += '\n\n';
     paragraph.sentences.forEach((sentence, sIndex) => {
       if (sIndex > 0) text += ' ';
-      sentence.tokens.forEach((token, tIndex) => {
-        const isPunctuation = token.type === 'punctuation';
-        if (tIndex > 0 && !isPunctuation) text += ' ';
-        const start = text.length;
-        text += token.text;
-        spans.push({ tokenId: token.id, start, end: text.length });
+      const sentenceStart = text.length;
+      text += sentence.text;
+
+      let cursor = 0;
+      sentence.tokens.forEach((token) => {
+        const relIdx = sentence.text.indexOf(token.text, cursor);
+        const start = sentenceStart + (relIdx === -1 ? cursor : relIdx);
+        const end = start + token.text.length;
+        spans.push({ tokenId: token.id, start, end });
+        if (relIdx !== -1) cursor = relIdx + token.text.length;
       });
     });
   });
