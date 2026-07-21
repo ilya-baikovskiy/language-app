@@ -1,5 +1,5 @@
 import type { Lesson } from '../../types/lesson';
-import { buildLessonText, findTokenAtOffset, type TokenSpan } from '../../lib/lessonText';
+import { buildLessonText, type TokenSpan } from '../../lib/lessonText';
 import type { NarrationAdapter } from './NarrationAdapter';
 
 type TimedSpan = { tokenId: string; startTime: number; endTime: number };
@@ -95,10 +95,14 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
       onError?.(new Error('selection-not-found'));
       return;
     }
-    const startSpan = findTokenAtOffset(this.textSpans, idx);
-    const endSpan = findTokenAtOffset(this.textSpans, idx + text.length - 1);
-    const startTimed = startSpan && this.timedSpans.find((s) => s.tokenId === startSpan.tokenId);
-    const endTimed = endSpan && this.timedSpans.find((s) => s.tokenId === endSpan.tokenId);
+    // Границы диапазона ищем как ближайший токен С таймкодом, а не первый
+    // попавшийся: конец диапазона почти всегда приходится на завершающий
+    // знак препинания (., !, ?, »...), а у пунктуации таймкода нет —
+    // findTokenAtOffset тогда указывал бы на нетаймированный токен, и любое
+    // прослушивание предложения целиком падало бы с "нет таймкода".
+    const rangeEnd = idx + text.length;
+    const startTimed = this.findNearestTimed(idx, rangeEnd, 'forward');
+    const endTimed = this.findNearestTimed(idx, rangeEnd, 'backward');
     if (!startTimed || !endTimed) {
       onError?.(new Error('selection-timing-missing'));
       return;
@@ -134,6 +138,19 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
 
   onError(callback: (error: Error) => void): void {
     this.errorCb = callback;
+  }
+
+  // Ближайший к границе диапазона [rangeStart, rangeEnd) токен, у которого
+  // есть таймкод — 'forward' сканирует от начала диапазона, 'backward' от
+  // конца, пропуская токены без таймкода (пунктуация) по пути.
+  private findNearestTimed(rangeStart: number, rangeEnd: number, direction: 'forward' | 'backward'): TimedSpan | undefined {
+    const inRange = this.textSpans.filter((span) => span.start >= rangeStart && span.start < rangeEnd);
+    const ordered = direction === 'forward' ? inRange : [...inRange].reverse();
+    for (const span of ordered) {
+      const timed = this.timedSpans.find((s) => s.tokenId === span.tokenId);
+      if (timed) return timed;
+    }
+    return undefined;
   }
 
   private clearSelectionTimer(): void {
