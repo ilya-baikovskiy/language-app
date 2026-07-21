@@ -49,6 +49,22 @@ export type Annotation = {
   grammarDetails?: string;
   otherMeanings?: Meaning[];
   examples?: Example[];
+  // --- Тир 1 (базовое, приходит по клику) ---
+  // Базовая форма/фраза/модель + перевод («arriver → прибывать»): каждая
+  // иностранная единица сразу с переводом, грамматика конкретна, без жаргона.
+  baseForm?: FormPair;
+  // Форма как в тексте + перевод в этом контексте («arrivait → приближалась»).
+  formInText?: FormPair;
+  // Только для фраз: собранная фраза целиком + естественный перевод.
+  wholePhrase?: FormPair;
+  // Только для фраз/сложных форм: разбор по осмысленным кускам (3–6),
+  // не по каждому артиклю/предлогу.
+  beginnerBreakdown?: BreakdownPart[];
+  // Короткая практическая подсказка («не переводите дословно»), без терминов.
+  plainLearningNote?: string;
+  // --- Тир 2 (детали, приходят по клику «Подробнее») ---
+  // Другие полезные формы (3–5): спряжение по лицам, род/число и т.п.
+  formVariants?: FormVariants;
 };
 
 export type Meaning = {
@@ -59,4 +75,30 @@ export type Meaning = {
 export type Example = {
   targetText: string;
   translation: string;
+};
+
+// Иностранный текст + его перевод на язык учащегося. Text остаётся на языке
+// текста, meaning — на sourceLanguage.
+export type FormPair = {
+  text: string;
+  meaning: string;
+};
+
+export type BreakdownPart = {
+  text: string;
+  meaning: string;
+  note?: string;
+};
+
+export type FormVariant = {
+  text: string;
+  meaning: string;
+  note?: string;
+  // Форма, совпадающая с той, что в тексте — подсвечивается в списке.
+  isCurrent?: boolean;
+};
+
+export type FormVariants = {
+  title: string;
+  items: FormVariant[];
 };

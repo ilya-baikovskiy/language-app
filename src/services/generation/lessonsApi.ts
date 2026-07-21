@@ -5,7 +5,11 @@
 
 import type { InputSource, GeneratedText } from '../../../lib/pipeline/generateText';
 import type { PhraseGroup } from '../../../lib/pipeline/markPhrases';
-import type { AnnotationContent, AnnotationTarget } from '../../../lib/pipeline/generateAnnotations';
+import type {
+  AnnotationBasicContent,
+  AnnotationDetailsContent,
+  AnnotationTarget,
+} from '../../../lib/pipeline/generateAnnotations';
 import type { Lesson, Sentence, Token } from '../../types/lesson';
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -27,8 +31,14 @@ export async function fetchPhraseGroups(sentence: Sentence): Promise<PhraseGroup
   return groups;
 }
 
-export function fetchAnnotationContent(target: AnnotationTarget, level: string): Promise<AnnotationContent> {
-  return postJson('/api/generate-annotation', { target, level });
+// Тир 1 — по клику по слову (лёгкое базовое объяснение).
+export function fetchAnnotationBasic(target: AnnotationTarget, level: string): Promise<AnnotationBasicContent> {
+  return postJson('/api/generate-annotation', { target, level, tier: 'basic' });
+}
+
+// Тир 2 — по клику «Подробнее» (грамматика и формы).
+export function fetchAnnotationDetails(target: AnnotationTarget, level: string): Promise<AnnotationDetailsContent> {
+  return postJson('/api/generate-annotation', { target, level, tier: 'details' });
 }
 
 export function fetchGeneratedAudio(text: string, slug: string): Promise<{ audioUrl: string }> {
