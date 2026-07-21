@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<title>Audio alignment eval preview</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px;
+    border: 1px solid #ccc8;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    position: sticky;
+    top: 0;
+    background: Canvas;
+    z-index: 5;
+  }
+  button {
+    font: inherit;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc8;
+    background: ButtonFace;
+    cursor: pointer;
+  }
+  button.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  .seg { display: inline-flex; border: 1px solid #ccc8; border-radius: 8px; overflow: hidden; }
+  .seg button { border: none; border-radius: 0; }
+  .seg button + button { border-left: 1px solid #ccc8; }
+  .article {
+    font-family: Georgia, serif;
+    font-size: 19px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    padding: 8px 2px;
+  }
+  .tok { border-radius: 3px; padding: 0 1px; cursor: pointer; }
+  .tok:hover { background: #4f46e522; }
+  .tok.active { background: #fde68a; box-shadow: 0 0 0 1px #f59e0b inset; }
+  .tok.missing-timing { text-decoration: underline wavy #ef4444; text-decoration-thickness: 1.5px; }
+  .panel {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border: 1px solid #ccc8;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #888; margin: 0 0 8px; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid #ccc4; }
+  th { color: #888; font-weight: 500; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover { background: #4f46e511; }
+  .missing-badge { color: #ef4444; font-size: 12px; }
+  .hint { color: #888; font-size: 12px; margin-top: 6px; }
+</style>
+</head>
+<body>
+  <h1>Audio alignment eval — Whisper baseline vs ElevenLabs Forced Alignment</h1>
+  <p class="sub">Один и тот же public/audio/lesson-fr.mp3. Не часть пользовательского ридера — только для ручной проверки.</p>
+
+  <div class="controls">
+    <button id="playBtn">▶ Play</button>
+    <span class="seg" id="rateSeg">
+      <button data-rate="1" class="active">1×</button>
+      <button data-rate="0.8">0.8×</button>
+    </span>
+    <span class="seg" id="sourceSeg">
+      <button data-source="whisper" class="active">Whisper (текущий)</button>
+      <button data-source="elevenlabs">ElevenLabs Forced Alignment</button>
+    </span>
+    <span id="statusText" class="hint"></span>
+  </div>
+
+  <div id="article" class="article"></div>
+
+  <div class="panel">
+    <h2>Выбранное слово</h2>
+    <div id="selectedWord">Кликни по слову в тексте или в списке ниже.</div>
+  </div>
+
+  <div class="panel">
+    <h2>15 токенов с наибольшей разницей</h2>
+    <table>
+      <thead><tr><th>Слово</th><th>Whisper</th><th>ElevenLabs</th><th>Разница</th></tr></thead>
+      <tbody id="top15Body"></tbody>
+    </table>
+  </div>
+
+  <audio id="audio" src="/audio/lesson-fr.mp3" preload="auto"></audio>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

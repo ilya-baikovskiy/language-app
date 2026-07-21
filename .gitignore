@@ -40,5 +40,9 @@ scripts/.whisper-cache.json
 # Черновые результаты локального прогона scripts/generate-new-lesson.ts —
 # для ручной проверки, не часть приложения, пока не "усыновлены"
 scripts/output/
+
+# Сырой ответ ElevenLabs Forced Alignment (evals/audio-alignment) — кэш
+# платного запроса, не секрет, но и не то, что нужно коммитить
+evals/audio-alignment/.cache/
 .vercel
 .env*
