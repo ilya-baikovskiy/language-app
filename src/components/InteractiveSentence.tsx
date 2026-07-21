@@ -111,7 +111,7 @@ export function InteractiveSentence({
               token={group.tokens[0]}
               isSelected={isSelected}
               isSpeaking={activeTokenId === anchorTokenId}
-              onSelect={() => onSelectGroup(anchorTokenId, group.annotation?.id ?? null)}
+              onSelect={() => onSelectGroup(anchorTokenId, group.annotationId ?? null)}
             />
           </Fragment>
         );
