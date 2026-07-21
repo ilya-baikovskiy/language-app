@@ -44,5 +44,13 @@ scripts/output/
 # Сырой ответ ElevenLabs Forced Alignment (evals/audio-alignment) — кэш
 # платного запроса, не секрет, но и не то, что нужно коммитить
 evals/audio-alignment/.cache/
+
+# Результаты прогона evals/audio-alignment (npm run eval:alignment) —
+# регенерируются из .cache/ за секунды, не нужно коммитить
+evals/audio-alignment/comparison.json
+evals/audio-alignment/elevenlabs-timestamps.json
+evals/audio-alignment/whisper-timestamps.json
+evals/audio-alignment/lesson-snapshot.json
+evals/audio-alignment/report.md
 .vercel
 .env*

@@ -25,11 +25,16 @@ function round3(n: number): number {
 }
 
 export function mapCharactersToTokens(
-  characters: ElevenLabsCharacter[],
+  rawCharacters: ElevenLabsCharacter[],
   sentText: string,
   spans: TokenSpan[],
   tokensById: Map<string, Token>,
 ): MappingResult {
+  // ElevenLabs возвращает CRLF ('\r' перед каждым '\n'), тогда как sentText —
+  // с обычным '\n' (см. buildLessonText). Это разница в стиле переноса строк,
+  // а не в содержании: убираем '\r'-символы перед сравнением/индексацией, а не
+  // разрешаем позиционные догадки при реальном несовпадении текста.
+  const characters = rawCharacters.filter((c) => c.text !== '\r');
   const responseText = characters.map((c) => c.text).join('');
   const responseTextMatches = responseText === sentText;
 
