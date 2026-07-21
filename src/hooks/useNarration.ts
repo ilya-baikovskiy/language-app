@@ -106,8 +106,11 @@ export function useNarration(lesson: Lesson, audioSrc: string) {
 
   // onError сюда — только для этого конкретного клика (см. адаптеры): сбой
   // точечного прослушивания не должен трогать playbackStatus всего плеера.
+  // contextText (обычно предложение) сужает поиск позиции короткого/частого
+  // слова, чтобы не найти случайно другое его вхождение в уроке.
   const speakSelection = useCallback(
-    (text: string, onError?: (error: Error) => void) => adapterRef.current?.speakSelection(text, rate, onError),
+    (text: string, onError?: (error: Error) => void, contextText?: string) =>
+      adapterRef.current?.speakSelection(text, rate, onError, contextText),
     [rate],
   );
 

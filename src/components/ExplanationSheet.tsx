@@ -8,7 +8,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onContinue: () => void;
-  onSpeak: (text: string, onError?: (error: Error) => void) => void;
+  onSpeak: (text: string, onError?: (error: Error) => void, contextText?: string) => void;
   onRetry: () => void;
   onLoadDetails: () => void;
   onRetryDetails: () => void;
@@ -149,7 +149,7 @@ export function ExplanationSheet({
                       className="icon-btn-sm"
                       type="button"
                       aria-label="Прослушать"
-                      onClick={() => onSpeak(selection.word, showPlaybackErrorToast)}
+                      onClick={() => onSpeak(selection.word, showPlaybackErrorToast, selection.sentenceText)}
                     >
                       <SpeakerIcon />
                     </button>
@@ -203,7 +203,7 @@ export function ExplanationSheet({
 type AnnotationViewProps = {
   selection: Extract<SheetSelection, { kind: 'annotation' }>;
   onClose: () => void;
-  onSpeak: (text: string, onError?: (error: Error) => void) => void;
+  onSpeak: (text: string, onError?: (error: Error) => void, contextText?: string) => void;
   onStub: () => void;
   onPlaybackError: () => void;
   expanded: boolean;
@@ -234,7 +234,7 @@ function AnnotationView({
               className="icon-btn-sm"
               type="button"
               aria-label="Прослушать"
-              onClick={() => onSpeak(a.displayText, onPlaybackError)}
+              onClick={() => onSpeak(a.displayText, onPlaybackError, selection.sentenceText)}
             >
               <SpeakerIcon />
             </button>

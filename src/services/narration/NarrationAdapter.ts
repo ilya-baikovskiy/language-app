@@ -5,7 +5,7 @@ export interface NarrationAdapter {
   playFrom(tokenId: string, rate: number): void;
   pause(): void;
   stop(): void;
-  speakSelection(text: string, rate?: number, onError?: (error: Error) => void): void;
+  speakSelection(text: string, rate?: number, onError?: (error: Error) => void, contextText?: string): void;
   setRate(rate: number): void;
   onTokenChange(callback: (tokenId: string) => void): void;
   onComplete(callback: () => void): void;

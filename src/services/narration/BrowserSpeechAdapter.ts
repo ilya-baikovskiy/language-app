@@ -41,7 +41,9 @@ export class BrowserSpeechAdapter implements NarrationAdapter {
 
   // Ошибка точечного прослушивания идёт в собственный onError, не в общий
   // errorCb — не должна ломать основное чтение (см. PrecomputedAudioAdapter).
-  speakSelection(text: string, rate = this.rate, onError?: (error: Error) => void): void {
+  // contextText здесь не нужен: Web Speech синтезирует переданный текст
+  // напрямую, а не ищет его позицию в аудиодорожке.
+  speakSelection(text: string, rate = this.rate, onError?: (error: Error) => void, _contextText?: string): void {
     if (!this.isSupported()) {
       onError?.(new Error('speech-unsupported'));
       return;

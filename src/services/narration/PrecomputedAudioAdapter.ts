@@ -18,7 +18,7 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
   private errorCb: ((error: Error) => void) | null = null;
   private lastReportedTokenId: string | null = null;
   private mode: 'reading' | 'selection' = 'reading';
-  private selectionEndTime: number | null = null;
+  private selectionTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(lesson: Lesson, audioSrc: string) {
     this.audio = new Audio(audioSrc);
@@ -38,8 +38,8 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
 
   playFrom(tokenId: string, rate: number): void {
     const span = this.timedSpans.find((s) => s.tokenId === tokenId);
+    this.clearSelectionTimer();
     this.mode = 'reading';
-    this.selectionEndTime = null;
     this.lastReportedTokenId = null;
     this.audio.playbackRate = rate;
     this.audio.currentTime = span ? span.startTime : 0;
@@ -47,10 +47,12 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
   }
 
   pause(): void {
+    this.clearSelectionTimer();
     this.audio.pause();
   }
 
   stop(): void {
+    this.clearSelectionTimer();
     this.audio.pause();
     this.audio.currentTime = 0;
     this.lastReportedTokenId = null;
@@ -62,12 +64,33 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
   // Регистронезависимый поиск: сгенерированный displayText/сущность могут не
   // совпадать по регистру с тем, как слово стоит в реальном тексте урока.
   //
+  // contextText сужает поиск текста до конкретного предложения: короткое/частое
+  // слово (артикль, местоимение, "les"/"et"/"elle"...) без этого может встретиться
+  // в уроке много раз, и indexOf по всему тексту найдёт ПЕРВОЕ вхождение — не то,
+  // что реально кликнули, из-за чего звучит не то слово или таймкод не находится.
+  // Предложение почти всегда уникально в уроке, поэтому сначала ищем его, потом
+  // слово — только внутри найденного диапазона.
+  //
   // Ошибки здесь идут в собственный onError-колбэк, а не в общий errorCb:
   // один неудачный точечный клик (текст не нашёлся/нет таймкода) — это
   // локальный сбой конкретной кнопки, он не должен переводить весь плеер в
   // состояние error и блокировать обычное чтение урока.
-  speakSelection(text: string, rate = this.audio.playbackRate || 1, onError?: (error: Error) => void): void {
-    const idx = this.lessonText.toLowerCase().indexOf(text.toLowerCase());
+  speakSelection(
+    text: string,
+    rate = this.audio.playbackRate || 1,
+    onError?: (error: Error) => void,
+    contextText?: string,
+  ): void {
+    const haystack = this.lessonText.toLowerCase();
+    const needle = text.toLowerCase();
+    let idx: number;
+    if (contextText) {
+      const ctxIdx = haystack.indexOf(contextText.toLowerCase());
+      const withinCtx = ctxIdx !== -1 ? haystack.indexOf(needle, ctxIdx) : -1;
+      idx = withinCtx !== -1 && withinCtx < ctxIdx + contextText.length ? withinCtx : -1;
+    } else {
+      idx = haystack.indexOf(needle);
+    }
     if (idx === -1) {
       onError?.(new Error('selection-not-found'));
       return;
@@ -80,10 +103,20 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
       onError?.(new Error('selection-timing-missing'));
       return;
     }
+    this.clearSelectionTimer();
     this.mode = 'selection';
-    this.selectionEndTime = endTimed.endTime;
     this.audio.playbackRate = rate;
     this.audio.currentTime = startTimed.startTime;
+    // Точная остановка по таймеру, а не по 'timeupdate': браузер не гарантирует
+    // частоту этого события (может быть до ~250мс между тиками), из-за чего
+    // отрезок останавливался с непредсказуемым "хвостом" лишнего звука каждый
+    // раз по-разному. setTimeout с длительностью отрезка — намного точнее.
+    const durationMs = Math.max(0, ((endTimed.endTime - startTimed.startTime) / rate) * 1000);
+    this.selectionTimer = setTimeout(() => {
+      this.audio.pause();
+      this.mode = 'reading';
+      this.selectionTimer = null;
+    }, durationMs);
     void this.audio.play().catch((error: Error) => onError?.(error));
   }
 
@@ -103,14 +136,16 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
     this.errorCb = callback;
   }
 
+  private clearSelectionTimer(): void {
+    if (this.selectionTimer !== null) {
+      clearTimeout(this.selectionTimer);
+      this.selectionTimer = null;
+    }
+  }
+
   private handleTimeUpdate = (): void => {
     if (this.mode === 'selection') {
-      if (this.selectionEndTime !== null && this.audio.currentTime >= this.selectionEndTime) {
-        this.audio.pause();
-        this.mode = 'reading';
-        this.selectionEndTime = null;
-      }
-      return; // не двигаем подсветку основного чтения во время предпрослушивания
+      return; // не двигаем подсветку основного чтения во время предпрослушивания; остановку делает selectionTimer
     }
     // Не ищем токен, строго содержащий currentTime — короткие служебные слова
     // (de, un, et…) иногда короче интервала между двумя событиями timeupdate
