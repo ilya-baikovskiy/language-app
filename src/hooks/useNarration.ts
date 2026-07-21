@@ -104,7 +104,12 @@ export function useNarration(lesson: Lesson, audioSrc: string) {
     setPlaybackStatus('playing');
   }, [lesson, rate]);
 
-  const speakSelection = useCallback((text: string) => adapterRef.current?.speakSelection(text, rate), [rate]);
+  // onError сюда — только для этого конкретного клика (см. адаптеры): сбой
+  // точечного прослушивания не должен трогать playbackStatus всего плеера.
+  const speakSelection = useCallback(
+    (text: string, onError?: (error: Error) => void) => adapterRef.current?.speakSelection(text, rate, onError),
+    [rate],
+  );
 
   return {
     playbackStatus,

@@ -39,9 +39,11 @@ export class BrowserSpeechAdapter implements NarrationAdapter {
     if (this.isSupported()) window.speechSynthesis.cancel();
   }
 
-  speakSelection(text: string, rate = this.rate): void {
+  // Ошибка точечного прослушивания идёт в собственный onError, не в общий
+  // errorCb — не должна ломать основное чтение (см. PrecomputedAudioAdapter).
+  speakSelection(text: string, rate = this.rate, onError?: (error: Error) => void): void {
     if (!this.isSupported()) {
-      this.errorCb?.(new Error('speech-unsupported'));
+      onError?.(new Error('speech-unsupported'));
       return;
     }
     // Прослушивание отдельного слова/фразы/предложения — самостоятельное
@@ -56,7 +58,7 @@ export class BrowserSpeechAdapter implements NarrationAdapter {
     utterance.onerror = (event) => {
       const code = (event as SpeechSynthesisErrorEvent).error;
       if (code === 'canceled' || code === 'interrupted') return;
-      this.errorCb?.(new Error(code || 'speech-error'));
+      onError?.(new Error(code || 'speech-error'));
     };
     window.speechSynthesis.speak(utterance);
   }

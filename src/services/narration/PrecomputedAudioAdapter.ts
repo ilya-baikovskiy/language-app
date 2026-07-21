@@ -59,10 +59,17 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
   // Прослушивание слова/фразы/предложения — та же дорожка, короткий отрезок
   // по таймкодам, найденным через совпадение текста (раздел 14 контракт
   // принимает текст, а не id токенов — ищем его в каноническом тексте урока).
-  speakSelection(text: string, rate = this.audio.playbackRate || 1): void {
-    const idx = this.lessonText.indexOf(text);
+  // Регистронезависимый поиск: сгенерированный displayText/сущность могут не
+  // совпадать по регистру с тем, как слово стоит в реальном тексте урока.
+  //
+  // Ошибки здесь идут в собственный onError-колбэк, а не в общий errorCb:
+  // один неудачный точечный клик (текст не нашёлся/нет таймкода) — это
+  // локальный сбой конкретной кнопки, он не должен переводить весь плеер в
+  // состояние error и блокировать обычное чтение урока.
+  speakSelection(text: string, rate = this.audio.playbackRate || 1, onError?: (error: Error) => void): void {
+    const idx = this.lessonText.toLowerCase().indexOf(text.toLowerCase());
     if (idx === -1) {
-      this.errorCb?.(new Error('selection-not-found'));
+      onError?.(new Error('selection-not-found'));
       return;
     }
     const startSpan = findTokenAtOffset(this.textSpans, idx);
@@ -70,14 +77,14 @@ export class PrecomputedAudioAdapter implements NarrationAdapter {
     const startTimed = startSpan && this.timedSpans.find((s) => s.tokenId === startSpan.tokenId);
     const endTimed = endSpan && this.timedSpans.find((s) => s.tokenId === endSpan.tokenId);
     if (!startTimed || !endTimed) {
-      this.errorCb?.(new Error('selection-timing-missing'));
+      onError?.(new Error('selection-timing-missing'));
       return;
     }
     this.mode = 'selection';
     this.selectionEndTime = endTimed.endTime;
     this.audio.playbackRate = rate;
     this.audio.currentTime = startTimed.startTime;
-    void this.audio.play().catch((error: Error) => this.errorCb?.(error));
+    void this.audio.play().catch((error: Error) => onError?.(error));
   }
 
   setRate(rate: number): void {

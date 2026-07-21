@@ -8,7 +8,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onContinue: () => void;
-  onSpeak: (text: string) => void;
+  onSpeak: (text: string, onError?: (error: Error) => void) => void;
   onRetry: () => void;
   onLoadDetails: () => void;
   onRetryDetails: () => void;
@@ -57,11 +57,17 @@ export function ExplanationSheet({
     };
   }, []);
 
-  function showStubToast() {
-    setToast('Озвучивание будет добавлено позже');
+  function showToast(message: string) {
+    setToast(message);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 1800);
   }
+
+  const showStubToast = () => showToast('Озвучивание будет добавлено позже');
+  // Реальная озвучка (заголовок/предложение) может не найтись в аудиодорожке
+  // урока (см. onError у narration.speakSelection) — показываем тост вместо
+  // того, чтобы ронять весь плеер в состояние ошибки.
+  const showPlaybackErrorToast = () => showToast('Не удалось воспроизвести звук');
 
   function handleMore() {
     setExpanded(true);
@@ -87,6 +93,7 @@ export function ExplanationSheet({
                 onClose={onClose}
                 onSpeak={onSpeak}
                 onStub={showStubToast}
+                onPlaybackError={showPlaybackErrorToast}
                 expanded={expanded}
                 onMore={handleMore}
                 onRetryDetails={onRetryDetails}
@@ -142,7 +149,7 @@ export function ExplanationSheet({
                       className="icon-btn-sm"
                       type="button"
                       aria-label="Прослушать"
-                      onClick={() => onSpeak(selection.word)}
+                      onClick={() => onSpeak(selection.word, showPlaybackErrorToast)}
                     >
                       <SpeakerIcon />
                     </button>
@@ -196,14 +203,24 @@ export function ExplanationSheet({
 type AnnotationViewProps = {
   selection: Extract<SheetSelection, { kind: 'annotation' }>;
   onClose: () => void;
-  onSpeak: (text: string) => void;
+  onSpeak: (text: string, onError?: (error: Error) => void) => void;
   onStub: () => void;
+  onPlaybackError: () => void;
   expanded: boolean;
   onMore: () => void;
   onRetryDetails: () => void;
 };
 
-function AnnotationView({ selection, onClose, onSpeak, onStub, expanded, onMore, onRetryDetails }: AnnotationViewProps) {
+function AnnotationView({
+  selection,
+  onClose,
+  onSpeak,
+  onStub,
+  onPlaybackError,
+  expanded,
+  onMore,
+  onRetryDetails,
+}: AnnotationViewProps) {
   const a = selection.annotation;
   const unitLabel = getUnitLabel(a);
 
@@ -217,7 +234,7 @@ function AnnotationView({ selection, onClose, onSpeak, onStub, expanded, onMore,
               className="icon-btn-sm"
               type="button"
               aria-label="Прослушать"
-              onClick={() => onSpeak(a.displayText)}
+              onClick={() => onSpeak(a.displayText, onPlaybackError)}
             >
               <SpeakerIcon />
             </button>
@@ -247,7 +264,7 @@ function AnnotationView({ selection, onClose, onSpeak, onStub, expanded, onMore,
             className="icon-btn-sm"
             type="button"
             aria-label="Прослушать предложение"
-            onClick={() => onSpeak(selection.sentenceText)}
+            onClick={() => onSpeak(selection.sentenceText, onPlaybackError)}
           >
             <SpeakerIcon />
           </button>
