@@ -17,6 +17,7 @@ function punct(id: string, sentenceId: string, text: string): Token {
 const s1: Sentence = {
   id: 's1',
   text: 'Claire arrivait à la gare Saint-Lazare quand il a commencé à pleuvoir.',
+  translation: 'Клэр подъезжала к вокзалу Сен-Лазар, когда начался дождь.',
   tokens: [
     word('t1', 's1', 'Claire'),
     word('t2', 's1', 'arrivait', 'ann-arrivait'),
@@ -37,6 +38,7 @@ const s1: Sentence = {
 const s2: Sentence = {
   id: 's2',
   text: 'Elle avait besoin de quelques minutes pour trouver un café tranquille.',
+  translation: 'Ей нужно было несколько минут, чтобы найти тихое кафе.',
   tokens: [
     word('t14', 's2', 'Elle'),
     word('t15', 's2', 'avait', 'ann-avoir-besoin'),
@@ -56,6 +58,7 @@ const s2: Sentence = {
 const s3: Sentence = {
   id: 's3',
   text: "Elle s'est assise près de la fenêtre et elle a commandé un chocolat chaud.",
+  translation: 'Она села у окна и заказала горячий шоколад.',
   tokens: [
     word('t26', 's3', 'Elle'),
     word('t27', 's3', "s'est", 'ann-sest-assise'),
@@ -78,6 +81,7 @@ const s3: Sentence = {
 const s4: Sentence = {
   id: 's4',
   text: 'Dehors, les gens marchaient vite sous leurs parapluies.',
+  translation: 'Снаружи люди быстро шли под зонтами.',
   tokens: [
     word('t41', 's4', 'Dehors'),
     punct('t42', 's4', ','),
@@ -95,6 +99,7 @@ const s4: Sentence = {
 const s5: Sentence = {
   id: 's5',
   text: 'Après la pluie, Claire a décidé de continuer sa promenade le long de la Seine.',
+  translation: 'После дождя Клэр решила продолжить прогулку вдоль Сены.',
   tokens: [
     word('t51', 's5', 'Après'),
     word('t52', 's5', 'la'),
@@ -119,6 +124,7 @@ const s5: Sentence = {
 const s6: Sentence = {
   id: 's6',
   text: 'Elle aimait beaucoup cette partie de la ville, surtout le soir.',
+  translation: 'Она очень любила эту часть города, особенно вечером.',
   tokens: [
     word('t68', 's6', 'Elle'),
     word('t69', 's6', 'aimait', 'ann-aimait'),
@@ -139,6 +145,7 @@ const s6: Sentence = {
 const s7: Sentence = {
   id: 's7',
   text: "Soudain, elle a reconnu une amie d'enfance assise sur un banc.",
+  translation: 'Вдруг она узнала подругу детства, сидевшую на скамейке.',
   tokens: [
     word('t81', 's7', 'Soudain', 'ann-soudain'),
     punct('t82', 's7', ','),
@@ -159,6 +166,7 @@ const s7: Sentence = {
 const s8: Sentence = {
   id: 's8',
   text: 'Les deux femmes se sont mises à parler pendant longtemps, sans remarquer le temps qui passait.',
+  translation: 'Обе женщины принялись болтать надолго, не замечая, как идёт время.',
   tokens: [
     word('t94', 's8', 'Les'),
     word('t95', 's8', 'deux'),
@@ -184,6 +192,7 @@ const s8: Sentence = {
 const s9: Sentence = {
   id: 's9',
   text: "Quand le soleil a commencé à se coucher, Claire a compris qu'elle devait rentrer.",
+  translation: 'Когда солнце начало садиться, Клэр поняла, что ей пора возвращаться.',
   tokens: [
     word('t112', 's9', 'Quand'),
     word('t113', 's9', 'le'),
@@ -207,6 +216,7 @@ const s9: Sentence = {
 const s10: Sentence = {
   id: 's10',
   text: 'Elle est repartie vers le métro, le cœur léger et heureuse de cette rencontre inattendue.',
+  translation: 'Она отправилась обратно к метро, с лёгким сердцем и радуясь этой неожиданной встрече.',
   tokens: [
     word('t128', 's10', 'Elle'),
     word('t129', 's10', 'est', 'ann-est-repartie'),
@@ -242,6 +252,19 @@ const annotations: Annotation[] = [
     contextualMeaning:
       'Клэр была в процессе прибытия на вокзал — imparfait передаёт длящееся действие на фоне другого события (дождь).',
     grammarSummary: 'Форма глагола arriver в imparfait, 3-е лицо единственного числа.',
+    baseForm: { text: 'arriver', meaning: 'прибывать, приезжать' },
+    formInText: { text: 'arrivait', meaning: 'приближалась / подъезжала (в тот момент)' },
+    plainLearningNote:
+      'imparfait описывает фон — действие, которое длилось, когда случилось что-то ещё (здесь — начался дождь).',
+    formVariants: {
+      title: 'arriver в разных временах',
+      items: [
+        { text: 'elle arrive', meaning: 'она прибывает', note: 'présent', isCurrent: false },
+        { text: 'elle arrivait', meaning: 'она прибывала', note: 'imparfait — как в тексте', isCurrent: true },
+        { text: 'elle est arrivée', meaning: 'она прибыла', note: 'passé composé', isCurrent: false },
+        { text: 'elle arrivera', meaning: 'она прибудет', note: 'futur', isCurrent: false },
+      ],
+    },
     examples: [
       { targetText: "Le train arrivait à l'heure.", translation: 'Поезд прибывал вовремя.' },
       { targetText: 'Nous arrivions bientôt.', translation: 'Мы вот-вот должны были приехать.' },
@@ -263,6 +286,14 @@ const annotations: Annotation[] = [
     grammarSummary: 'a commencé — форма commencer в passé composé (avoir + причастие прошедшего времени).',
     grammarDetails:
       'Passé composé используется для конкретного, завершённого события на фоне общего описания (imparfait). Здесь дождь «начался» в какой-то момент — это отдельное событие, а не фон.',
+    baseForm: { text: 'commencer à + infinitif', meaning: 'начать делать что-то' },
+    formInText: { text: 'a commencé à', meaning: 'начал(ся)' },
+    wholePhrase: { text: 'il a commencé à pleuvoir', meaning: 'пошёл дождь' },
+    beginnerBreakdown: [
+      { text: 'a commencé', meaning: 'начал — passé composé от commencer' },
+      { text: 'à', meaning: 'обязательный предлог перед инфинитивом' },
+    ],
+    plainLearningNote: 'commencer требует предлога à перед инфинитивом, а не de.',
     otherMeanings: [{ translation: 'приступить к чему-либо' }],
     examples: [
       { targetText: 'Il a commencé à pleurer.', translation: 'Он начал плакать.' },
@@ -307,6 +338,15 @@ const annotations: Annotation[] = [
     grammarDetails:
       'Imparfait используется для фона, состояний и повторяющихся действий в прошлом — в отличие от passé composé, который описывает законченное событие. Здесь потребность в кафе — фоновое состояние Клэр, а не разовое событие, поэтому passé composé («a eu besoin») звучал бы менее естественно. Частая ошибка: путать avoir besoin de с avoir envie de («хотеть») — смысл ощутимо разный.',
     otherMeanings: [{ translation: 'испытывать потребность в чём-либо' }],
+    baseForm: { text: 'avoir besoin de', meaning: 'нуждаться в чём-то' },
+    formInText: { text: 'avait besoin de', meaning: 'нуждалась в / ей было нужно' },
+    wholePhrase: { text: 'elle avait besoin de quelques minutes', meaning: 'ей нужно было несколько минут' },
+    beginnerBreakdown: [
+      { text: 'avait', meaning: 'имела — imparfait от avoir' },
+      { text: 'besoin', meaning: 'потребность, нужда' },
+      { text: 'de', meaning: 'обязательный предлог', note: 'без него выражение не работает' },
+    ],
+    plainLearningNote: 'Узнавайте фразу целиком: «нуждаться в», всегда с de — не переводите по словам.',
     examples: [
       { targetText: "J'ai besoin de repos.", translation: 'Мне нужен отдых.' },
       { targetText: "Elle avait besoin d'aide.", translation: 'Ей была нужна помощь.' },
@@ -362,6 +402,15 @@ const annotations: Annotation[] = [
     grammarSummary: 'assise — причастие asseoir с окончанием женского рода -e, потому что подлежащее elle женского рода.',
     grammarDetails:
       'Все возвратные глаголы в passé composé используют вспомогательный глагол être, а не avoir. Причастие при этом согласуется с подлежащим: il s\'est assis, elle s\'est assise.',
+    baseForm: { text: "s'asseoir", meaning: 'садиться' },
+    formInText: { text: "s'est assise", meaning: 'села (о женщине)' },
+    wholePhrase: { text: "elle s'est assise", meaning: 'она села' },
+    beginnerBreakdown: [
+      { text: "s'", meaning: 'возвратная частица (себя)' },
+      { text: 'est', meaning: 'вспомогательный глагол être' },
+      { text: 'assise', meaning: 'причастие ж.р. — согласовано с elle' },
+    ],
+    plainLearningNote: 'Возвратные глаголы в passé composé идут с être, причастие согласуется с подлежащим.',
     examples: [
       { targetText: "Il s'est assis à côté de moi.", translation: 'Он сел рядом со мной.' },
       { targetText: 'Nous nous sommes assises au fond de la salle.', translation: 'Мы сели в конце зала.' },
@@ -667,6 +716,14 @@ const annotations: Annotation[] = [
       'Идиома описывает состояние Клэр — она уходила довольная и спокойная после приятной встречи.',
     constructionExplanation: 'le cœur léger используется как наречное выражение без предлога: partir le cœur léger — «уйти с лёгким сердцем».',
     grammarSummary: 'Устойчивое выражение, не переводится дословно слово в слово.',
+    baseForm: { text: 'avoir le cœur léger', meaning: 'быть беззаботным, с лёгким сердцем' },
+    formInText: { text: 'le cœur léger', meaning: 'с лёгким сердцем' },
+    wholePhrase: { text: 'elle est partie le cœur léger', meaning: 'она ушла с лёгким сердцем' },
+    beginnerBreakdown: [
+      { text: 'le cœur', meaning: 'сердце' },
+      { text: 'léger', meaning: 'лёгкий' },
+    ],
+    plainLearningNote: 'Идиома: целиком значит «спокойно, без тревог» — не переводите дословно.',
     examples: [
       { targetText: 'Il est parti le cœur léger.', translation: 'Он ушёл с лёгким сердцем.' },
       { targetText: "Elle a le cœur lourd aujourd'hui.", translation: 'У неё сегодня тяжело на сердце (антоним).' },

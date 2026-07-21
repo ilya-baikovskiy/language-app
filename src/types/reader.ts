@@ -18,4 +18,5 @@ export type ArticleFontSize = 'small' | 'medium' | 'large';
 export type ReaderPreferences = {
   theme: ReaderTheme;
   fontSize: ArticleFontSize;
+  translationMode: boolean;
 };

@@ -20,6 +20,10 @@ export type Sentence = {
   id: string;
   text: string;
   tokens: Token[];
+  // Перевод предложения на sourceLanguage. Опционален: в fixtures (sampleLesson)
+  // проставлен заранее, для сгенерированных уроков догружается лениво по запросу
+  // в режиме перевода (useSentenceTranslations.ts).
+  translation?: string;
 };
 
 export type Token = {

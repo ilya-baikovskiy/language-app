@@ -9,10 +9,21 @@ type Props = {
   onThemeChange: (theme: ReaderTheme) => void;
   fontSize: ArticleFontSize;
   onFontSizeChange: (size: ArticleFontSize) => void;
+  translationMode: boolean;
+  onTranslationModeChange: (on: boolean) => void;
   onBack?: () => void;
 };
 
-export function ReaderHeader({ lesson, theme, onThemeChange, fontSize, onFontSizeChange, onBack }: Props) {
+export function ReaderHeader({
+  lesson,
+  theme,
+  onThemeChange,
+  fontSize,
+  onFontSizeChange,
+  translationMode,
+  onTranslationModeChange,
+  onBack,
+}: Props) {
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +91,8 @@ export function ReaderHeader({ lesson, theme, onThemeChange, fontSize, onFontSiz
             onThemeChange={onThemeChange}
             fontSize={fontSize}
             onFontSizeChange={onFontSizeChange}
+            translationMode={translationMode}
+            onTranslationModeChange={onTranslationModeChange}
           />
         )}
       </div>

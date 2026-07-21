@@ -1,98 +1,63 @@
-# Bottom Sheet rework — статус незавершённой работы (WIP)
+# Bottom Sheet rework — статус
 
-Живой статус реализации плана `~/.claude/plans/lazy-wibbling-naur.md` (переработка bottom
-sheet + режим перевода предложений). Этот файл и WIP-код лежат в ветке `bottom-sheet-wip`,
-НЕ в `master` — потому что код сейчас **не собирается** (см. ниже), а `master` автодеплоится
-на Vercel. Влить в `master` только когда Этап B соберётся чисто.
+Реализация плана переработки bottom sheet + режима перевода предложений.
+**Этапы A, B, C, D завершены** — билд собирается чисто (`npm run build` + `npm run lint`),
+проверено в браузере на sample-уроке.
 
-## Что уже сделано
+## Готово
 
-### Этап A — двухуровневое выделение фразы/слова ✅ (в `master`, коммит 2e66f4d)
+### Этап A — двухуровневое выделение фразы/слова ✅
 Клик по слову внутри размеченной фразы: вся фраза тонируется мягко, кликнутое слово —
 подчёркивается сильнее. Внутренние токены фразы кликабельны и репортят свой tokenId
 (аннотация всё равно фразовая). Файлы: `InteractiveSentence.tsx`, `reader.css`.
 
-### Этап B — двухтировый богатый контент — ЧАСТИЧНО (в ветке `bottom-sheet-wip`)
-Сделано:
-- **`src/types/lesson.ts`** — добавлены опциональные поля `Annotation`: `baseForm`,
-  `formInText`, `wholePhrase`, `beginnerBreakdown`, `plainLearningNote` (тир 1); `formVariants`
-  (тир 2). Плюс типы `FormPair`, `BreakdownPart`, `FormVariant`, `FormVariants`. Все
-  опциональные — старые аннотации (sampleLesson) не ломаются.
-- **`lib/pipeline/generateAnnotations.ts`** — генерация разбита на два тира:
-  `BASIC_SCHEMA`+`basicSystemPrompt`→`generateAnnotationBasic`; `DETAILS_SCHEMA`+
-  `detailsSystemPrompt`→`generateAnnotationDetails`; общий `callAnnotationModel`.
-  `generateAnnotationContent` теперь склеивает оба тира (для CLI/офлайн). Типы
-  `AnnotationBasicContent`/`AnnotationDetailsContent`/`AnnotationContent`.
-- **`api/generate-annotation.ts`** — принимает `tier: 'basic' | 'details'` (дефолт basic),
-  зовёт соответствующую функцию.
-- **`src/services/generation/lessonsApi.ts`** — `fetchAnnotationContent` заменён на
-  `fetchAnnotationBasic` / `fetchAnnotationDetails`.
-- **`src/hooks/useSelectedAnnotation.ts`** — переписан под два тира: `loadDetails()`,
-  `retryDetails()`, `detailsStatus` в selection (`idle|loading|ready|error`); отдельный кэш и
-  статусы для деталей; `annotationHasDetails()` определяет, есть ли уже тир-2 (sampleLesson →
-  сразу ready, без второго запроса).
-- **`src/components/ReaderPage.tsx`** — прокидывает `onLoadDetails`/`onRetryDetails` в
-  `ExplanationSheet`.
+### Этап B — двухтировый богатый контент Bottom Sheet ✅
+- **`src/types/lesson.ts`** — опциональные поля `Annotation`: `baseForm`, `formInText`,
+  `wholePhrase`, `beginnerBreakdown`, `plainLearningNote` (тир 1); `formVariants` (тир 2).
+  Типы `FormPair`, `BreakdownPart`, `FormVariant`, `FormVariants`. Все опциональные —
+  старые аннотации не ломаются.
+- **`lib/pipeline/generateAnnotations.ts`** — генерация в два тира: `generateAnnotationBasic`
+  / `generateAnnotationDetails` + общий `callAnnotationModel`.
+- **`api/generate-annotation.ts`** — принимает `tier: 'basic' | 'details'`.
+- **`src/services/generation/lessonsApi.ts`** — `fetchAnnotationBasic` / `fetchAnnotationDetails`.
+- **`src/hooks/useSelectedAnnotation.ts`** — два тира: `loadDetails()`, `retryDetails()`,
+  `detailsStatus` в selection; отдельный кэш и статусы для деталей.
+- **`src/components/ExplanationSheet.tsx`** — переписан: Уровень 1 (заголовок + реальная
+  озвучка, чип единицы, произношение, `shortTranslation`, предложение с подсветкой целевого
+  фрагмента `<mark class="sheet-target">`, `contextualMeaning`, пары `baseForm`/`formInText`,
+  `beginnerBreakdown` и `wholePhrase` для фраз, `plainLearningNote`); дисклоужер «Подробнее»
+  → тир-2 (грамматика, `constructionExplanation`, `formVariants`, примеры, `otherMeanings`) с
+  loading/error/retry по `detailsStatus`. Реальная озвучка — только заголовок и предложение;
+  у сгенерированных строк кнопка-стаб с тостом «Озвучивание будет добавлено позже».
+  `GrammarSummary.tsx`/`GrammarDetails.tsx` удалены (логика внутри шита), `ExampleList.tsx`
+  переиспользован.
+- **`src/data/sampleLesson.ts`** — тир-1 fixtures у `ann-arrivait`, `ann-a-commence-1`,
+  `ann-avoir-besoin`, `ann-sest-assise`, `ann-coeur-leger` (+`formVariants` у `ann-arrivait`),
+  чтобы новый UI был виден в `npm run dev` без затрат на AI.
 
-## Что НЕ доделано (Этап B)
+### Этап C — режим перевода предложений ✅
+- **`src/types/lesson.ts`** — `Sentence.translation?: string` (fixtures/ленивая дозагрузка).
+- **`src/data/sampleLesson.ts`** — `translation` проставлен всем 10 предложениям.
+- **`lib/pipeline/translateSentence.ts`** (новый) + **`api/translate-sentence.ts`** (новый,
+  `POST {sentenceText, level?} → {translation}`) + `vercel.json` maxDuration 30.
+- **`src/services/generation/lessonsApi.ts`** — `fetchSentenceTranslation`.
+- **`src/hooks/useSentenceTranslations.ts`** (новый) — session-кэш по `sentence.id`: fixture →
+  сразу ready; иначе ленивый фетч (concurrency 3) при включённом режиме; `retry`.
+- **`useReaderPreferences` / `types/reader` / `SettingsMenu` / `ReaderHeader`** — тумблер
+  «Перевод предложений» (`translationMode`, персист в localStorage).
+- **`ArticleContent`** — в режиме перевода предложения рендерятся блоками (`.sentence-block`)
+  с русской строкой под каждым (`.sentence-translation`, состояния loading/error+retry); без
+  режима — прежний инлайн-рендер. CSS: `.translation-mode`, `.sentence-translation`.
 
-1. **`src/components/ExplanationSheet.tsx` — НЕ переписан.** Это причина, по которой билд
-   падает: `ReaderPage` уже передаёт `onLoadDetails`/`onRetryDetails`, а шит их не принимает,
-   и `SheetSelection.annotation` теперь несёт `detailsStatus`, который шит пока не читает.
-   Нужно:
-   - Props добавить: `onLoadDetails: () => void`, `onRetryDetails: () => void`.
-   - Уровень 1 (всегда виден): заголовок `displayText` + 🔊(реальная озвучка `onSpeak`) +
-     `unitLabel`-чип (вывести: `type==='phrase'`→«Фраза»; иначе `baseForm.text!==displayText`
-     →«Форма слова»; иначе «Слово») + произношение; `shortTranslation`; блок «В этом
-     предложении» — **французское предложение с подсветкой целевого фрагмента** (substring по
-     `displayText`, обернуть в `<mark className="sheet-target">`) + 🔊 + `contextualMeaning`;
-     пара `baseForm`↔`formInText` (франц. + 🔊-стаб + рус.); `beginnerBreakdown` «Разберём по
-     частям» (только фразы); `wholePhrase` «Вся фраза» (только фразы); `plainLearningNote`.
-   - Дисклоужер «Подробнее про грамматику и формы» (локальный `expanded`, сброс при смене
-     `annotation.id`): по клику `setExpanded(true)` + `onLoadDetails()`. Когда раскрыт —
-     рендер по `detailsStatus`: `loading`→спиннер; `error`→сообщение+«Повторить»
-     (`onRetryDetails`); `ready`→`grammarLabel`+`grammarSummary`, `grammarDetails`,
-     `constructionExplanation`, `formVariants` (список с `isCurrent`), `examples`
-     (переиспользовать `ExampleList`), `otherMeanings`.
-   - Озвучка **реально vs стаб**: `onSpeak` (реальная дорожка урока) — только для заголовка и
-     предложения; для сгенерированных строк (baseForm/formInText/breakdown/wholePhrase/
-     formVariants/examples) — кнопка-стаб, показывающая toast «Озвучивание будет добавлено
-     позже» (локальный `toast`-стейт + таймаут), т.к. их нет в аудиодорожке.
-   - Сохранить существующие ветки `loading`/`error`/`fallback` из `SheetSelection`.
-   - Старые аннотации без тир-1 полей должны рендериться gracefully (показывать что есть; для
-     них `lemma`-строку выводить, только если нет `baseForm`).
-   - `GrammarSummary.tsx`/`GrammarDetails.tsx` — свернуть в новую структуру (можно удалить,
-     если больше не используются); `ExampleList.tsx` — переиспользовать.
-2. **`src/styles/reader.css`** — стили новых блоков: `.sheet-target` (подсветка фрагмента в
-   предложении), `.sheet-sentence`, `.sheet-forms`/`.form-line`, `.breakdown-part`,
-   `.whole-phrase`, `.form-variant`(+`.is-current`), `.sheet-more-toggle`, `.sheet-toast`,
-   `.sheet-unit-label`, `.sheet-note`.
-3. **`src/data/sampleLesson.ts`** — добавить тир-1 поля (baseForm/formInText/wholePhrase/
-   beginnerBreakdown/plainLearningNote) к ~5 существующим аннотациям (напр. `ann-arrivait`,
-   `ann-avoir-besoin`, `ann-a-commence-1`, `ann-sest-assise`, `ann-coeur-leger`) как fixtures,
-   чтобы видеть новый UI без трат на AI. Остальные аннотации остаются как есть.
-4. **Проверка Этапа B**: `npm run build` + `npm run lint` чисто; `npm run dev` — клик по
-   fixtures-слову показывает уровень 1, «Подробнее» раскрывает детали (в fixtures мгновенно);
-   в свежесгенерированном уроке клик → тир-1, «Подробнее» → тир-2 с loading. `sampleLesson`
-   не сломан. Затем влить `bottom-sheet-wip` → `master`.
+### Этап D — «Сохранить» (стаб на localStorage) ✅
+- **`src/hooks/useSavedUnits.ts`** (новый) — localStorage `context-reader:saved`,
+  `isSaved` / `toggleSave`.
+- **`ExplanationSheet`** — кнопка «Сохранить»/«Сохранено» в футере (только для аннотаций),
+  `aria-pressed`; проброшено из `ReaderPage`. Экрана просмотра сохранённого пока нет (v1 стаб).
 
-## Ещё не начато
-
-### Этап C — режим перевода предложений
-`lib/pipeline/translateSentence.ts` (новый) + `api/translate-sentence.ts` (новый, `POST
-{sentenceText, level?}→{translation}`) + `fetchSentenceTranslation` в `lessonsApi.ts` +
-`useSentenceTranslations` (новый хук, session-кэш) + тумблер «Перевод» в `SettingsMenu` +
-`translationMode` в `useReaderPreferences` + строки перевода под предложениями
-(`ArticleContent`/`InteractiveSentence` — обернуть предложение в блок-элемент под
-`.translation-mode`) + `vercel.json` maxDuration. Подробности — в плане.
-
-### Этап D — «Сохранить» (стаб на localStorage)
-`useSavedUnits()` (новый хук, localStorage `context-reader:saved`) + кнопка «Сохранить» в
-футере шита. Экрана просмотра сохранённого пока нет.
-
-## Ключевые решения (чтобы не переспрашивать)
-- Расширяем `Annotation`, не мигрируем на `LearningUnit`. Новые поля опциональны.
+## Ключевые решения
+- Расширяем `Annotation`/`Sentence`, не мигрируем на новые сущности. Новые поля опциональны.
 - Ленивый фетч в два тира: клик → тир-1, «Подробнее» → тир-2.
-- Zod не добавляем (json_schema strict уже гарантирует форму). `AudioContent`-тип не заводим.
-- Тесты — fixtures + глаза, без vitest.
+- Fixtures в `sampleLesson` для нового контента — `/api/*` в `npm run dev` (Vite) недоступны.
+- Zod не добавляем (json_schema strict гарантирует форму). Тесты — fixtures + браузер.
 - «Сохранить» — стаб localStorage, без бэкенда.

@@ -8,6 +8,7 @@
     "api/generate-text.ts": { "maxDuration": 30 },
     "api/mark-phrases.ts": { "maxDuration": 30 },
     "api/generate-annotation.ts": { "maxDuration": 30 },
+    "api/translate-sentence.ts": { "maxDuration": 30 },
     "api/save-lesson.ts": { "maxDuration": 30 },
     "api/lessons.ts": { "maxDuration": 15 }
   }

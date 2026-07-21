@@ -41,6 +41,12 @@ export function fetchAnnotationDetails(target: AnnotationTarget, level: string):
   return postJson('/api/generate-annotation', { target, level, tier: 'details' });
 }
 
+// Перевод одного предложения — по запросу в режиме перевода (тумблер «Перевод»).
+export async function fetchSentenceTranslation(sentenceText: string, level: string): Promise<string> {
+  const { translation } = await postJson<{ translation: string }>('/api/translate-sentence', { sentenceText, level });
+  return translation;
+}
+
 export function fetchGeneratedAudio(text: string, slug: string): Promise<{ audioUrl: string }> {
   return postJson('/api/generate-audio', { text, slug });
 }

@@ -6,6 +6,7 @@ const STORAGE_KEY = 'context-reader:preferences';
 type StoredPreferences = {
   theme: ReaderTheme;
   fontSize: ArticleFontSize;
+  translationMode: boolean;
 };
 
 function getSystemTheme(): ReaderTheme {
@@ -32,6 +33,7 @@ const FONT_SIZE_PX: Record<ArticleFontSize, { size: string; lineHeight: string }
 export function useReaderPreferences() {
   const [theme, setThemeState] = useState<ReaderTheme>(() => loadStored().theme ?? getSystemTheme());
   const [fontSize, setFontSizeState] = useState<ArticleFontSize>(() => loadStored().fontSize ?? 'medium');
+  const [translationMode, setTranslationModeState] = useState<boolean>(() => loadStored().translationMode ?? false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -45,14 +47,15 @@ export function useReaderPreferences() {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ theme, fontSize }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ theme, fontSize, translationMode }));
     } catch {
       // localStorage unavailable (private mode, quota) — preference just won't persist
     }
-  }, [theme, fontSize]);
+  }, [theme, fontSize, translationMode]);
 
   const setTheme = useCallback((next: ReaderTheme) => setThemeState(next), []);
   const setFontSize = useCallback((next: ArticleFontSize) => setFontSizeState(next), []);
+  const setTranslationMode = useCallback((next: boolean) => setTranslationModeState(next), []);
 
-  return { theme, setTheme, fontSize, setFontSize };
+  return { theme, setTheme, fontSize, setFontSize, translationMode, setTranslationMode };
 }

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useReaderPreferences } from '../hooks/useReaderPreferences';
 import { useSelectedAnnotation } from '../hooks/useSelectedAnnotation';
+import { useSentenceTranslations } from '../hooks/useSentenceTranslations';
+import { useSavedUnits } from '../hooks/useSavedUnits';
 import { useNarration } from '../hooks/useNarration';
 import { orderedWordTokenIds } from '../lib/lessonText';
 import type { Lesson } from '../types/lesson';
@@ -32,9 +34,12 @@ type Props = {
 };
 
 export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
-  const { theme, setTheme, fontSize, setFontSize } = useReaderPreferences();
+  const { theme, setTheme, fontSize, setFontSize, translationMode, setTranslationMode } = useReaderPreferences();
   const narration = useNarration(lesson, audioSrc);
   const [selection, setSelection] = useState<SelectionState>(INITIAL_SELECTION);
+
+  const { translations, retry: retryTranslation } = useSentenceTranslations(lesson, translationMode);
+  const { isSaved, toggleSave } = useSavedUnits();
 
   const wordTokenIds = useMemo(() => orderedWordTokenIds(lesson), [lesson]);
   const progress = narration.activeTokenId
@@ -70,6 +75,18 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
     else narration.play();
   }, [narration]);
 
+  const savedAnnotation = sheetSelection?.kind === 'annotation' ? sheetSelection.annotation : null;
+  const isCurrentSaved = savedAnnotation ? isSaved(lesson.id, savedAnnotation.id) : false;
+  const handleToggleSave = useCallback(() => {
+    if (!savedAnnotation) return;
+    toggleSave({
+      lessonId: lesson.id,
+      annotationId: savedAnnotation.id,
+      displayText: savedAnnotation.displayText,
+      shortTranslation: savedAnnotation.shortTranslation,
+    });
+  }, [savedAnnotation, lesson.id, toggleSave]);
+
   useEffect(() => {
     if (!selection.isSheetOpen) return;
     function handleKeyDown(event: KeyboardEvent) {
@@ -102,6 +119,8 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
         onThemeChange={setTheme}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
+        translationMode={translationMode}
+        onTranslationModeChange={setTranslationMode}
         onBack={onBack}
       />
 
@@ -111,6 +130,9 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
         selectedTokenId={selection.selectedTokenId}
         activeTokenId={SPEAKING_STATUSES.has(narration.playbackStatus) ? narration.activeTokenId : null}
         onSelectGroup={handleSelectGroup}
+        translationMode={translationMode}
+        translations={translations}
+        onRetryTranslation={retryTranslation}
       />
 
       {FAB_STATUSES.has(narration.playbackStatus) && (
@@ -148,6 +170,8 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
         onRetry={retryAnnotation}
         onLoadDetails={loadDetails}
         onRetryDetails={retryDetails}
+        isSaved={isCurrentSaved}
+        onToggleSave={handleToggleSave}
       />
     </div>
   );

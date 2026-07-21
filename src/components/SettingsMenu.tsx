@@ -5,9 +5,18 @@ type Props = {
   onThemeChange: (theme: ReaderTheme) => void;
   fontSize: ArticleFontSize;
   onFontSizeChange: (size: ArticleFontSize) => void;
+  translationMode: boolean;
+  onTranslationModeChange: (on: boolean) => void;
 };
 
-export function SettingsMenu({ theme, onThemeChange, fontSize, onFontSizeChange }: Props) {
+export function SettingsMenu({
+  theme,
+  onThemeChange,
+  fontSize,
+  onFontSizeChange,
+  translationMode,
+  onTranslationModeChange,
+}: Props) {
   return (
     <div className="settings-popover" role="menu">
       <div className="settings-row">
@@ -50,6 +59,17 @@ export function SettingsMenu({ theme, onThemeChange, fontSize, onFontSizeChange 
             onClick={() => onFontSizeChange('large')}
           >
             A
+          </button>
+        </div>
+      </div>
+      <div className="settings-row">
+        <span className="settings-label">Перевод предложений</span>
+        <div className="settings-seg" role="group" aria-label="Перевод предложений">
+          <button type="button" aria-pressed={!translationMode} onClick={() => onTranslationModeChange(false)}>
+            Выкл
+          </button>
+          <button type="button" aria-pressed={translationMode} onClick={() => onTranslationModeChange(true)}>
+            Вкл
           </button>
         </div>
       </div>
