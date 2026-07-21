@@ -66,9 +66,13 @@ export function InteractiveSentence({
         }
 
         if (group.tokens.length > 1) {
-          // Фраза — единая кликабельная область, но подсветка произносимого
-          // слова всё равно должна быть точечной (раздел 8.4 ТЗ), поэтому
-          // внутри рендерим отдельные некликабельные под-span'ы на слово.
+          // Фраза — единая кликабельная область (открывается одно объяснение на
+          // всю фразу), но подсветка двухуровневая: вся фраза тонируется мягко
+          // (.phrase.is-selected), а конкретное кликнутое слово внутри —
+          // сильнее (.tok-inline.is-selected-token). Поэтому внутренние слова
+          // тоже кликабельны и репортят свой tokenId (аннотация — всё равно
+          // фразовая), а клик по «пробелу» между словами ловит внешний span по
+          // якорному токену. Подсветка произносимого слова остаётся точечной.
           return (
             <Fragment key={anchorTokenId}>
               {needsLeadingSpace ? ' ' : null}
@@ -76,14 +80,25 @@ export function InteractiveSentence({
                 className={`phrase${isSelected ? ' is-selected' : ''}`}
                 onClick={() => onSelectGroup(anchorTokenId, group.annotationId ?? null)}
               >
-                {group.tokens.map((token, tokenIndex) => (
-                  <Fragment key={token.id}>
-                    {tokenIndex > 0 ? ' ' : null}
-                    <span className={`tok-inline${activeTokenId === token.id ? ' is-speaking' : ''}`}>
-                      {token.text}
-                    </span>
-                  </Fragment>
-                ))}
+                {group.tokens.map((token, tokenIndex) => {
+                  const classes = ['tok-inline'];
+                  if (activeTokenId === token.id) classes.push('is-speaking');
+                  if (isSelected && selectedTokenId === token.id) classes.push('is-selected-token');
+                  return (
+                    <Fragment key={token.id}>
+                      {tokenIndex > 0 ? ' ' : null}
+                      <span
+                        className={classes.join(' ')}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelectGroup(token.id, group.annotationId ?? null);
+                        }}
+                      >
+                        {token.text}
+                      </span>
+                    </Fragment>
+                  );
+                })}
               </span>
             </Fragment>
           );

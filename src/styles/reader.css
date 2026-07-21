@@ -131,10 +131,15 @@
   background: var(--marker);
   box-shadow: 0 0 0 1px var(--marker) inset;
 }
-.tok.is-selected,
-.phrase.is-selected {
+.tok.is-selected {
   background: var(--accent-soft);
   box-shadow: inset 0 -2px 0 0 var(--accent-underline);
+}
+/* Двухуровневое выделение фразы: вся фраза тонируется мягко (только фон),
+   а конкретное кликнутое слово внутри несёт accent-подчёркивание — «курсор»
+   на слове. */
+.phrase.is-selected {
+  background: var(--accent-soft);
 }
 .phrase {
   cursor: pointer;
@@ -143,11 +148,17 @@
 .phrase:hover {
   background: var(--surface-2);
 }
+.tok-inline {
+  cursor: pointer;
+  border-radius: 4px;
+}
 .tok-inline.is-speaking {
   background: var(--marker);
-  border-radius: 4px;
   padding: 0 1px;
   margin: 0 -1px;
+}
+.tok-inline.is-selected-token {
+  box-shadow: inset 0 -2px 0 0 var(--accent-underline);
 }
 
 /* ---------- idle FAB ---------- */
