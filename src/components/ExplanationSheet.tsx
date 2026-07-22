@@ -157,26 +157,23 @@ export function ExplanationSheet({
             </div>
           )}
 
+          {/* Футер эталона — ровно два элемента: сохранение иконкой слева и
+              широкое основное действие справа. */}
           <div className="sheet-footer">
-            <button className="act-btn primary" type="button" onClick={onContinue}>
-              Продолжить отсюда
-            </button>
             {selection?.kind === 'annotation' && (
               <button
-                className={`act-btn save${isSaved ? ' is-saved' : ''}`}
+                className={`act-btn icon-only save${isSaved ? ' is-saved' : ''}`}
                 type="button"
                 aria-pressed={isSaved}
+                aria-label={isSaved ? 'Убрать из сохранённого' : 'Сохранить слово'}
                 onClick={onToggleSave}
               >
                 <BookmarkIcon filled={isSaved} />
-                {isSaved ? 'Сохранено' : 'Сохранить'}
               </button>
             )}
-            {selection && (
-              <button className="act-btn ghost" type="button">
-                ✦ Спросить AI · скоро
-              </button>
-            )}
+            <button className="act-btn primary wide" type="button" onClick={onContinue}>
+              Продолжить отсюда
+            </button>
           </div>
         </div>
       </div>
@@ -232,12 +229,16 @@ function AnnotationView({
 
       <p className="sheet-translation">{summary.translation}</p>
 
-      {context.relatedSource && (
-        <div className="sheet-related">
-          <p className="sheet-related-source">{highlightTarget(context.relatedSource, summary.displayForm)}</p>
-          {context.relatedTranslation && (
-            <p className="sheet-related-translation">{highlightTarget(context.relatedTranslation, summary.translation)}</p>
-          )}
+      {summary.hint && (
+        <div className="sheet-hint">
+          <p className="sheet-hint-label">{summary.hint.label}</p>
+          <p className="sheet-hint-row">
+            <span className="foreign">{summary.hint.source}</span>
+            <span className="sheet-hint-arrow" aria-hidden="true">
+              →
+            </span>
+            <span className="native">{summary.hint.translation}</span>
+          </p>
         </div>
       )}
 
@@ -265,8 +266,9 @@ function AnnotationView({
 
       {!expanded && (
         <button className="sheet-more-toggle" type="button" aria-expanded={false} onClick={onMore}>
-          <span>
-            Подробнее <span className="sheet-more-sub">— объяснение, формы и грамматика</span>
+          <span className="sheet-more-text">
+            <span className="sheet-more-title">Подробнее</span>
+            <span className="sheet-more-sub">объяснение, формы и грамматика</span>
           </span>
           <ChevronDownIcon />
         </button>
@@ -276,9 +278,6 @@ function AnnotationView({
         <DetailsView
           annotation={selection.annotation}
           detailsStatus={selection.detailsStatus}
-          onSpeakUnit={onSpeakUnit}
-          isUnitLoading={isUnitLoading}
-          onPlaybackError={onPlaybackError}
           onRetryDetails={onRetryDetails}
         />
       )}
@@ -289,16 +288,10 @@ function AnnotationView({
 function DetailsView({
   annotation,
   detailsStatus,
-  onSpeakUnit,
-  isUnitLoading,
-  onPlaybackError,
   onRetryDetails,
 }: {
   annotation: Annotation;
   detailsStatus: Extract<SheetSelection, { kind: 'annotation' }>['detailsStatus'];
-  onSpeakUnit: SpeakFn;
-  isUnitLoading: IsLoadingFn;
-  onPlaybackError: () => void;
   onRetryDetails: () => void;
 }) {
   if (detailsStatus === 'loading') {
@@ -328,29 +321,13 @@ function DetailsView({
   return (
     <>
       {sections.map((section, index) => (
-        <DetailSectionView
-          key={index}
-          section={section}
-          onSpeakUnit={onSpeakUnit}
-          isUnitLoading={isUnitLoading}
-          onPlaybackError={onPlaybackError}
-        />
+        <DetailSectionView key={index} section={section} />
       ))}
     </>
   );
 }
 
-function DetailSectionView({
-  section,
-  onSpeakUnit,
-  isUnitLoading,
-  onPlaybackError,
-}: {
-  section: DetailSection;
-  onSpeakUnit: SpeakFn;
-  isUnitLoading: IsLoadingFn;
-  onPlaybackError: () => void;
-}) {
+function DetailSectionView({ section }: { section: DetailSection }) {
   if (section.type === 'explanation') {
     return (
       <div className="sheet-body">
@@ -360,30 +337,28 @@ function DetailSectionView({
     );
   }
 
+  // Шапки колонок нет намеренно: в эталоне первая ячейка строки сама работает
+  // ярлыком («я», «сейчас / обычно», «вопрос»), отдельной строки заголовков нет.
   if (section.type === 'table') {
     return (
       <div className="sheet-body">
         {section.title && <p className="sheet-section-title">{section.title}</p>}
         <div className="sheet-table-wrap">
           <table className="sheet-table">
-            <thead>
-              <tr>
-                {section.columns.map((column, i) => (
-                  <th key={i}>{column}</th>
-                ))}
-              </tr>
-            </thead>
             <tbody>
               {section.rows.map((row, ri) => (
-                <tr key={ri} className={section.highlightRow === ri ? 'is-highlighted' : undefined}>
+                <tr key={ri}>
                   {row.map((cell, ci) => (
-                    <td key={ci}>{cell}</td>
+                    <td key={ci} className={ci === 0 ? 'sheet-table-label' : undefined}>
+                      {cell}
+                    </td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {section.note && <p className="sheet-table-note">{section.note}</p>}
       </div>
     );
   }
@@ -394,24 +369,18 @@ function DetailSectionView({
         {section.title && <p className="sheet-section-title">{section.title}</p>}
         {section.pairs.map((pair, i) => (
           <div className="bilingual-pair" key={i}>
-            <div className="bilingual-pair-head">
-              <span className="foreign">{pair.source}</span>
-              <UnitSpeakerButton
-                text={pair.source}
-                onSpeakUnit={onSpeakUnit}
-                isUnitLoading={isUnitLoading}
-                onPlaybackError={onPlaybackError}
-                label={`Прослушать ${pair.source}`}
-              />
+            <div className="foreign">{pair.source}</div>
+            <div className="native">
+              {pair.translation}
+              {pair.note && <span className="bilingual-pair-note"> · {pair.note}</span>}
             </div>
-            <div className="native">{pair.translation}</div>
           </div>
         ))}
       </div>
     );
   }
 
-  // grammarNote
+  // grammarNote — закрывающая реплика обычным абзацем, без плашки.
   return (
     <div className="sheet-body">
       <p className="sheet-note">{section.body}</p>

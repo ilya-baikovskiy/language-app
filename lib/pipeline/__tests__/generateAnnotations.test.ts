@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dropSelfHighlight, isValidRelatedSpan } from '../generateAnnotations.js';
-import type { DetailSection, Sentence, Token } from '../../../src/types/lesson.js';
+import { buildHint, HINT_IN_SENTENCE, HINT_OTHER_MEANING, isValidRelatedSpan } from '../generateAnnotations.js';
+import type { Sentence, Token } from '../../../src/types/lesson.js';
 
 // "Η Άννα πήγε στον σταθμό." — t1..t5 слова, t6 точка (пунктуация).
 function makeToken(id: string, text: string, type: Token['type'] = 'word'): Token {
@@ -50,46 +50,48 @@ describe('isValidRelatedSpan', () => {
   });
 });
 
-function table(rows: string[][], highlightRow: number | null): DetailSection {
-  return { type: 'table', title: null, columns: ['лицо', 'греческий'], rows, highlightRow };
-}
+const NO_OTHER_MEANING = { otherMeaningSource: null, otherMeaningTranslation: null };
 
-describe('dropSelfHighlight', () => {
-  const rows = [
-    ['я', 'πήγα'],
-    ['ты', 'πήγες'],
-    ['он / она', 'πήγε'],
-  ];
-
-  it('clears a highlight that points at the clicked form', () => {
-    const [section] = dropSelfHighlight([table(rows, 2)], 'πήγε') as [Extract<DetailSection, { type: 'table' }>];
-    expect(section.highlightRow).toBeNull();
+describe('buildHint', () => {
+  it('labels a related span as the in-sentence hint', () => {
+    expect(buildHint('στον σταθμό', 'на станцию', NO_OTHER_MEANING)).toEqual({
+      label: HINT_IN_SENTENCE,
+      source: 'στον σταθμό',
+      translation: 'на станцию',
+    });
   });
 
-  it('matches case-insensitively', () => {
-    const [section] = dropSelfHighlight([table(rows, 2)], 'ΠΉΓΕ') as [Extract<DetailSection, { type: 'table' }>];
-    expect(section.highlightRow).toBeNull();
+  it('falls back to the other-meaning hint when there is no related span', () => {
+    expect(buildHint(null, null, { otherMeaningSource: 'Γιατί;', otherMeaningTranslation: 'Почему?' })).toEqual({
+      label: HINT_OTHER_MEANING,
+      source: 'Γιατί;',
+      translation: 'Почему?',
+    });
   });
 
-  it('keeps a highlight on a row that is not the clicked form', () => {
-    const [section] = dropSelfHighlight([table(rows, 0)], 'πήγε') as [Extract<DetailSection, { type: 'table' }>];
-    expect(section.highlightRow).toBe(0);
+  it('prefers the related span over the other meaning', () => {
+    const hint = buildHint('στον σταθμό', 'на станцию', {
+      otherMeaningSource: 'Γιατί;',
+      otherMeaningTranslation: 'Почему?',
+    });
+    expect(hint?.label).toBe(HINT_IN_SENTENCE);
   });
 
-  it('does not treat the target as a match when it is only a substring of a longer form', () => {
-    const [section] = dropSelfHighlight([table([['они', 'πήγαν']], 0)], 'πήγα') as [
-      Extract<DetailSection, { type: 'table' }>,
+  it('returns null when nothing worth showing came back', () => {
+    expect(buildHint(null, null, NO_OTHER_MEANING)).toBeNull();
+  });
+
+  it('returns null when only one half of a pair is present', () => {
+    expect(buildHint('στον σταθμό', null, NO_OTHER_MEANING)).toBeNull();
+    expect(buildHint(null, null, { otherMeaningSource: 'Γιατί;', otherMeaningTranslation: null })).toBeNull();
+  });
+
+  it('never produces a "dictionary form" label', () => {
+    const labels = [
+      buildHint('στον σταθμό', 'на станцию', NO_OTHER_MEANING)?.label,
+      buildHint(null, null, { otherMeaningSource: 'πηγαίνω', otherMeaningTranslation: 'идти' })?.label,
     ];
-    expect(section.highlightRow).toBe(0);
-  });
-
-  it('clears an out-of-range highlight index', () => {
-    const [section] = dropSelfHighlight([table(rows, 9)], 'πήγε') as [Extract<DetailSection, { type: 'table' }>];
-    expect(section.highlightRow).toBeNull();
-  });
-
-  it('leaves non-table sections untouched', () => {
-    const sections: DetailSection[] = [{ type: 'grammarNote', body: 'аорист' }];
-    expect(dropSelfHighlight(sections, 'πήγε')).toEqual(sections);
+    expect(labels.every((label) => label !== 'Словарная форма')).toBe(true);
   });
 });
+

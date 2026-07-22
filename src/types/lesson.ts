@@ -63,6 +63,17 @@ export type Token = {
 // "gen-t71-t72-t73" ушли вместе с шагом markPhrases — см. историю решения).
 // "Связанная фраза" (context.relatedSource/-Translation) — не смена цели
 // клика, а подсказка внутри объяснения ОДНОГО выбранного токена.
+// Подписанная строка-связка под переводом («Слот-подсказка» в эталонных
+// скриншотах): ярлык + «source → translation». Ярлык не свободный —
+// см. HINT_LABELS в lib/pipeline/generateAnnotations.ts. Словарной формы
+// здесь быть не может по решению пользователя (и по §5 хэндоффа): у глагола
+// начальная форма наверху только мешает читать.
+export type AnnotationHint = {
+  label: string;
+  source: string;
+  translation: string;
+};
+
 export type AnnotationSummary = {
   partOfSpeech: string | null;
   // Форма как она стоит в тексте (была formInText).
@@ -71,6 +82,7 @@ export type AnnotationSummary = {
   translation: string;
   // Что озвучивать по клику на динамик — обычно === displayForm.
   audioText: string;
+  hint: AnnotationHint | null;
   context: {
     source: string;
     translation: string;
@@ -81,10 +93,19 @@ export type AnnotationSummary = {
   };
 };
 
+// Таблица без шапки колонок и без подсветки строк — так во всех 19 эталонных
+// скриншотах: первая ячейка строки работает ярлыком (`я`, `сейчас / обычно`,
+// `вопрос`), заголовков колонок нет вообще, выделенных строк нет нигде
+// (критерий приёмки прямо запрещает подсвечивать текущую форму). `note` —
+// хвостовой абзац под таблицей, он есть в эталоне у таблицы времён.
 export type DetailSection =
   | { type: 'explanation'; title: string | null; body: string }
-  | { type: 'table'; title: string | null; columns: string[]; rows: string[][]; highlightRow: number | null }
-  | { type: 'bilingualPairs'; title: string | null; pairs: { source: string; translation: string }[] }
+  | { type: 'table'; title: string | null; rows: string[][]; note: string | null }
+  | {
+      type: 'bilingualPairs';
+      title: string | null;
+      pairs: { source: string; translation: string; note: string | null }[];
+    }
   | { type: 'grammarNote'; body: string };
 
 export type Annotation = {

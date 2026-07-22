@@ -6,7 +6,14 @@
 // ВНУТРИ объяснения одного токена, не смена того, что было выбрано.
 
 import type { LanguageConfig } from './languageConfig.js';
-import type { Annotation, AnnotationSummary, DetailSection, Sentence, Token } from '../../src/types/lesson.js';
+import type {
+  Annotation,
+  AnnotationHint,
+  AnnotationSummary,
+  DetailSection,
+  Sentence,
+  Token,
+} from '../../src/types/lesson.js';
 
 export type AnnotationTarget = { tokenId: string; sentence: Sentence };
 
@@ -65,12 +72,20 @@ const RELATED_EXAMPLES_BY_LANGUAGE: Record<string, RelatedPhraseExamples> = {
   },
 };
 
+// Ярлыки строки-связки. Закрытый список специально: в эталоне это подписанный
+// слот с предсказуемой подписью, а не свободный заголовок. «Словарной формы»
+// в списке нет намеренно — начальная форма наверху запрещена (§5 хэндоффа).
+export const HINT_IN_SENTENCE = 'В этом предложении';
+export const HINT_OTHER_MEANING = 'Другое значение';
+
 type RawSummaryResponse = {
   partOfSpeech: string | null;
   translation: string;
   contextTranslation: string;
   relatedTokenIds: string[] | null;
   relatedTranslation: string | null;
+  otherMeaningSource: string | null;
+  otherMeaningTranslation: string | null;
 };
 
 const SUMMARY_SCHEMA = {
@@ -81,8 +96,18 @@ const SUMMARY_SCHEMA = {
     contextTranslation: { type: 'string' },
     relatedTokenIds: { type: ['array', 'null'], items: { type: 'string' } },
     relatedTranslation: { type: ['string', 'null'] },
+    otherMeaningSource: { type: ['string', 'null'] },
+    otherMeaningTranslation: { type: ['string', 'null'] },
   },
-  required: ['partOfSpeech', 'translation', 'contextTranslation', 'relatedTokenIds', 'relatedTranslation'],
+  required: [
+    'partOfSpeech',
+    'translation',
+    'contextTranslation',
+    'relatedTokenIds',
+    'relatedTranslation',
+    'otherMeaningSource',
+    'otherMeaningTranslation',
+  ],
   additionalProperties: false,
 };
 
@@ -105,11 +130,10 @@ const SECTION_SCHEMA = {
         properties: {
           type: { type: 'string', const: 'table' },
           title: { type: ['string', 'null'] },
-          columns: { type: 'array', items: { type: 'string' } },
           rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
-          highlightRow: { type: ['integer', 'null'] },
+          note: { type: ['string', 'null'] },
         },
-        required: ['type', 'title', 'columns', 'rows', 'highlightRow'],
+        required: ['type', 'title', 'rows', 'note'],
         additionalProperties: false,
       },
       {
@@ -121,8 +145,12 @@ const SECTION_SCHEMA = {
             type: 'array',
             items: {
               type: 'object',
-              properties: { source: { type: 'string' }, translation: { type: 'string' } },
-              required: ['source', 'translation'],
+              properties: {
+                source: { type: 'string' },
+                translation: { type: 'string' },
+                note: { type: ['string', 'null'] },
+              },
+              required: ['source', 'translation', 'note'],
               additionalProperties: false,
             },
           },
@@ -172,6 +200,12 @@ Rules:
   if not useful (e.g. a proper name).
 - relatedTranslation: natural ${sourceLanguage} translation of ONLY the related phrase, matching how it
   reads inside the sentence — null whenever relatedTokenIds is null.
+- otherMeaningSource / otherMeaningTranslation: ONLY for a word that carries a genuinely different
+  second meaning a learner will meet soon (e.g. Greek "γιατί" = "потому что" here, but "Γιατί;" =
+  "Почему?" as a question). Both null otherwise — this is rare, do not invent one to fill the slot.
+- NEVER return a dictionary/base form as the "other meaning" (no "πηγαίνω", no "μικρός", no infinitive).
+  The base form is deliberately NOT shown above the context — it distracts from reading. If the base
+  form is worth teaching, it belongs in the details sections, not here.
 - Never invent grammar or vocabulary. Output strictly the JSON object per the schema.`;
 }
 
@@ -181,25 +215,36 @@ A ${sourceLanguage}-speaking learner tapped "more" on a single word. The short m
 shown — do not repeat it. Return ONLY the sections that add genuinely new, useful knowledge about
 THIS word; most words need very few. An empty array is a correct answer for a trivial word.
 
+Give every section a short, plain ${sourceLanguage} "title" (e.g. "Как это работает", "Формы
+прошедшего времени", "Полезно запомнить", "Два значения") — a null title is only acceptable for
+"grammarNote", which renders as a closing remark.
+
 Section types available — use whichever fit, in a sensible reading order:
 - "explanation": one focused point in plain ${sourceLanguage}, no jargon dump. Use this for "how this
-  form works" (e.g. why this tense/case is used here).
-- "table": a small comparison (e.g. tense across present/past/future, or a short paradigm). Compare
-  forms using the SAME grammatical person/number throughout — do not mix a form from the sentence with
-  other persons in the same row logic. EVERY table that lists ${languageConfig.promptLanguageName}
-  forms must carry a ${sourceLanguage} column translating them — never a grid of bare forms with no
-  translation (a singular/plural grid of forms alone is NOT acceptable; use one row per person with a
-  ${sourceLanguage} column instead). Set highlightRow to null almost always: it must never be used
-  merely to point at the form the learner clicked — they already know which one that is.
+  form works" (e.g. why this tense/case is used here). Usually the FIRST section, titled
+  "Как это работает".
+- "table": rows of 2-3 cells; there is NO header row, so the first cell of each row must itself be the
+  label ("я", "ты", "сейчас / обычно", "вопрос", "причина"). EVERY row that shows a
+  ${languageConfig.promptLanguageName} form must also carry a ${sourceLanguage} cell translating it —
+  never a grid of bare forms (a singular/plural grid with no translation is NOT acceptable).
+  For a verb's tense comparison use the FIRST PERSON "я" consistently across all rows
+  (e.g. πηγαίνω / πήγα / θα πάω = "я иду" / "я пошёл" / "я пойду"), never mixing persons.
+  "note" is an optional short closing line under the table, e.g. pointing out how the forms look for a
+  different person — null when not needed.
 - "bilingualPairs": 2-4 short ${languageConfig.promptLanguageName} examples with idiomatic (never
   mechanically literal) ${sourceLanguage} translations — similar constructions, not random sentences.
-- "grammarNote": one short technical line (e.g. "aorist, 3rd person singular"), only if a learner would
-  actually look this up — not required for most words.
+  Each pair may carry a short "note" (e.g. "мужской род") — null when not useful.
+- "grammarNote": one short technical closing line, only if a learner would actually look this up —
+  not required for most words. Grammar terms go in ${sourceLanguage} too ("аорист, 3-е лицо,
+  единственное число"), never in English.
 
 Hard rules:
+- EVERY word you write — titles, bodies, table labels, notes — is in ${sourceLanguage}, except the
+  ${languageConfig.promptLanguageName} forms and examples themselves. Never answer in English.
 - Do not add a section that only restates the sentence already shown in the summary's context block.
 - No invented grammar. If a language doesn't have a category ${sourceLanguage} speakers might expect
   (e.g. no grammatical gender, no case marking), say so briefly instead of forcing a comparison.
+- Never write a title in ALL CAPS.
 - Output strictly the JSON object per the schema — no prose outside it.`;
 }
 
@@ -270,37 +315,42 @@ export async function generateAnnotationBasic(
 
   const token = targetToken(target);
   const relatedValid = raw.relatedTokenIds && isValidRelatedSpan(target.sentence, target.tokenId, raw.relatedTokenIds);
+  const relatedSource = relatedValid ? relatedSourceText(target.sentence, raw.relatedTokenIds!) : null;
+  const relatedTranslation = relatedValid ? raw.relatedTranslation : null;
 
   return {
     partOfSpeech: raw.partOfSpeech,
     displayForm: token.text,
     translation: raw.translation,
     audioText: token.text,
+    hint: buildHint(relatedSource, relatedTranslation, raw),
     context: {
       source: target.sentence.text,
       translation: raw.contextTranslation,
       selectedSource: token.text,
       selectedTranslation: raw.translation,
-      relatedSource: relatedValid ? relatedSourceText(target.sentence, raw.relatedTokenIds!) : null,
-      relatedTranslation: relatedValid ? raw.relatedTranslation : null,
+      relatedSource,
+      relatedTranslation,
     },
   };
 }
 
-// Критерий приёмки хэндоффа: «в таблице текущая форма не выделена отдельным
-// цветом или плашкой». Промпт об этом просит, но модель устойчиво подсвечивает
-// именно кликнутую форму (наблюдалось на πήγε/αποφάσισαν/όμορφη/στην), поэтому
-// правило добивается детерминированно: подсветка строки, содержащей выбранное
-// слово, снимается на сервере.
-export function dropSelfHighlight(sections: DetailSection[], targetText: string): DetailSection[] {
-  const target = targetText.toLowerCase();
-  return sections.map((section) => {
-    if (section.type !== 'table' || section.highlightRow === null) return section;
-    const row = section.rows[section.highlightRow];
-    if (!row) return { ...section, highlightRow: null };
-    const marksTarget = row.some((cell) => cell.toLowerCase().split(/[^\p{L}\p{N}]+/u).includes(target));
-    return marksTarget ? { ...section, highlightRow: null } : section;
-  });
+// Строка-связка под переводом. Связанная фраза из самого предложения важнее
+// «другого значения» — она объясняет именно то, что человек сейчас читает.
+// Ярлык не приходит от модели (иначе он рано или поздно станет «Словарной
+// формой», которой тут быть не должно) — он выводится из того, какой слот занят.
+export function buildHint(
+  relatedSource: string | null,
+  relatedTranslation: string | null,
+  raw: Pick<RawSummaryResponse, 'otherMeaningSource' | 'otherMeaningTranslation'>,
+): AnnotationHint | null {
+  if (relatedSource && relatedTranslation) {
+    return { label: HINT_IN_SENTENCE, source: relatedSource, translation: relatedTranslation };
+  }
+  if (raw.otherMeaningSource && raw.otherMeaningTranslation) {
+    return { label: HINT_OTHER_MEANING, source: raw.otherMeaningSource, translation: raw.otherMeaningTranslation };
+  }
+  return null;
 }
 
 // Тир 2 — секции по запросу «Подробнее». Тяжелее — генерим только когда
@@ -313,7 +363,7 @@ export async function generateAnnotationDetails(
   apiKey: string,
   model: string,
 ): Promise<{ sections: DetailSection[] }> {
-  const { sections } = await callAnnotationModel<{ sections: DetailSection[] }>(
+  return callAnnotationModel(
     'annotation_details',
     DETAILS_SCHEMA,
     detailsSystemPrompt(languageConfig, sourceLanguage),
@@ -321,7 +371,6 @@ export async function generateAnnotationDetails(
     apiKey,
     model,
   );
-  return { sections: dropSelfHighlight(sections, targetToken(target).text) };
 }
 
 // Полный контент (оба тира сразу) — для CLI/офлайн-прогона, где урок

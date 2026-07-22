@@ -491,11 +491,42 @@
   font-size: 13px;
   color: var(--ink-faint);
 }
+/* Эталон: перевод — обычный тёмный текст, не акцентный и не жирный. Акцент в
+   шите зарезервирован за выбранным словом и интерактивом (§7: не строить
+   иерархию одновременно цветом, жирностью и плашкой). */
 .sheet-translation {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   font-size: 17px;
-  font-weight: 600;
-  color: var(--accent);
+  color: var(--ink);
+}
+
+/* Строка-связка: серый ярлык + «source → translation». */
+.sheet-hint {
+  margin: 14px 0 0;
+}
+.sheet-hint-label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.sheet-hint-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 3px 0 0;
+}
+.sheet-hint-row .foreign {
+  font-family: var(--font-article);
+  font-size: 16px;
+  color: var(--ink);
+}
+.sheet-hint-arrow {
+  color: var(--ink-faint);
+}
+.sheet-hint-row .native {
+  font-size: 15px;
+  color: var(--ink-soft);
 }
 .sheet-divider {
   border: none;
@@ -503,12 +534,14 @@
   margin: 16px 0;
 }
 /* Хэндофф §7 / критерии приёмки: никаких заголовков в CAPS внутри шита,
-   умеренное начертание вместо тяжёлого bold. */
+   умеренное начертание вместо тяжёлого bold. Размер и тёмный цвет — по
+   эталонным скриншотам: заголовок секции читается как заголовок, а не как
+   мелкая серая подпись. */
 .sheet-section-title {
-  font-size: 13.5px;
+  font-size: 16px;
   font-weight: 500;
-  color: var(--ink-soft);
-  margin: 0 0 8px;
+  color: var(--ink);
+  margin: 0 0 10px;
 }
 .sheet-body p {
   margin: 0 0 12px;
@@ -590,11 +623,15 @@ details.sheet-more .sheet-more-body p:last-child {
 .act-btn.primary:hover {
   opacity: 0.92;
 }
-.act-btn.ghost {
-  border-style: dashed;
-  color: var(--ink-faint);
-  background: transparent;
-  margin-left: auto;
+.act-btn.wide {
+  flex: 1;
+  justify-content: center;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+.act-btn.icon-only {
+  flex: 0 0 auto;
+  padding: 11px;
 }
 .act-btn.save.is-saved {
   color: var(--accent);
@@ -682,38 +719,45 @@ details.sheet-more .sheet-more-body p:last-child {
   border-radius: 4px;
   padding: 2px 2px;
 }
+/* grammarNote — закрывающая реплика обычным абзацем: в эталоне вокруг неё нет
+   плашки, это просто более тихий текст в конце. */
 .sheet-note {
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.55;
   color: var(--ink-soft);
-  background: var(--surface-2);
-  border-radius: 10px;
-  padding: 10px 12px;
   margin: 0;
 }
+/* «Подробнее» — две строки (тёмный заголовок + серая расшифровка) и шеврон
+   справа, без рамки: в эталоне это спокойная строка-раскрывашка, а не кнопка. */
 .sheet-more-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
   text-align: left;
-  border: 1px dashed var(--border);
+  border: none;
   background: transparent;
-  color: var(--accent);
-  font-size: 13.5px;
-  padding: 11px 14px;
-  border-radius: 10px;
+  color: var(--ink-soft);
+  padding: 14px 0 4px;
   cursor: pointer;
-  margin: 4px 0 6px;
 }
-.sheet-more-toggle:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.sheet-more-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sheet-more-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
 }
 .sheet-more-sub {
+  font-size: 13.5px;
   color: var(--ink-faint);
-  font-weight: 400;
+}
+.sheet-more-toggle:hover .sheet-more-title {
+  color: var(--accent);
 }
 /* Секции подробностей (тир 2, DetailSection[]) — раздел 4/7 хэндоффа: без
    заголовков в CAPS, без серых карточек вокруг таблиц, тонкие разделители. */
@@ -723,49 +767,50 @@ details.sheet-more .sheet-more-body p:last-child {
 .sheet-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-}
-.sheet-table th {
-  text-align: left;
-  font-weight: 500;
-  color: var(--ink-faint);
-  font-size: 12.5px;
-  padding: 0 10px 8px 0;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
+  font-size: 15px;
+  border-top: 1px solid var(--border);
 }
 .sheet-table td {
-  padding: 8px 10px 8px 0;
+  padding: 10px 12px 10px 0;
   border-bottom: 1px solid var(--border);
   color: var(--ink);
+  vertical-align: top;
 }
-.sheet-table tr:last-child td {
-  border-bottom: none;
+.sheet-table td:last-child {
+  padding-right: 0;
 }
-.sheet-table tr.is-highlighted td {
-  background: var(--accent-soft);
+/* Первая ячейка строки — ярлык («я», «сейчас / обычно»): в эталоне она серая
+   и мельче, потому что заголовков колонок нет и роль несёт сама строка. */
+.sheet-table-label {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+.sheet-table-note {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
 }
 .bilingual-pair {
-  padding: 8px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
 .bilingual-pair:last-child {
   border-bottom: none;
 }
-.bilingual-pair-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.bilingual-pair-head .foreign {
+.bilingual-pair .foreign {
   font-family: var(--font-article);
-  font-size: 15px;
+  font-size: 17px;
   color: var(--ink);
 }
 .bilingual-pair .native {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink-soft);
-  margin-top: 2px;
+  margin-top: 3px;
+}
+.bilingual-pair-note {
+  color: var(--ink-faint);
 }
 .sheet-toast {
   position: absolute;

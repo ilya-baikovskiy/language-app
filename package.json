@@ -10,7 +10,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "eval:alignment": "npx tsx --env-file-if-exists=.env evals/audio-alignment/scripts/runEval.ts",
-    "eval:alignment:preview": "node evals/audio-alignment/preview/server.mjs"
+    "eval:alignment:preview": "node evals/audio-alignment/preview/server.mjs",
+    "audit:annotations": "npx tsx scripts/audit-annotations.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",
