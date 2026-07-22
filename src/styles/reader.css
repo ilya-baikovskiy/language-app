@@ -456,10 +456,11 @@
   color: var(--accent);
   background: var(--accent-soft);
 }
+/* justify-content:space-between отправлял кнопку озвучки к правому краю, где
+   она висела оторванно от заголовка. Прижимаем к тексту. */
 .sheet-section-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 .sheet-section-row .sheet-section-title {

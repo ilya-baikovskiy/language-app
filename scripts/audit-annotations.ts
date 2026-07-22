@@ -102,6 +102,20 @@ function auditSummary(word: string, summary: AnnotationSummary): Finding[] {
     }
   }
 
+  // Подсветка внутри перевода ищет точное совпадение по границам слова, так что
+  // selectedTranslation обязан стоять в переводе предложения ровно в той форме,
+  // в какой он там употреблён. Ловилось: глосса «улицы» против «по улицам»,
+  // «красивая» против «красивый район» — подсветка молча пропадала.
+  const sel = summary.context.selectedTranslation;
+  if (sel && !summary.context.translation.toLowerCase().includes(sel.toLowerCase())) {
+    out.push({
+      severity: 'fail',
+      rule: 'подсветка находится в переводе предложения',
+      where: at,
+      detail: `"${sel}" нет в "${summary.context.translation}"`,
+    });
+  }
+
   // Связанная фраза обязана реально встречаться в предложении — иначе
   // подсветка в «В контексте» её не найдёт и слот будет висеть впустую.
   const related = summary.context.relatedSource;
@@ -158,6 +172,14 @@ function auditSections(word: string, sections: DetailSection[]): Finding[] {
           rule: 'строки таблицы одной ширины',
           where: at,
           detail: `ширины строк: ${[...widths].join(', ')}`,
+        });
+      }
+      if (section.rows.some((r) => r.length < 3)) {
+        out.push({
+          severity: 'warn',
+          rule: 'таблица в три колонки: ярлык, форма, перевод',
+          where: at,
+          detail: `ширина строки ${section.rows[0]?.length}: ${JSON.stringify(section.rows[0])}`,
         });
       }
       // Ключевое правило приёмки: у каждой строки с иноязычной формой должен

@@ -245,6 +245,9 @@ function AnnotationView({
       <hr className="sheet-divider" />
 
       <div className="sheet-body">
+        {/* Кнопка стоит вплотную к заголовку, а не улетает к правому краю:
+            прижатая к краю она читалась как отдельный плавающий элемент,
+            не связанный с блоком контекста. */}
         <div className="sheet-section-row">
           <p className="sheet-section-title">В контексте</p>
           <button

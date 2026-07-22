@@ -82,6 +82,7 @@ type RawSummaryResponse = {
   partOfSpeech: string | null;
   translation: string;
   contextTranslation: string;
+  selectedInTranslation: string;
   relatedTokenIds: string[] | null;
   relatedTranslation: string | null;
   otherMeaningSource: string | null;
@@ -94,6 +95,7 @@ const SUMMARY_SCHEMA = {
     partOfSpeech: { type: ['string', 'null'] },
     translation: { type: 'string' },
     contextTranslation: { type: 'string' },
+    selectedInTranslation: { type: 'string' },
     relatedTokenIds: { type: ['array', 'null'], items: { type: 'string' } },
     relatedTranslation: { type: ['string', 'null'] },
     otherMeaningSource: { type: ['string', 'null'] },
@@ -103,6 +105,7 @@ const SUMMARY_SCHEMA = {
     'partOfSpeech',
     'translation',
     'contextTranslation',
+    'selectedInTranslation',
     'relatedTokenIds',
     'relatedTranslation',
     'otherMeaningSource',
@@ -196,6 +199,13 @@ Rules:
   mechanism here — that belongs in details, not the summary.
 - contextTranslation: a natural, idiomatic ${sourceLanguage} translation of the WHOLE sentence — not
   a literal word-by-word rendering, and not a grammar explanation.
+- selectedInTranslation: copy the EXACT substring of contextTranslation that renders the tapped word,
+  character for character, INCLUDING its inflected ending as it stands in that sentence. It is used to
+  highlight the word inside the translated sentence, so it must occur verbatim in contextTranslation —
+  it is usually NOT identical to "translation" above. Example: if translation is "улицы" but
+  contextTranslation reads "гуляли по улицам", then selectedInTranslation is "улицам". If the word has
+  no separate ${sourceLanguage} word (a particle, an article that dissolves into the phrasing), copy
+  the single word that carries its meaning, or repeat "translation" if truly nothing matches.
 - partOfSpeech: a plain ${sourceLanguage} word for the part of speech ("глагол", "предлог"...), or null
   if not useful (e.g. a proper name).
 - relatedTranslation: natural ${sourceLanguage} translation of ONLY the related phrase, matching how it
@@ -212,8 +222,15 @@ Rules:
 function detailsSystemPrompt(languageConfig: LanguageConfig, sourceLanguage: string): string {
   return `You are a ${languageConfig.promptLanguageName}-language teaching assistant embedded in a reading app.
 A ${sourceLanguage}-speaking learner tapped "more" on a single word. The short meaning was already
-shown — do not repeat it. Return ONLY the sections that add genuinely new, useful knowledge about
-THIS word; most words need very few. An empty array is a correct answer for a trivial word.
+shown — do not repeat it. Build the small lesson this particular word deserves.
+
+How much to return depends on the word:
+- A VERB, NOUN or ADJECTIVE is worth a real walkthrough — typically 3-4 sections: how the form works,
+  a table of the forms that matter here, 2-3 example phrases, and a closing grammar line if a learner
+  would look it up. Do not stop after a single paragraph for these.
+- A function word (article, preposition, particle, conjunction, pronoun) usually needs 2-3: what it
+  does here, what it combines with, a couple of contrasting examples.
+- Only a proper name or something genuinely self-evident may return one section or none.
 
 Give every section a short, plain ${sourceLanguage} "title" (e.g. "Как это работает", "Формы
 прошедшего времени", "Полезно запомнить", "Два значения") — a null title is only acceptable for
@@ -223,10 +240,14 @@ Section types available — use whichever fit, in a sensible reading order:
 - "explanation": one focused point in plain ${sourceLanguage}, no jargon dump. Use this for "how this
   form works" (e.g. why this tense/case is used here). Usually the FIRST section, titled
   "Как это работает".
-- "table": rows of 2-3 cells; there is NO header row, so the first cell of each row must itself be the
-  label ("я", "ты", "сейчас / обычно", "вопрос", "причина"). EVERY row that shows a
-  ${languageConfig.promptLanguageName} form must also carry a ${sourceLanguage} cell translating it —
-  never a grid of bare forms (a singular/plural grid with no translation is NOT acceptable).
+- "table": there is NO header row, so use THREE cells per row, always in this order:
+  [label, ${languageConfig.promptLanguageName} form, ${sourceLanguage} translation].
+  The label names the slot, not the meaning ("я", "ты", "сейчас / обычно", "уже произошло",
+  "единственное число", "вопрос") — do not put the ${sourceLanguage} translation in the label cell and
+  leave the third out. Every row must keep the same three-cell shape, and no row may show a
+  ${languageConfig.promptLanguageName} form without its ${sourceLanguage} translation.
+  For a noun or adjective, write the ${languageConfig.promptLanguageName} form together with its
+  article when the language uses one (ο δρόμος, τον δρόμο, οι δρόμοι) — bare stems are harder to reuse.
   For a verb's tense comparison use the FIRST PERSON "я" consistently across all rows
   (e.g. πηγαίνω / πήγα / θα πάω = "я иду" / "я пошёл" / "я пойду"), never mixing persons.
   "note" is an optional short closing line under the table, e.g. pointing out how the forms look for a
@@ -328,11 +349,24 @@ export async function generateAnnotationBasic(
       source: target.sentence.text,
       translation: raw.contextTranslation,
       selectedSource: token.text,
-      selectedTranslation: raw.translation,
+      selectedTranslation: pickSelectedTranslation(raw),
       relatedSource,
       relatedTranslation,
     },
   };
+}
+
+// Что подсвечивать внутри ПЕРЕВОДА предложения. Раньше сюда клалась заголовочная
+// глосса, и подсветка молча не срабатывала везде, где русский склоняет слово:
+// глосса «улицы» против «гуляли по улицам», «красивая» против «красивый район».
+// Поэтому модель отдельно отдаёт форму из самого предложения, а мы проверяем,
+// что она там дословно есть, и только тогда ей верим.
+export function pickSelectedTranslation(
+  raw: Pick<RawSummaryResponse, 'contextTranslation' | 'selectedInTranslation' | 'translation'>,
+): string {
+  const inSentence = raw.selectedInTranslation?.trim();
+  if (inSentence && raw.contextTranslation.toLowerCase().includes(inSentence.toLowerCase())) return inSentence;
+  return raw.translation;
 }
 
 // Строка-связка под переводом. Связанная фраза из самого предложения важнее
