@@ -90,7 +90,11 @@ export function fetchAudioAlignment(
 // Клип отдельного слова/фразы для Bottom Sheet (не нарезка общей дорожки —
 // см. api/speak-unit.ts). provider обязателен и должен совпадать с
 // lesson.audioProvider, чтобы голос клипа не расходился с голосом урока.
-export function fetchUnitClip(text: string, language: LanguageCode, provider: AudioProvider): Promise<{ audioUrl: string }> {
+export function fetchUnitClip(
+  text: string,
+  language: LanguageCode,
+  provider: AudioProvider,
+): Promise<{ audioUrl: string; audioBase64?: string }> {
   return postJson('/api/speak-unit', { text, language, provider });
 }
 

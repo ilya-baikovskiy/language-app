@@ -5,7 +5,7 @@ import { useSentenceTranslations } from '../hooks/useSentenceTranslations';
 import { useSavedUnits } from '../hooks/useSavedUnits';
 import { useNarration } from '../hooks/useNarration';
 import { useUnitPronunciation } from '../hooks/useUnitPronunciation';
-import { orderedWordTokenIds } from '../lib/lessonText';
+import { findTokenText, orderedWordTokenIds, resolveAnnotationTarget } from '../lib/lessonText';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import type { Lesson } from '../types/lesson';
 import { ReaderHeader } from './ReaderHeader';
@@ -63,8 +63,17 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
     (tokenId: string, annotationId: string | null) => {
       narration.inspectToken(tokenId);
       setSelection({ selectedTokenId: tokenId, selectedAnnotationId: annotationId, isSheetOpen: true });
+
+      // Прогрев клипа произношения сразу при выборе — раньше, чем придёт
+      // ответ AI-объяснения (см. useUnitPronunciation.prefetch). Текст —
+      // ровно тот, что позже окажется в a.displayText/selection.word, поэтому
+      // берём его синхронно из уже сохранённого урока, не дожидаясь сети:
+      // фраза целиком через resolveAnnotationTarget (тот же source of truth,
+      // что и useSelectedAnnotation), одиночный токен — через findTokenText.
+      const prefetchText = annotationId ? resolveAnnotationTarget(lesson, annotationId)?.displayText : findTokenText(lesson, tokenId);
+      if (prefetchText) unitPronunciation.prefetch(prefetchText);
     },
-    [narration],
+    [narration, lesson, unitPronunciation],
   );
 
   const closeSheet = useCallback(() => {
@@ -85,6 +94,11 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
   // на нарезку дорожки урока, если клип не получился (сеть/квота). Нарезка
   // сработает только для текста, который дословно есть в уроке — для форм/
   // разборов фраз (их в аудио нет вообще) сработает только клип.
+  //
+  // Решение по итогам A/B (см. PROGRESS.md): даже с точными границами токенов
+  // (edge-snap фикс) нарезка звучит хуже клипа — коартикуляция соседних слов
+  // никакой точностью таймингов не лечится, это свойство слитной речи, не
+  // ошибка данных. Клип — постоянное решение, не временный вариант.
   const handleSpeakUnit = useCallback(
     (text: string, onError?: (error: Error) => void, contextText?: string) => {
       unitPronunciation.speak(text, () => narration.speakSelection(text, onError, contextText));

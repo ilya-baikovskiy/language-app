@@ -10,8 +10,16 @@ export type VoiceConfig = {
   openaiVoice: string;
   /** Голос ElevenLabs (premade voice_id), перекрывается env ELEVENLABS_VOICE_ID. */
   elevenLabsVoiceId: string;
-  /** Модель ElevenLabs TTS — multilingual нужна, чтобы голос говорил не по-английски. */
+  /** Модель ElevenLabs TTS для озвучки урока целиком — multilingual нужна, чтобы голос говорил не по-английски. */
   elevenLabsModelId: string;
+  /**
+   * Модель ElevenLabs для отдельных клипов слов/фраз (Bottom Sheet) —
+   * eleven_flash_v2_5, ~75мс латентности вместо секунд у multilingual_v2.
+   * Для урока целиком не подходит: там важнее качество/просодия, а сам вызов
+   * и так один на весь урок, не на каждый клик — латентность там не так
+   * чувствуется.
+   */
+  elevenLabsClipModelId: string;
   /**
    * Базовый темп речи ElevenLabs (voice_settings.speed, диапазон 0.7–1.2).
    * Это не пост-обработка time-stretch (как отклонённый числовой speed у
@@ -42,6 +50,11 @@ export type LanguageConfig = {
 // временный дефолт, а не оставляем язык вовсе без конфигурации.
 const FALLBACK_ELEVENLABS_VOICE_ID = 'XrExE9yKIg1WjnnlVkGX'; // Matilda
 const FALLBACK_ELEVENLABS_MODEL_ID = 'eleven_multilingual_v2';
+// eleven_flash_v2_5 — ~75мс латентности (ElevenLabs), поддерживает все наши
+// языки (fr/de/en/el в списке 32 поддерживаемых). Рекомендован самим
+// ElevenLabs для интерактивных сценариев — используется только для клипов
+// отдельных слов/фраз, не для урока целиком.
+const FALLBACK_ELEVENLABS_CLIP_MODEL_ID = 'eleven_flash_v2_5';
 
 export const LANGUAGE_CONFIGS: Record<LanguageCode, LanguageConfig> = {
   fr: {
@@ -57,6 +70,7 @@ export const LANGUAGE_CONFIGS: Record<LanguageCode, LanguageConfig> = {
       // (см. scripts/generate-audio-sample.mjs).
       elevenLabsVoiceId: FALLBACK_ELEVENLABS_VOICE_ID,
       elevenLabsModelId: FALLBACK_ELEVENLABS_MODEL_ID,
+      elevenLabsClipModelId: FALLBACK_ELEVENLABS_CLIP_MODEL_ID,
       elevenLabsSpeed: 0.8,
     },
   },
@@ -71,6 +85,7 @@ export const LANGUAGE_CONFIGS: Record<LanguageCode, LanguageConfig> = {
       openaiVoice: 'marin',
       elevenLabsVoiceId: FALLBACK_ELEVENLABS_VOICE_ID,
       elevenLabsModelId: FALLBACK_ELEVENLABS_MODEL_ID,
+      elevenLabsClipModelId: FALLBACK_ELEVENLABS_CLIP_MODEL_ID,
       elevenLabsSpeed: 0.8,
     },
   },
@@ -85,6 +100,7 @@ export const LANGUAGE_CONFIGS: Record<LanguageCode, LanguageConfig> = {
       openaiVoice: 'marin',
       elevenLabsVoiceId: FALLBACK_ELEVENLABS_VOICE_ID,
       elevenLabsModelId: FALLBACK_ELEVENLABS_MODEL_ID,
+      elevenLabsClipModelId: FALLBACK_ELEVENLABS_CLIP_MODEL_ID,
       elevenLabsSpeed: 0.9,
     },
   },
@@ -99,6 +115,7 @@ export const LANGUAGE_CONFIGS: Record<LanguageCode, LanguageConfig> = {
       openaiVoice: 'marin',
       elevenLabsVoiceId: FALLBACK_ELEVENLABS_VOICE_ID,
       elevenLabsModelId: FALLBACK_ELEVENLABS_MODEL_ID,
+      elevenLabsClipModelId: FALLBACK_ELEVENLABS_CLIP_MODEL_ID,
       elevenLabsSpeed: 0.8,
     },
   },

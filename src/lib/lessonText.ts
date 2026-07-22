@@ -47,6 +47,20 @@ export function findTokenAtOffset(spans: TokenSpan[], offset: number): TokenSpan
   return spans.find((s) => offset >= s.start && offset < s.end) ?? spans.find((s) => s.start >= offset);
 }
 
+// Текст одного токена по id — для прогрева клипа произношения сразу при
+// выборе слова (useUnitPronunciation.prefetch в ReaderPage), раньше, чем
+// придёт ответ AI-объяснения (см. resolveAnnotationTarget — тот же паттерн
+// для фраз, эта функция — для одиночного токена, когда annotationId ещё нет).
+export function findTokenText(lesson: Lesson, tokenId: string): string | null {
+  for (const paragraph of lesson.paragraphs) {
+    for (const sentence of paragraph.sentences) {
+      const token = sentence.tokens.find((t) => t.id === tokenId);
+      if (token) return token.text;
+    }
+  }
+  return null;
+}
+
 export function firstWordTokenId(lesson: Lesson): string | null {
   for (const paragraph of lesson.paragraphs) {
     for (const sentence of paragraph.sentences) {

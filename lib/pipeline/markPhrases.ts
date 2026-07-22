@@ -3,27 +3,83 @@
 // см. AI_PIPELINE.md). Отдаёт только границы (id токенов), без контента —
 // контент генерирует шаг 5 (generateAnnotations.ts) уже поверх этих групп.
 
-import type { LanguageConfig } from './languageConfig.js';
+import type { LanguageConfig, LanguageCode } from './languageConfig.js';
 import type { Paragraph, Sentence } from '../../src/types/lesson.js';
 
 export type PhraseGroup = { tokenIds: string[] };
 
-const SYSTEM_PROMPT = (languageName: string) => `You are analyzing a ${languageName} sentence to
+// Примеры — язык-специфичные, не просто переведённые французские. Прежняя
+// версия промпта показывала модели ТОЛЬКО французские примеры независимо от
+// языка урока (даже когда языковое название в шапке подставлялось верно) —
+// на греческом это давало сверхгруппировку: модель склеивала "Μετά το φαγητό"
+// (предлог+артикль+существительное — обычная составная конструкция, прямо
+// запрещённый случай "article+noun") и "πήγαν σε" (глагол+предлог, но предлог
+// тут вполне прозрачный, не "неочевидная" часть смысла, как того требует
+// правило) — то есть не следовала собственным критериям на языке, для
+// которого не видела ни одного релевантного примера. Каждый язык теперь
+// получает свой набор, отражающий его реальную грамматику (например, у
+// немецкого это отделяемые приставки глаголов — прямой аналог "неочевидного
+// предлога", у греческого — безличные конструкции вроде "μου αρέσει").
+type PhraseExamples = {
+  idiomatic: string;
+  verbParticle: string;
+  compoundTense: string;
+  compoundPreposition: string;
+  doNotGroupExample: string;
+};
+
+const EXAMPLES_BY_LANGUAGE: Record<LanguageCode, PhraseExamples> = {
+  fr: {
+    idiomatic: '"avoir besoin de" (need), "le cœur léger" (light-hearted)',
+    verbParticle: '"décider de" (decide to), "commencer à" (start to)',
+    compoundTense: '"s\'est assise", "se sont mises" (reflexive verb + auxiliary)',
+    compoundPreposition: '"près de" (near), "le long de" (along)',
+    doNotGroupExample: '"le chat" (article + noun — obvious, do not group)',
+  },
+  de: {
+    idiomatic: '"es gibt" (there is/are, lit. "it gives"), "Lust haben" (feel like, lit. "have desire")',
+    verbParticle:
+      'separable verbs, where the prefix is split off and moved to the end of the clause — ' +
+      '"aufstehen" appearing as "steht … auf" ("Sie steht früh auf" = she gets up early); ' +
+      'also "warten auf" (wait for)',
+    compoundTense: '"hat sich gesetzt" (sat down — reflexive verb + auxiliary)',
+    compoundPreposition: '"in der Nähe von" (near)',
+    doNotGroupExample: '"das Essen" (article + noun — obvious, do not group)',
+  },
+  en: {
+    idiomatic: '"kick the bucket" (die)',
+    verbParticle: 'phrasal verbs — "look forward to", "give up", "run into" (meet by chance)',
+    compoundTense: '"has given up" (auxiliary + participle, incl. phrasal verb)',
+    compoundPreposition: '"in front of", "because of"',
+    doNotGroupExample: '"the food" (article + noun — obvious, do not group)',
+  },
+  el: {
+    idiomatic: '"έχω δίκιο" (be right, lit. "have right"), "μου αρέσει" (I like — impersonal, non-compositional)',
+    verbParticle: '"νοιάζομαι για" (care about), "εξαρτάται από" (depend on)',
+    compoundTense: '"έχει φύγει" (has left — auxiliary + participle)',
+    compoundPreposition: '"εκτός από" (except for/apart from)',
+    doNotGroupExample: '"το φαγητό" (article + noun — obvious, do not group)',
+  },
+};
+
+const SYSTEM_PROMPT = (languageConfig: LanguageConfig) => {
+  const ex = EXAMPLES_BY_LANGUAGE[languageConfig.code];
+  return `You are analyzing a ${languageConfig.promptLanguageName} sentence to
 find word groups that should be explained together as a single unit for a language learner,
 rather than word-by-word.
 
 Group tokens together ONLY when they form:
-- a fixed/idiomatic expression (e.g. "avoir besoin de", "le cœur léger")
-- a verb + its required preposition, when the preposition is an integral, non-obvious part of the
-  meaning (e.g. "décider de", "commencer à")
-- a reflexive/pronominal verb together with its auxiliary in a compound tense (e.g. "s'est assise",
-  "se sont mises")
-- a compound preposition (e.g. "près de", "le long de")
+- a fixed/idiomatic expression (e.g. ${ex.idiomatic})
+- a verb + its required preposition/particle, when it is an integral, non-obvious part of the
+  meaning (e.g. ${ex.verbParticle})
+- a verb together with its auxiliary in a compound tense (e.g. ${ex.compoundTense})
+- a compound preposition (e.g. ${ex.compoundPreposition})
 
 Do NOT group:
 - a verb with its direct object — that is ordinary syntax, not a fixed unit
-- an article with its noun
-- anything whose meaning is already obvious word-by-word
+- an article with its noun (e.g. ${ex.doNotGroupExample})
+- anything whose meaning is already obvious word-by-word, even if the words are adjacent and one of
+  them is a preposition — a preposition next to a word is not by itself a reason to group
 
 Rules:
 - A group must be made of CONSECUTIVE tokens, in the given order, by id.
@@ -32,6 +88,7 @@ Rules:
 - Most sentences will have zero or very few groups — that is expected. Return an empty array if
   nothing in this sentence deserves grouping. Do not force a group to justify the call.
 - Output strictly the JSON object per the schema — no prose outside it.`;
+};
 
 const RESPONSE_SCHEMA = {
   type: 'object',
@@ -80,7 +137,7 @@ Tokens (in order): ${JSON.stringify(wordTokens)}`;
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT(languageConfig.promptLanguageName) },
+        { role: 'system', content: SYSTEM_PROMPT(languageConfig) },
         { role: 'user', content: userPrompt },
       ],
       response_format: {

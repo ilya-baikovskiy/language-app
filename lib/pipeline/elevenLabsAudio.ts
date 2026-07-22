@@ -85,7 +85,7 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
 // Голос берётся из LanguageConfig (единственная точка знания про язык), но
 // перекрывается ELEVENLABS_VOICE_ID — так голос можно менять без деплоя, пока
 // идёт подбор на слух.
-function resolveVoiceId(languageConfig: LanguageConfig): string {
+export function resolveVoiceId(languageConfig: LanguageConfig): string {
   return process.env.ELEVENLABS_VOICE_ID || languageConfig.voices.elevenLabsVoiceId;
 }
 
@@ -97,16 +97,18 @@ function alignmentToCharacters(alignment: WithTimestampsResponse['alignment']): 
   }));
 }
 
-// Короткий клип для отдельного слова/фразы (Bottom Sheet) — та же функция TTS
-// с тем же голосом/темпом, что и весь урок, БЕЗ таймингов (они тут не нужны,
-// проигрывается целиком). Используется api/speak-unit.ts.
+// Короткий клип для отдельного слова/фразы (Bottom Sheet) — тот же голос/темп,
+// что и весь урок, но БЫСТРАЯ модель (elevenLabsClipModelId — eleven_flash_v2_5,
+// ~75мс латентности вместо секунд у multilingual_v2): здесь важна скорость
+// ответа на клик, не просодия длинного текста, — и таймингов тут не нужно,
+// проигрывается целиком. Используется api/speak-unit.ts.
 export async function generateSpeechElevenLabs(text: string, languageConfig: LanguageConfig, apiKey: string): Promise<Buffer> {
   const res = await fetchWithTimeout(`${TTS_ENDPOINT}/${resolveVoiceId(languageConfig)}`, {
     method: 'POST',
     headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
     body: JSON.stringify({
       text,
-      model_id: languageConfig.voices.elevenLabsModelId,
+      model_id: languageConfig.voices.elevenLabsClipModelId,
       voice_settings: { stability: 0.5, similarity_boost: 0.75, speed: languageConfig.voices.elevenLabsSpeed },
     }),
   });

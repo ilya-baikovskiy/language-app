@@ -8,8 +8,8 @@
 import { put, list } from '@vercel/blob';
 import { createHash } from 'node:crypto';
 import { generateSpeech } from '../lib/pipeline/generateAudio.js';
-import { generateSpeechElevenLabs } from '../lib/pipeline/elevenLabsAudio.js';
-import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
+import { generateSpeechElevenLabs, resolveVoiceId } from '../lib/pipeline/elevenLabsAudio.js';
+import { getLanguageConfig, type LanguageCode, type LanguageConfig } from '../lib/pipeline/languageConfig.js';
 import type { AudioProvider } from '../src/types/lesson.js';
 
 export const maxDuration = 30;
@@ -18,8 +18,23 @@ export const maxDuration = 30;
 // сюда прилетать не должен ни по UX, ни по стоимости кэш-промаха.
 const MAX_TEXT_LENGTH = 80;
 
-function clipPathname(provider: AudioProvider, language: LanguageCode, text: string): string {
-  const hash = createHash('sha256').update(`${provider}|${language}|${text}`).digest('hex');
+// Единая точка: какими именно параметрами озвучен клип — используется и для
+// самой генерации, и для ключа кэша, чтобы они не могли разъехаться (иначе
+// смена модели/голоса тихо не подействует — старый клип продолжит отдаваться
+// из кэша, ключ которого о смене ничего не знает).
+function resolveClipVoiceParams(provider: AudioProvider, languageConfig: LanguageConfig): { voiceId: string; modelId: string; speed: number } {
+  if (provider === 'elevenlabs') {
+    return {
+      voiceId: resolveVoiceId(languageConfig),
+      modelId: languageConfig.voices.elevenLabsClipModelId,
+      speed: languageConfig.voices.elevenLabsSpeed,
+    };
+  }
+  return { voiceId: languageConfig.voices.openaiVoice, modelId: 'gpt-4o-mini-tts', speed: 1 };
+}
+
+function clipPathname(provider: AudioProvider, language: LanguageCode, text: string, voiceId: string, modelId: string, speed: number): string {
+  const hash = createHash('sha256').update(`${provider}|${language}|${voiceId}|${modelId}|${speed}|${text}`).digest('hex');
   return `clips/${provider}/${language}/${hash}.mp3`;
 }
 
@@ -37,7 +52,8 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const languageConfig = getLanguageConfig(language);
-    const pathname = clipPathname(provider, language, text);
+    const { voiceId, modelId, speed } = resolveClipVoiceParams(provider, languageConfig);
+    const pathname = clipPathname(provider, language, text, voiceId, modelId, speed);
 
     const existing = await list({ prefix: pathname, limit: 1 });
     if (existing.blobs.length > 0) {
@@ -62,7 +78,14 @@ export async function POST(request: Request): Promise<Response> {
       allowOverwrite: true,
     });
 
-    return Response.json({ audioUrl: blob.url });
+    // На промахе кэша дополнительно отдаём сами байты — клиент проигрывает их
+    // напрямую (Blob URL в браузере), не делая отдельный GET по audioUrl
+    // после этого ответа. На попадании в кэш это не нужно: та же ссылка уже
+    // могла быть в браузерном HTTP-кэше с прошлого раза, лишний трафик того
+    // не стоит. Загрузка в Blob по-прежнему ждётся (await) — если делать
+    // fire-and-forget, serverless-функция может быть остановлена раньше, чем
+    // запись в Blob завершится, и кэш на будущее тихо не появится.
+    return Response.json({ audioUrl: blob.url, audioBase64: audioBuffer.toString('base64') });
   } catch (err) {
     return new Response(err instanceof Error ? err.message : String(err), { status: 500 });
   }
