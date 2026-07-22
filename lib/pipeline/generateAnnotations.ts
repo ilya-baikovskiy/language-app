@@ -225,9 +225,21 @@ A ${sourceLanguage}-speaking learner tapped "more" on a single word. The short m
 shown — do not repeat it. Build the small lesson this particular word deserves.
 
 How much to return depends on the word:
-- A VERB, NOUN or ADJECTIVE is worth a real walkthrough — typically 3-4 sections: how the form works,
-  a table of the forms that matter here, 2-3 example phrases, and a closing grammar line if a learner
-  would look it up. Do not stop after a single paragraph for these.
+- A VERB gets this four-part structure (a fixed pattern learners rely on — skip a part only when it
+  truly does not apply to this verb or language, never reorder it):
+  1. "explanation" titled "Как это работает": 1-2 sentences on what this exact form means here, and
+     name the dictionary/citation form ("Базовая форма: αποφασίζω") the learner would look up.
+  2. "table" — FIRST PERSON "я" only, one row per tense/aspect this language grammatically
+     distinguishes (present, imperfect, aorist/perfective past, future, ...; see the table rules below
+     for language-specific detail). Title it something like "Все формы" or "Времена и виды".
+  3. "table" — the person paradigm (я/ты/он-она/мы/вы/они) in the SAME tense/aspect the clicked word
+     is actually in (not a different, more "default" one) — title it after that tense, e.g.
+     "Формы аориста" or "Спряжение в имперфекте".
+  4. "bilingualPairs", ONLY if this verb has a genuinely fixed or non-obvious preposition/case it
+     combines with — 2-3 verb+preposition examples with translations. Skip this part entirely for a
+     verb with no notable combination; never invent one to fill the slot.
+- A NOUN or ADJECTIVE is worth a real walkthrough too — typically 2-3 sections: how the form works, a
+  table of the forms that matter here (declension/gender/number as applicable), 2-3 example phrases.
 - A function word (article, preposition, particle, conjunction, pronoun) usually needs 2-3: what it
   does here, what it combines with, a couple of contrasting examples.
 - Only a proper name or something genuinely self-evident may return one section or none.
@@ -248,10 +260,27 @@ Section types available — use whichever fit, in a sensible reading order:
   ${languageConfig.promptLanguageName} form without its ${sourceLanguage} translation.
   For a noun or adjective, write the ${languageConfig.promptLanguageName} form together with its
   article when the language uses one (ο δρόμος, τον δρόμο, οι δρόμοι) — bare stems are harder to reuse.
-  For a verb's tense comparison use the FIRST PERSON "я" consistently across all rows
-  (e.g. πηγαίνω / πήγα / θα πάω = "я иду" / "я пошёл" / "я пойду"), never mixing persons.
-  "note" is an optional short closing line under the table, e.g. pointing out how the forms look for a
-  different person — null when not needed.
+
+  A table compares along exactly ONE axis — either different persons (all in the same tense/aspect),
+  or different tenses/aspects (all in the same person), never both at once.
+
+  For a verb's tense/aspect table, hold the person fixed at FIRST PERSON "я" for EVERY row and put
+  ONLY the tense/aspect name in the label ("настоящее", "имперфект", "аорист", "будущее совершенное")
+  — never write a person word ("я", "мы"...) in this kind of table's label at all, and never append a
+  parenthetical like "я (прошедшее)" to smuggle a second axis back in disguised as one row. List ALL
+  tense/aspect forms this language grammatically distinguishes for "я" — not just two. For Greek that
+  is typically up to five rows: imperfective present (πηγαίνω), imperfective past (πήγαινα), perfective
+  past/aorist (πήγα), imperfective future (θα πηγαίνω), perfective future (θα πάω) — include a row only
+  for a form that genuinely exists and differs from the others; do not pad with a form that doesn't
+  exist for this verb. Other languages have their own tense system (French présent/imparfait/passé
+  composé/futur, German Präsens/Präteritum/Perfekt/Futur, English present/past/perfect/future) — cover
+  what that language actually distinguishes, do not force a foreign scheme onto it.
+
+  A person-comparison table (verb structure part 3, or for a noun/adjective when genuinely useful) is
+  the opposite shape: the label IS a person word ("я", "ты", "он / она", "мы", "вы", "они"), one row
+  each, all in the SAME already-fixed tense/aspect — do not add anything else to those labels either.
+
+  "note" is an optional short closing line under the table — null when not needed.
 - "bilingualPairs": 2-4 short ${languageConfig.promptLanguageName} examples with idiomatic (never
   mechanically literal) ${sourceLanguage} translations — similar constructions, not random sentences.
   Each pair may carry a short "note" (e.g. "мужской род") — null when not useful.
