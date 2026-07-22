@@ -5,7 +5,7 @@ import { useSentenceTranslations } from '../hooks/useSentenceTranslations';
 import { useSavedUnits } from '../hooks/useSavedUnits';
 import { useNarration } from '../hooks/useNarration';
 import { useUnitPronunciation } from '../hooks/useUnitPronunciation';
-import { findTokenText, orderedWordTokenIds, resolveAnnotationTarget } from '../lib/lessonText';
+import { findTokenText, orderedWordTokenIds } from '../lib/lessonText';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import type { Lesson } from '../types/lesson';
 import { ReaderHeader } from './ReaderHeader';
@@ -15,13 +15,11 @@ import { ExplanationSheet } from './ExplanationSheet';
 
 type SelectionState = {
   selectedTokenId: string | null;
-  selectedAnnotationId: string | null;
   isSheetOpen: boolean;
 };
 
 const INITIAL_SELECTION: SelectionState = {
   selectedTokenId: null,
-  selectedAnnotationId: null,
   isSheetOpen: false,
 };
 
@@ -57,20 +55,18 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
     retry: retryAnnotation,
     loadDetails,
     retryDetails,
-  } = useSelectedAnnotation(lesson, selection.selectedTokenId, selection.selectedAnnotationId);
+  } = useSelectedAnnotation(lesson, selection.selectedTokenId);
 
-  const handleSelectGroup = useCallback(
-    (tokenId: string, annotationId: string | null) => {
+  // Bottom Sheet v2 — каждый токен кликабелен сам по себе, annotation.id ===
+  // token.id (нет больше отдельного annotationId группы). Текст для прогрева
+  // клипа (см. useUnitPronunciation.prefetch) — просто text самого токена:
+  // audioText в объяснении всегда равен ему же, гадать по AI-ответу не нужно.
+  const handleSelectToken = useCallback(
+    (tokenId: string) => {
       narration.inspectToken(tokenId);
-      setSelection({ selectedTokenId: tokenId, selectedAnnotationId: annotationId, isSheetOpen: true });
+      setSelection({ selectedTokenId: tokenId, isSheetOpen: true });
 
-      // Прогрев клипа произношения сразу при выборе — раньше, чем придёт
-      // ответ AI-объяснения (см. useUnitPronunciation.prefetch). Текст —
-      // ровно тот, что позже окажется в a.displayText/selection.word, поэтому
-      // берём его синхронно из уже сохранённого урока, не дожидаясь сети:
-      // фраза целиком через resolveAnnotationTarget (тот же source of truth,
-      // что и useSelectedAnnotation), одиночный токен — через findTokenText.
-      const prefetchText = annotationId ? resolveAnnotationTarget(lesson, annotationId)?.displayText : findTokenText(lesson, tokenId);
+      const prefetchText = findTokenText(lesson, tokenId);
       if (prefetchText) unitPronunciation.prefetch(prefetchText);
     },
     [narration, lesson, unitPronunciation],
@@ -112,9 +108,9 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
     if (!savedAnnotation) return;
     toggleSave({
       lessonId: lesson.id,
-      annotationId: savedAnnotation.id,
-      displayText: savedAnnotation.displayText,
-      shortTranslation: savedAnnotation.shortTranslation,
+      tokenId: savedAnnotation.id,
+      displayText: savedAnnotation.summary.displayForm,
+      shortTranslation: savedAnnotation.summary.translation,
     });
   }, [savedAnnotation, lesson.id, toggleSave]);
 
@@ -157,10 +153,9 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
 
       <ArticleContent
         lesson={lesson}
-        selectedAnnotationId={selection.selectedAnnotationId}
         selectedTokenId={selection.selectedTokenId}
         activeTokenId={SPEAKING_STATUSES.has(narration.playbackStatus) ? narration.activeTokenId : null}
-        onSelectGroup={handleSelectGroup}
+        onSelectToken={handleSelectToken}
         translationMode={translationMode}
         translations={translations}
         onRetryTranslation={retryTranslation}

@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import type { SheetSelection } from '../hooks/useSelectedAnnotation';
-import type { Annotation, BreakdownPart, FormPair } from '../types/lesson';
-import { ExampleList } from './ExampleList';
+import type { Annotation, DetailSection } from '../types/lesson';
 
 type SpeakFn = (text: string, onError?: (error: Error) => void, contextText?: string) => void;
 type IsLoadingFn = (text: string) => boolean;
@@ -27,13 +26,13 @@ type Props = {
   onToggleSave: () => void;
 };
 
-// Раздел 6.4 и 11 ТЗ. Контент не размонтируется при закрытии (иначе во время
-// анимации сворачивания панель на миг станет пустой) — только isOpen переключает
-// видимость через CSS-класс.
+// Bottom Sheet v2 (см. AI_PIPELINE.md, greek-bottom-sheet-handoff/). Контент не
+// размонтируется при закрытии (иначе во время анимации сворачивания панель на
+// миг станет пустой) — только isOpen переключает видимость через CSS-класс.
 //
-// Двухтировый контент (CLAUDE.md/PROGRESS.md): Уровень 1 (базовое — что значит
-// ЗДЕСЬ, без грамматических терминов) виден сразу; грамматика и формы (тир 2)
-// прячутся за «Подробнее» и догружаются лениво (onLoadDetails).
+// Двухтировый контент: короткое summary (что значит ЗДЕСЬ, без грамматических
+// терминов) виден сразу; типизированные секции details (тир 2) прячутся за
+// «Подробнее» и догружаются лениво (onLoadDetails).
 export function ExplanationSheet({
   selection,
   isOpen,
@@ -54,8 +53,8 @@ export function ExplanationSheet({
 
   const annotationId = selection?.kind === 'annotation' ? selection.annotation.id : null;
 
-  // Смена слова/фразы — сбрасываем локальное «Подробнее» и тост, чтобы новая
-  // панель открывалась в свёрнутом виде.
+  // Смена слова — сбрасываем локальное «Подробнее» и тост, чтобы новая панель
+  // открывалась в свёрнутом виде (раздел 2 хэндоффа, п.6).
   useEffect(() => {
     setExpanded(false);
     setToast(null);
@@ -150,32 +149,6 @@ export function ExplanationSheet({
                 </div>
               </>
             )}
-
-            {selection?.kind === 'fallback' && (
-              <>
-                <div className="sheet-top">
-                  <div className="sheet-head-row">
-                    <div className="sheet-head">{selection.word}</div>
-                    <UnitSpeakerButton
-                      text={selection.word}
-                      contextText={selection.sentenceText}
-                      onSpeakUnit={onSpeakUnit}
-                      isUnitLoading={isUnitLoading}
-                      onPlaybackError={showPlaybackErrorToast}
-                      label="Прослушать"
-                    />
-                  </div>
-                  <CloseButton onClose={onClose} />
-                </div>
-
-                <hr className="sheet-divider" />
-
-                <div className="sheet-body">
-                  <p>Встречается в предложении: «{selection.sentenceText}»</p>
-                  <p className="fallback-note">Подробное объяснение пока не добавлено.</p>
-                </div>
-              </>
-            )}
           </div>
 
           {toast && (
@@ -234,125 +207,73 @@ function AnnotationView({
   onMore,
   onRetryDetails,
 }: AnnotationViewProps) {
-  const a = selection.annotation;
-  const unitLabel = getUnitLabel(a);
+  const { summary } = selection.annotation;
+  const { context } = summary;
 
   return (
     <>
       <div className="sheet-top">
         <div>
+          {summary.partOfSpeech && <p className="sheet-pos">{summary.partOfSpeech}</p>}
           <div className="sheet-head-row">
-            <div className="sheet-head">{a.displayText}</div>
+            <div className="sheet-head">{summary.displayForm}</div>
             <UnitSpeakerButton
-              text={a.displayText}
+              text={summary.audioText}
               contextText={selection.sentenceText}
               onSpeakUnit={onSpeakUnit}
               isUnitLoading={isUnitLoading}
               onPlaybackError={onPlaybackError}
-              label="Прослушать"
+              label={`Прослушать ${summary.audioText}`}
             />
-            <span className="sheet-unit-label">{unitLabel}</span>
           </div>
-          {a.pronunciation && <p className="sheet-pron">{a.pronunciation}</p>}
         </div>
         <CloseButton onClose={onClose} />
       </div>
 
-      {/* Старые аннотации без baseForm показывают lemma-строку как запасной вариант. */}
-      {!a.baseForm && (
-        <p className="sheet-lemma">
-          от <b>{a.lemma}</b>
-          {a.partOfSpeech && <span className="sheet-tag">{a.partOfSpeech}</span>}
-        </p>
-      )}
+      <p className="sheet-translation">{summary.translation}</p>
 
-      <p className="sheet-translation">{a.shortTranslation}</p>
+      {context.relatedSource && (
+        <div className="sheet-related">
+          <p className="sheet-related-source">{highlightTarget(context.relatedSource, summary.displayForm)}</p>
+          {context.relatedTranslation && (
+            <p className="sheet-related-translation">{highlightTarget(context.relatedTranslation, summary.translation)}</p>
+          )}
+        </div>
+      )}
 
       <hr className="sheet-divider" />
 
       <div className="sheet-body">
         <div className="sheet-section-row">
-          <p className="sheet-section-title">В этом предложении</p>
+          <p className="sheet-section-title">В контексте</p>
           <button
             className="icon-btn-sm"
             type="button"
             aria-label="Прослушать предложение"
-            onClick={() => onSpeak(selection.sentenceText, onPlaybackError)}
+            onClick={() => onSpeak(context.source, onPlaybackError)}
           >
             <SpeakerIcon />
           </button>
         </div>
-        <p className="sheet-sentence">{highlightTarget(selection.sentenceText, a.displayText)}</p>
-        <p>{a.contextualMeaning}</p>
+        <p className="sheet-sentence">{highlightContext(context.source, context.selectedSource, context.relatedSource)}</p>
+        <p className="sheet-context-translation">
+          {highlightContext(context.translation, context.selectedTranslation, context.relatedTranslation)}
+        </p>
       </div>
 
-      {(a.baseForm || a.formInText) && (
-        <div className="sheet-body sheet-forms">
-          {a.baseForm && (
-            <FormLine label="Базовая форма" pair={a.baseForm} onSpeakUnit={onSpeakUnit} isUnitLoading={isUnitLoading} onPlaybackError={onPlaybackError} />
-          )}
-          {a.formInText && (
-            <FormLine label="Форма в тексте" pair={a.formInText} onSpeakUnit={onSpeakUnit} isUnitLoading={isUnitLoading} onPlaybackError={onPlaybackError} />
-          )}
-        </div>
-      )}
-
-      {a.type === 'phrase' && a.beginnerBreakdown && a.beginnerBreakdown.length > 0 && (
-        <div className="sheet-body">
-          <p className="sheet-section-title">Разберём по частям</p>
-          {a.beginnerBreakdown.map((part: BreakdownPart) => (
-            <div className="breakdown-part" key={part.text}>
-              <div className="breakdown-part-head">
-                <span className="fr">{part.text}</span>
-                <UnitSpeakerButton
-                  text={part.text}
-                  onSpeakUnit={onSpeakUnit}
-                  isUnitLoading={isUnitLoading}
-                  onPlaybackError={onPlaybackError}
-                  label={`Прослушать ${part.text}`}
-                />
-              </div>
-              <div className="ru">{part.meaning}</div>
-              {part.note && <div className="breakdown-note">{part.note}</div>}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {a.type === 'phrase' && a.wholePhrase && (
-        <div className="sheet-body">
-          <p className="sheet-section-title">Вся фраза</p>
-          <div className="whole-phrase">
-            <div className="whole-phrase-head">
-              <span className="fr">{a.wholePhrase.text}</span>
-              <UnitSpeakerButton
-                text={a.wholePhrase.text}
-                onSpeakUnit={onSpeakUnit}
-                isUnitLoading={isUnitLoading}
-                onPlaybackError={onPlaybackError}
-                label="Прослушать фразу"
-              />
-            </div>
-            <div className="ru">{a.wholePhrase.meaning}</div>
-          </div>
-        </div>
-      )}
-
-      {a.plainLearningNote && (
-        <div className="sheet-body">
-          <p className="sheet-note">{a.plainLearningNote}</p>
-        </div>
-      )}
-
       {!expanded && (
-        <button className="sheet-more-toggle" type="button" onClick={onMore}>
-          Подробнее про грамматику и формы
+        <button className="sheet-more-toggle" type="button" aria-expanded={false} onClick={onMore}>
+          <span>
+            Подробнее <span className="sheet-more-sub">— объяснение, формы и грамматика</span>
+          </span>
+          <ChevronDownIcon />
         </button>
       )}
 
       {expanded && (
         <DetailsView
-          selection={selection}
+          annotation={selection.annotation}
+          detailsStatus={selection.detailsStatus}
           onSpeakUnit={onSpeakUnit}
           isUnitLoading={isUnitLoading}
           onPlaybackError={onPlaybackError}
@@ -364,32 +285,32 @@ function AnnotationView({
 }
 
 function DetailsView({
-  selection,
+  annotation,
+  detailsStatus,
   onSpeakUnit,
   isUnitLoading,
   onPlaybackError,
   onRetryDetails,
 }: {
-  selection: Extract<SheetSelection, { kind: 'annotation' }>;
+  annotation: Annotation;
+  detailsStatus: Extract<SheetSelection, { kind: 'annotation' }>['detailsStatus'];
   onSpeakUnit: SpeakFn;
   isUnitLoading: IsLoadingFn;
   onPlaybackError: () => void;
   onRetryDetails: () => void;
 }) {
-  const a = selection.annotation;
-
-  if (selection.detailsStatus === 'loading') {
+  if (detailsStatus === 'loading') {
     return (
       <div className="sheet-body sheet-loading" role="status" aria-live="polite">
         <span className="sheet-loading-spinner" aria-hidden="true">
           <SpinnerIcon />
         </span>
-        <p>Готовим грамматику…</p>
+        <p>Готовим подробности…</p>
       </div>
     );
   }
 
-  if (selection.detailsStatus === 'error') {
+  if (detailsStatus === 'error') {
     return (
       <div className="sheet-body">
         <p className="fallback-note">Не удалось загрузить детали — попробуй ещё раз.</p>
@@ -400,91 +321,98 @@ function DetailsView({
     );
   }
 
+  const sections = annotation.details?.sections ?? [];
+
   return (
     <>
-      {(a.grammarLabel || a.grammarSummary) && (
-        <div className="sheet-body">
-          <div className="sheet-section-row">
-            <p className="sheet-section-title">Грамматика</p>
-            {a.grammarLabel && <span className="sheet-tag">{a.grammarLabel}</span>}
-          </div>
-          {a.grammarSummary && <p>{a.grammarSummary}</p>}
-          {a.grammarDetails && <p className="sheet-note">{a.grammarDetails}</p>}
-        </div>
-      )}
-
-      {a.constructionExplanation && (
-        <div className="sheet-body">
-          <p className="sheet-section-title">Конструкция</p>
-          <p>{a.constructionExplanation}</p>
-        </div>
-      )}
-
-      {a.formVariants && a.formVariants.items.length > 0 && (
-        <div className="sheet-body">
-          <p className="sheet-section-title">{a.formVariants.title}</p>
-          {a.formVariants.items.map((variant) => (
-            <div className={`form-variant${variant.isCurrent ? ' is-current' : ''}`} key={variant.text}>
-              <div className="form-variant-head">
-                <span className="fr">{variant.text}</span>
-                <UnitSpeakerButton
-                  text={variant.text}
-                  onSpeakUnit={onSpeakUnit}
-                  isUnitLoading={isUnitLoading}
-                  onPlaybackError={onPlaybackError}
-                  label={`Прослушать ${variant.text}`}
-                />
-              </div>
-              <div className="ru">
-                {variant.meaning}
-                {variant.note && <span className="form-variant-note"> · {variant.note}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <ExampleList examples={a.examples} />
-
-      {a.otherMeanings && a.otherMeanings.length > 0 && (
-        <div className="sheet-body">
-          <p className="sheet-section-title">Другие значения</p>
-          {a.otherMeanings.map((meaning) => (
-            <p key={meaning.translation}>{meaning.translation}</p>
-          ))}
-        </div>
-      )}
+      {sections.map((section, index) => (
+        <DetailSectionView
+          key={index}
+          section={section}
+          onSpeakUnit={onSpeakUnit}
+          isUnitLoading={isUnitLoading}
+          onPlaybackError={onPlaybackError}
+        />
+      ))}
     </>
   );
 }
 
-function FormLine({
-  label,
-  pair,
+function DetailSectionView({
+  section,
   onSpeakUnit,
   isUnitLoading,
   onPlaybackError,
 }: {
-  label: string;
-  pair: FormPair;
+  section: DetailSection;
   onSpeakUnit: SpeakFn;
   isUnitLoading: IsLoadingFn;
   onPlaybackError: () => void;
 }) {
-  return (
-    <div className="form-line">
-      <div className="form-line-top">
-        <span className="form-line-label">{label}</span>
-        <span className="fr">{pair.text}</span>
-        <UnitSpeakerButton
-          text={pair.text}
-          onSpeakUnit={onSpeakUnit}
-          isUnitLoading={isUnitLoading}
-          onPlaybackError={onPlaybackError}
-          label={`Прослушать ${pair.text}`}
-        />
+  if (section.type === 'explanation') {
+    return (
+      <div className="sheet-body">
+        {section.title && <p className="sheet-section-title">{section.title}</p>}
+        <p>{section.body}</p>
       </div>
-      <div className="ru">{pair.meaning}</div>
+    );
+  }
+
+  if (section.type === 'table') {
+    return (
+      <div className="sheet-body">
+        {section.title && <p className="sheet-section-title">{section.title}</p>}
+        <div className="sheet-table-wrap">
+          <table className="sheet-table">
+            <thead>
+              <tr>
+                {section.columns.map((column, i) => (
+                  <th key={i}>{column}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {section.rows.map((row, ri) => (
+                <tr key={ri} className={section.highlightRow === ri ? 'is-highlighted' : undefined}>
+                  {row.map((cell, ci) => (
+                    <td key={ci}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (section.type === 'bilingualPairs') {
+    return (
+      <div className="sheet-body">
+        {section.title && <p className="sheet-section-title">{section.title}</p>}
+        {section.pairs.map((pair, i) => (
+          <div className="bilingual-pair" key={i}>
+            <div className="bilingual-pair-head">
+              <span className="foreign">{pair.source}</span>
+              <UnitSpeakerButton
+                text={pair.source}
+                onSpeakUnit={onSpeakUnit}
+                isUnitLoading={isUnitLoading}
+                onPlaybackError={onPlaybackError}
+                label={`Прослушать ${pair.source}`}
+              />
+            </div>
+            <div className="native">{pair.translation}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // grammarNote
+  return (
+    <div className="sheet-body">
+      <p className="sheet-note">{section.body}</p>
     </div>
   );
 }
@@ -530,26 +458,41 @@ function CloseButton({ onClose }: { onClose: () => void }) {
   );
 }
 
-// Ярлык единицы: фраза / форма слова / отдельное слово.
-function getUnitLabel(a: Annotation): string {
-  if (a.type === 'phrase') return 'Фраза';
-  if (a.baseForm && a.baseForm.text !== a.displayText) return 'Форма слова';
-  return 'Слово';
-}
-
-// Подсветка целевого фрагмента внутри французского предложения: первое
-// вхождение displayText (без учёта регистра) оборачивается в <mark>. Если не
-// нашли (напр. форма в тексте отличается) — предложение показывается как есть.
-function highlightTarget(sentence: string, target: string) {
-  const idx = sentence.toLowerCase().indexOf(target.toLowerCase());
-  if (idx === -1) return sentence;
-  const before = sentence.slice(0, idx);
-  const match = sentence.slice(idx, idx + target.length);
-  const after = sentence.slice(idx + target.length);
+// Подсветка первого вхождения target внутри text (без учёта регистра, первое
+// совпадение). Если не нашли — текст показывается как есть.
+function highlightTarget(text: string, target: string): ReactNode {
+  const idx = text.toLowerCase().indexOf(target.toLowerCase());
+  if (idx === -1) return text;
+  const before = text.slice(0, idx);
+  const match = text.slice(idx, idx + target.length);
+  const after = text.slice(idx + target.length);
   return (
     <>
       {before}
       <mark className="sheet-target">{match}</mark>
+      {after}
+    </>
+  );
+}
+
+// Двухтировая подсветка для «В контексте» (раздел 3 хэндоффа): если есть
+// related — сначала оборачиваем его в мягкий серый фон, а внутри него ещё раз
+// выделяем выбранное слово акцентом; без related — просто акцентный highlight
+// выбранного слова, как highlightTarget.
+function highlightContext(text: string, selected: string, related?: string | null): ReactNode {
+  if (!related) return highlightTarget(text, selected);
+
+  const idx = text.toLowerCase().indexOf(related.toLowerCase());
+  if (idx === -1) return highlightTarget(text, selected);
+
+  const before = text.slice(0, idx);
+  const relatedMatch = text.slice(idx, idx + related.length);
+  const after = text.slice(idx + related.length);
+
+  return (
+    <>
+      {before}
+      <span className="sheet-related-inline">{highlightTarget(relatedMatch, selected)}</span>
       {after}
     </>
   );
@@ -576,6 +519,14 @@ function SpeakerIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
       <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
       <path d="M16.5 8.5a5 5 0 010 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -1,235 +1,213 @@
-// Шаг 5 пайплайна — обобщение scripts/generate-annotations.ts (тот же
-// шаблон/schema из AI_PIPELINE.md), но теперь проходит по ВСЕМ единицам:
-// и по фразовым группам из шага 4 (markPhrases.ts), и по одиночным словам,
-// которые ни в одну группу не попали — а не только по «оставшимся после
-// ручной разметки» токенам, как было в scripts/generate-annotations.ts.
+// Шаг 5 пайплайна — Bottom Sheet v2 (см. AI_PIPELINE.md, решение «каждое слово
+// кликабельно само по себе»). Раньше объяснение генерировалось на ГРУППУ
+// токенов, заранее собранную отдельным AI-шагом (markPhrases.ts, шаг 4) —
+// теперь группировки при генерации урока нет вообще: каждый word-токен сам
+// себе цель, а «связанная фраза» (напр. στον → στον σταθμό) — это подсказка
+// ВНУТРИ объяснения одного токена, не смена того, что было выбрано.
 
 import type { LanguageConfig } from './languageConfig.js';
-import type { PhraseGroup } from './markPhrases.js';
-import type { Annotation, Paragraph, Token } from '../../src/types/lesson.js';
+import type { Annotation, AnnotationSummary, DetailSection, Sentence, Token } from '../../src/types/lesson.js';
 
-// Полный контент = базовый (тир 1) ∪ детали (тир 2). Ленивый фетч тянет их по
-// отдельности: тир 1 по клику по слову, тир 2 по клику «Подробнее»
-// (см. useSelectedAnnotation.ts). CLI/офлайн генерит оба сразу и склеивает.
-export type AnnotationBasicContent = Pick<
-  Annotation,
-  | 'displayText' | 'lemma' | 'pronunciation' | 'partOfSpeech' | 'shortTranslation'
-  | 'contextualMeaning' | 'baseForm' | 'formInText' | 'wholePhrase' | 'beginnerBreakdown'
-  | 'plainLearningNote'
->;
+export type AnnotationTarget = { tokenId: string; sentence: Sentence };
 
-export type AnnotationDetailsContent = Pick<
-  Annotation,
-  | 'grammarLabel' | 'grammarSummary' | 'grammarDetails' | 'constructionExplanation'
-  | 'formVariants' | 'examples' | 'otherMeanings'
->;
+function targetToken(target: AnnotationTarget): Token {
+  const token = target.sentence.tokens.find((t) => t.id === target.tokenId);
+  if (!token) throw new Error(`token ${target.tokenId} not found in sentence ${target.sentence.id}`);
+  return token;
+}
 
-export type AnnotationContent = AnnotationBasicContent & AnnotationDetailsContent;
+// Соседние word-токены, содержащие целевой — та же проверка, что раньше жила
+// в markPhrases.ts (isConsecutiveWordSpan), перенесена сюда: связанная фраза
+// обязана быть непрерывным куском предложения, включающим сам выбранный
+// токен, иначе это не "контекст для этого слова", а что-то другое.
+export function isValidRelatedSpan(sentence: Sentence, targetTokenId: string, tokenIds: string[]): boolean {
+  if (tokenIds.length < 2) return false;
+  if (!tokenIds.includes(targetTokenId)) return false;
+  const indices = tokenIds.map((id) => sentence.tokens.findIndex((t) => t.id === id));
+  if (indices.some((i) => i === -1)) return false;
+  if (indices.some((i) => sentence.tokens[i].type !== 'word')) return false;
+  const sorted = [...indices].sort((a, b) => a - b);
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] !== sorted[i - 1] + 1) return false;
+  }
+  return true;
+}
 
-export type AnnotationTarget = {
-  tokenIds: string[];
-  displayText: string;
-  sentenceText: string;
-  type: 'word' | 'phrase';
+function relatedSourceText(sentence: Sentence, tokenIds: string[]): string {
+  const order = new Map(sentence.tokens.map((t, i) => [t.id, i]));
+  const sorted = [...tokenIds].sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
+  return sorted.map((id) => sentence.tokens.find((t) => t.id === id)!.text).join(' ');
+}
+
+// Примеры — язык-специфичные (перенесены из markPhrases.ts): все примеры
+// раньше были французскими независимо от языка урока, что на греческом давало
+// сверхгруппировку ("Μετά το φαγητό" как одна фраза — обычная составная
+// конструкция, не идиома). Тот же риск здесь: модель должна понимать, что
+// действительно стоит показать как "связанное", а не любой соседний предлог.
+type RelatedPhraseExamples = { worthShowing: string; notWorthShowing: string };
+
+const RELATED_EXAMPLES_BY_LANGUAGE: Record<string, RelatedPhraseExamples> = {
+  fr: {
+    worthShowing: '"décider de" (глагол + неочевидный обязательный предлог), "s\'est assise" (возвратный глагол + вспомогательный)',
+    notWorthShowing: '"la gare" (артикль + существительное — само слово "gare" уже понятно без соседа)',
+  },
+  de: {
+    worthShowing: '"steht … auf" (отделяемая приставка глагола — aufstehen), "hat sich gesetzt" (возвратный глагол + вспомогательный)',
+    notWorthShowing: '"das Essen" (артикль + существительное)',
+  },
+  en: {
+    worthShowing: '"look forward to", "give up" (фразовый глагол — смысл не складывается из частей по отдельности)',
+    notWorthShowing: '"the food" (артикль + существительное)',
+  },
+  el: {
+    worthShowing: '"στον σταθμό" (σε+τον слито в στον — форма без соседа не понятна), "μου αρέσει" (безличная конструкция)',
+    notWorthShowing: '"το φαγητό" (артикль + существительное — обычная составная конструкция, не идиома)',
+  },
 };
 
-// Иностранная форма + перевод (nullable как объект целиком).
-const FORM_PAIR_SCHEMA = {
-  type: ['object', 'null'],
-  properties: { text: { type: 'string' }, meaning: { type: 'string' } },
-  required: ['text', 'meaning'],
-  additionalProperties: false,
+type RawSummaryResponse = {
+  partOfSpeech: string | null;
+  translation: string;
+  contextTranslation: string;
+  relatedTokenIds: string[] | null;
+  relatedTranslation: string | null;
 };
 
-const BASIC_SCHEMA = {
+const SUMMARY_SCHEMA = {
   type: 'object',
   properties: {
-    displayText: { type: 'string' },
-    lemma: { type: 'string' },
-    pronunciation: { type: ['string', 'null'] },
     partOfSpeech: { type: ['string', 'null'] },
-    shortTranslation: { type: 'string' },
-    contextualMeaning: { type: 'string' },
-    baseForm: FORM_PAIR_SCHEMA,
-    formInText: FORM_PAIR_SCHEMA,
-    wholePhrase: FORM_PAIR_SCHEMA,
-    beginnerBreakdown: {
-      type: ['array', 'null'],
-      items: {
+    translation: { type: 'string' },
+    contextTranslation: { type: 'string' },
+    relatedTokenIds: { type: ['array', 'null'], items: { type: 'string' } },
+    relatedTranslation: { type: ['string', 'null'] },
+  },
+  required: ['partOfSpeech', 'translation', 'contextTranslation', 'relatedTokenIds', 'relatedTranslation'],
+  additionalProperties: false,
+};
+
+const SECTION_SCHEMA = {
+  type: 'array',
+  items: {
+    anyOf: [
+      {
         type: 'object',
-        properties: { text: { type: 'string' }, meaning: { type: 'string' }, note: { type: ['string', 'null'] } },
-        required: ['text', 'meaning', 'note'],
+        properties: {
+          type: { type: 'string', const: 'explanation' },
+          title: { type: ['string', 'null'] },
+          body: { type: 'string' },
+        },
+        required: ['type', 'title', 'body'],
         additionalProperties: false,
       },
-    },
-    plainLearningNote: { type: ['string', 'null'] },
+      {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'table' },
+          title: { type: ['string', 'null'] },
+          columns: { type: 'array', items: { type: 'string' } },
+          rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+          highlightRow: { type: ['integer', 'null'] },
+        },
+        required: ['type', 'title', 'columns', 'rows', 'highlightRow'],
+        additionalProperties: false,
+      },
+      {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'bilingualPairs' },
+          title: { type: ['string', 'null'] },
+          pairs: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { source: { type: 'string' }, translation: { type: 'string' } },
+              required: ['source', 'translation'],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ['type', 'title', 'pairs'],
+        additionalProperties: false,
+      },
+      {
+        type: 'object',
+        properties: { type: { type: 'string', const: 'grammarNote' }, body: { type: 'string' } },
+        required: ['type', 'body'],
+        additionalProperties: false,
+      },
+    ],
   },
-  required: [
-    'displayText', 'lemma', 'pronunciation', 'partOfSpeech', 'shortTranslation',
-    'contextualMeaning', 'baseForm', 'formInText', 'wholePhrase', 'beginnerBreakdown',
-    'plainLearningNote',
-  ],
-  additionalProperties: false,
 };
 
 const DETAILS_SCHEMA = {
   type: 'object',
-  properties: {
-    grammarLabel: { type: ['string', 'null'] },
-    grammarSummary: { type: ['string', 'null'] },
-    grammarDetails: { type: ['string', 'null'] },
-    constructionExplanation: { type: ['string', 'null'] },
-    formVariants: {
-      type: ['object', 'null'],
-      properties: {
-        title: { type: 'string' },
-        items: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              text: { type: 'string' },
-              meaning: { type: 'string' },
-              note: { type: ['string', 'null'] },
-              isCurrent: { type: 'boolean' },
-            },
-            required: ['text', 'meaning', 'note', 'isCurrent'],
-            additionalProperties: false,
-          },
-        },
-      },
-      required: ['title', 'items'],
-      additionalProperties: false,
-    },
-    examples: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: { targetText: { type: 'string' }, translation: { type: 'string' } },
-        required: ['targetText', 'translation'],
-        additionalProperties: false,
-      },
-    },
-    otherMeanings: {
-      type: ['array', 'null'],
-      items: {
-        type: 'object',
-        properties: { translation: { type: 'string' }, note: { type: ['string', 'null'] } },
-        required: ['translation', 'note'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: [
-    'grammarLabel', 'grammarSummary', 'grammarDetails', 'constructionExplanation',
-    'formVariants', 'examples', 'otherMeanings',
-  ],
+  properties: { sections: SECTION_SCHEMA },
+  required: ['sections'],
   additionalProperties: false,
 };
 
-function basicSystemPrompt(languageName: string, sourceLanguage: string): string {
-  return `You are a ${languageName}-language teaching assistant embedded in a reading app.
-A learner (${sourceLanguage}-speaking) clicked a word or phrase while reading. Give the FIRST,
-essential explanation — what it means HERE — like a good teacher in a short live aside. This is the
-basic tier: NO grammar terminology at all (that comes later, on demand).
+function summarySystemPrompt(languageConfig: LanguageConfig, sourceLanguage: string): string {
+  const ex = RELATED_EXAMPLES_BY_LANGUAGE[languageConfig.code] ?? RELATED_EXAMPLES_BY_LANGUAGE.fr;
+  return `You are a ${languageConfig.promptLanguageName}-language teaching assistant embedded in a reading app.
+A learner (${sourceLanguage}-speaking) tapped exactly ONE word while reading. Give the FIRST, essential
+explanation — what it means HERE — like a good teacher in a short live aside. NO grammar terminology
+beyond a plain part-of-speech label (that comes later, on demand).
+
+The tapped word is always the exact target — never substitute a surrounding phrase for it. You MAY
+point out a related phrase around it ONLY when the word genuinely cannot be understood well in
+isolation (e.g. ${ex.worthShowing}). Do NOT do this for ordinary adjacent words that are each already
+clear on their own (e.g. ${ex.notWorthShowing}) — most words have no related phrase, that's expected.
+If you do include one, relatedTokenIds must be a CONSECUTIVE run of word-token ids from the given
+token list that includes the target token id itself.
 
 Rules:
-- All explanatory text (contextualMeaning, meanings, notes, plainLearningNote) in ${sourceLanguage},
-  natural and concise.
-- shortTranslation: a short ${sourceLanguage} gloss (a few words), not a sentence.
-- Every ${languageName} form you output (baseForm.text, formInText.text, wholePhrase.text,
-  beginnerBreakdown[].text) MUST be paired with its ${sourceLanguage} meaning — never leave a foreign
-  form without a translation.
-- contextualMeaning: explain the MEANING IN THIS SPECIFIC SENTENCE first, in plain words, no dictionary
-  opener, no grammar terms.
-- baseForm: the dictionary/base form + ${sourceLanguage} translation — infinitive for a verb
-  ("arriver → …"), the base expression or a model for a construction ("commencer à + infinitif → …"),
-  the base noun/adjective otherwise.
-- formInText: the form EXACTLY as it appears in the sentence + its ${sourceLanguage} meaning in this
-  context ("arrivait → …"). If it is identical to baseForm and adds nothing, return null.
-- wholePhrase: ONLY when the target is a multi-word phrase — the whole phrase reassembled + a natural
-  ${sourceLanguage} translation. For a single word, return null.
-- beginnerBreakdown: ONLY for phrases or genuinely complex forms — 3–6 MEANINGFUL chunks (do not split
-  every article/preposition), each = ${languageName} text + short ${sourceLanguage} meaning + optional
-  tiny note. Do NOT put the whole phrase as the last item (it is shown separately). For a trivial single
-  word, return null.
-- plainLearningNote: one short practical tip in ${sourceLanguage} (e.g. "recognize the whole phrase as
-  one unit, don't translate word by word"), or null. No grammar jargon.
-- Never invent. If unsure about a field, return null rather than guess.
-- Output strictly the JSON object per the schema.`;
+- translation: a short, natural ${sourceLanguage} gloss of the word AS IT APPEARS HERE (a few words,
+  not a sentence). If the target language doesn't lexically encode something ${sourceLanguage} needs
+  (e.g. grammatical gender), pick the form the SENTENCE's context implies and don't explain the
+  mechanism here — that belongs in details, not the summary.
+- contextTranslation: a natural, idiomatic ${sourceLanguage} translation of the WHOLE sentence — not
+  a literal word-by-word rendering, and not a grammar explanation.
+- partOfSpeech: a plain ${sourceLanguage} word for the part of speech ("глагол", "предлог"...), or null
+  if not useful (e.g. a proper name).
+- relatedTranslation: natural ${sourceLanguage} translation of ONLY the related phrase, matching how it
+  reads inside the sentence — null whenever relatedTokenIds is null.
+- Never invent grammar or vocabulary. Output strictly the JSON object per the schema.`;
 }
 
-function detailsSystemPrompt(languageName: string, sourceLanguage: string): string {
-  return `You are a ${languageName}-language teaching assistant embedded in a reading app.
-A ${sourceLanguage}-speaking learner tapped "more" on a word or phrase. Give the DEEPER explanation —
-grammar and forms. The basic meaning was already shown, so do not repeat it.
+function detailsSystemPrompt(languageConfig: LanguageConfig, sourceLanguage: string): string {
+  return `You are a ${languageConfig.promptLanguageName}-language teaching assistant embedded in a reading app.
+A ${sourceLanguage}-speaking learner tapped "more" on a single word. The short meaning was already
+shown — do not repeat it. Return ONLY the sections that add genuinely new, useful knowledge about
+THIS word; most words need very few. An empty array is a correct answer for a trivial word.
 
-Rules:
-- All explanatory text (grammarSummary, grammarDetails, constructionExplanation, meanings, notes) in
-  ${sourceLanguage}, natural and concise.
-- grammarLabel: the standard grammar term for this form ("imparfait", "passé composé", …), or null for
-  a trivial word.
-- grammarSummary: 1–2 sentences in plain ${sourceLanguage}. If you use the term, explain it in the same
-  breath. No padding; null for a very simple word.
-- grammarDetails: only if there is a genuinely useful deeper point (tense contrast, an irregular form, a
-  common learner mistake) — 2–4 sentences, otherwise null.
-- constructionExplanation: for a verb+preposition / fixed construction, explain the pattern (e.g. the
-  required preposition); otherwise null.
-- formVariants: 3–5 useful forms of this unit, each ${languageName} form paired with its
-  ${sourceLanguage} meaning, mark the one matching the text with isCurrent=true. Choose what fits the word
-  type (verb → a few persons/tenses; adjective/noun → gender/number; expression → its common shapes) and
-  give the list a short title. NOT a full paradigm table. null if not useful.
-- examples: EXACTLY 2 short, natural ${languageName} sentences at the learner's level using the same
-  word/construction, each with a ${sourceLanguage} translation.
-- otherMeanings: other common meanings of the unit if relevant, else null.
-- Never invent grammar. If unsure, return null rather than guess.
-- Output strictly the JSON object per the schema.`;
+Section types available — use whichever fit, in a sensible reading order:
+- "explanation": one focused point in plain ${sourceLanguage}, no jargon dump. Use this for "how this
+  form works" (e.g. why this tense/case is used here).
+- "table": a small comparison (e.g. tense across present/past/future, or a short paradigm). Compare
+  forms using the SAME grammatical person/number throughout — do not mix a form from the sentence with
+  other persons in the same row logic. Set highlightRow only if genuinely useful, never just to mark
+  the clicked form.
+- "bilingualPairs": 2-4 short ${languageConfig.promptLanguageName} examples with idiomatic (never
+  mechanically literal) ${sourceLanguage} translations — similar constructions, not random sentences.
+- "grammarNote": one short technical line (e.g. "aorist, 3rd person singular"), only if a learner would
+  actually look this up — not required for most words.
+
+Hard rules:
+- Do not add a section that only restates the sentence already shown in the summary's context block.
+- No invented grammar. If a language doesn't have a category ${sourceLanguage} speakers might expect
+  (e.g. no grammatical gender, no case marking), say so briefly instead of forcing a comparison.
+- Output strictly the JSON object per the schema — no prose outside it.`;
 }
 
-export function collectAnnotationTargets(paragraphs: Paragraph[], phraseGroups: PhraseGroup[]): AnnotationTarget[] {
-  const tokensById = new Map<string, { token: Token; sentenceText: string }>();
-  for (const paragraph of paragraphs) {
-    for (const sentence of paragraph.sentences) {
-      for (const token of sentence.tokens) {
-        tokensById.set(token.id, { token, sentenceText: sentence.text });
-      }
-    }
-  }
-
-  const covered = new Set<string>();
-  const targets: AnnotationTarget[] = [];
-
-  for (const group of phraseGroups) {
-    const entries = group.tokenIds.map((id) => tokensById.get(id)).filter((e): e is NonNullable<typeof e> => !!e);
-    if (entries.length !== group.tokenIds.length) continue;
-    group.tokenIds.forEach((id) => covered.add(id));
-    targets.push({
-      tokenIds: group.tokenIds,
-      displayText: entries.map((e) => e.token.text).join(' '),
-      sentenceText: entries[0].sentenceText,
-      type: 'phrase',
-    });
-  }
-
-  for (const paragraph of paragraphs) {
-    for (const sentence of paragraph.sentences) {
-      for (const token of sentence.tokens) {
-        if (token.type === 'word' && !covered.has(token.id)) {
-          targets.push({ tokenIds: [token.id], displayText: token.text, sentenceText: sentence.text, type: 'word' });
-        }
-      }
-    }
-  }
-
-  return targets;
-}
-
-function annotationUserPrompt(target: AnnotationTarget, languageConfig: LanguageConfig, level: string): string {
+function targetUserPrompt(target: AnnotationTarget, languageConfig: LanguageConfig, level: string): string {
+  const wordTokens = target.sentence.tokens.filter((t) => t.type === 'word').map((t) => ({ id: t.id, text: t.text }));
   return `Language: ${languageConfig.promptLanguageName}
 Learner level: ${level}
-Full sentence: "${target.sentenceText}"
-Target span in the sentence: "${target.displayText}"
-Token type: ${target.type}`;
+Full sentence: "${target.sentence.text}"
+Sentence tokens (in order): ${JSON.stringify(wordTokens)}
+Target token id: "${target.tokenId}"
+Target token text: "${targetToken(target).text}"`;
 }
 
 async function callAnnotationModel<T>(
@@ -267,47 +245,67 @@ async function callAnnotationModel<T>(
   throw new Error('unreachable');
 }
 
-// Тир 1 — базовое объяснение (по клику по слову). Быстро/дёшево.
-export function generateAnnotationBasic(
+// Тир 1 — короткое объяснение (по клику по слову). Раздельно и посимвольно
+// проверенная связанная фраза — не доверяем модели дословный текст, только
+// её решение "какие id" и перевод, сам текст собираем из наших же токенов.
+export async function generateAnnotationBasic(
   target: AnnotationTarget,
   languageConfig: LanguageConfig,
   level: string,
   sourceLanguage: string,
   apiKey: string,
   model: string,
-): Promise<AnnotationBasicContent> {
-  return callAnnotationModel(
-    'annotation_basic',
-    BASIC_SCHEMA,
-    basicSystemPrompt(languageConfig.promptLanguageName, sourceLanguage),
-    annotationUserPrompt(target, languageConfig, level),
+): Promise<AnnotationSummary> {
+  const raw = await callAnnotationModel<RawSummaryResponse>(
+    'annotation_summary',
+    SUMMARY_SCHEMA,
+    summarySystemPrompt(languageConfig, sourceLanguage),
+    targetUserPrompt(target, languageConfig, level),
     apiKey,
     model,
   );
+
+  const token = targetToken(target);
+  const relatedValid = raw.relatedTokenIds && isValidRelatedSpan(target.sentence, target.tokenId, raw.relatedTokenIds);
+
+  return {
+    partOfSpeech: raw.partOfSpeech,
+    displayForm: token.text,
+    translation: raw.translation,
+    audioText: token.text,
+    context: {
+      source: target.sentence.text,
+      translation: raw.contextTranslation,
+      selectedSource: token.text,
+      selectedTranslation: raw.translation,
+      relatedSource: relatedValid ? relatedSourceText(target.sentence, raw.relatedTokenIds!) : null,
+      relatedTranslation: relatedValid ? raw.relatedTranslation : null,
+    },
+  };
 }
 
-// Тир 2 — грамматика и формы (по клику «Подробнее»). Тяжелее — генерим только
-// если пользователь реально захотел деталей.
-export function generateAnnotationDetails(
+// Тир 2 — секции по запросу «Подробнее». Тяжелее — генерим только когда
+// пользователь реально захотел деталей.
+export async function generateAnnotationDetails(
   target: AnnotationTarget,
   languageConfig: LanguageConfig,
   level: string,
   sourceLanguage: string,
   apiKey: string,
   model: string,
-): Promise<AnnotationDetailsContent> {
+): Promise<{ sections: DetailSection[] }> {
   return callAnnotationModel(
     'annotation_details',
     DETAILS_SCHEMA,
-    detailsSystemPrompt(languageConfig.promptLanguageName, sourceLanguage),
-    annotationUserPrompt(target, languageConfig, level),
+    detailsSystemPrompt(languageConfig, sourceLanguage),
+    targetUserPrompt(target, languageConfig, level),
     apiKey,
     model,
   );
 }
 
-// Полный контент — оба тира сразу. Для CLI/офлайн-прогона (стоимость не важна),
-// где урок собирается целиком; ленивый клиент вызывает тиры по отдельности.
+// Полный контент (оба тира сразу) — для CLI/офлайн-прогона, где урок
+// собирается целиком и стоимость параллельных вызовов не важна.
 export async function generateAnnotationContent(
   target: AnnotationTarget,
   languageConfig: LanguageConfig,
@@ -315,12 +313,12 @@ export async function generateAnnotationContent(
   sourceLanguage: string,
   apiKey: string,
   model: string,
-): Promise<AnnotationContent> {
-  const [basic, details] = await Promise.all([
+): Promise<Annotation> {
+  const [summary, details] = await Promise.all([
     generateAnnotationBasic(target, languageConfig, level, sourceLanguage, apiKey, model),
     generateAnnotationDetails(target, languageConfig, level, sourceLanguage, apiKey, model),
   ]);
-  return { ...basic, ...details };
+  return { id: target.tokenId, summary, details };
 }
 
 async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -336,96 +334,37 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
   return results;
 }
 
-// Ленивая генерация контента (см. CLAUDE.md/PROGRESS.md): на этапе создания
-// урока OpenAI больше не вызывается для каждого слова/фразы — только эта
-// чистая функция, которая проставляет annotationId по той же id-схеме, что и
-// mergeAnnotationResults, но без сети и без объектов Annotation.
-// lesson.annotations стартует пустым — фразовая группировка в UI
-// (InteractiveSentence.tsx схлопывает соседние токены с одинаковым
-// annotationId) работает сразу, а сам текст объяснения дозапрашивается по
-// клику (см. useSelectedAnnotation.ts) и резолвится обратно в AnnotationTarget
-// через resolveAnnotationTarget (src/lib/lessonText.ts).
-export function stampAnnotationTargets(paragraphs: Paragraph[], targets: AnnotationTarget[]): Paragraph[] {
-  const annotationIdByTokenId = new Map<string, string>();
-  for (const target of targets) {
-    const annotationId = `gen-${target.tokenIds.join('-')}`;
-    target.tokenIds.forEach((id) => annotationIdByTokenId.set(id, annotationId));
-  }
-
-  return paragraphs.map((paragraph) => ({
-    ...paragraph,
-    sentences: paragraph.sentences.map((sentence) => ({
-      ...sentence,
-      tokens: sentence.tokens.map((token) => {
-        const annotationId = annotationIdByTokenId.get(token.id);
-        return annotationId ? { ...token, annotationId } : token;
-      }),
-    })),
-  }));
-}
-
-export type AnnotationResult = { target: AnnotationTarget; content: AnnotationContent };
-
-// Чистая функция, без сети/секретов — переиспользуется и CLI (generateAnnotationsForLesson
-// ниже), и клиентским оркестратором (src/services/generation/), который сам дёргает
-// api/generate-annotation.ts по одной единице за раз и потом мёржит результаты этой же
-// функцией. ВАЖНО: у фразовой аннотации несколько tokenIds — каждый из них должен получить
-// один и тот же annotationId, иначе группировка в UI (InteractiveSentence.tsx схлопывает
-// соседние токены с одинаковым annotationId) не соберёт фразу целиком.
-export function mergeAnnotationResults(
-  paragraphs: Paragraph[],
-  results: (AnnotationResult | null)[],
-): { paragraphs: Paragraph[]; annotations: Annotation[] } {
-  const annotationIdByTokenId = new Map<string, string>();
-  const annotations: Annotation[] = [];
-  for (const r of results) {
-    if (!r) continue;
-    const { target, content } = r;
-    const annotationId = `gen-${target.tokenIds.join('-')}`;
-    target.tokenIds.forEach((id) => annotationIdByTokenId.set(id, annotationId));
-    annotations.push({ id: annotationId, type: target.type, tokenIds: target.tokenIds, ...content });
-  }
-
-  const nextParagraphs = paragraphs.map((paragraph) => ({
-    ...paragraph,
-    sentences: paragraph.sentences.map((sentence) => ({
-      ...sentence,
-      tokens: sentence.tokens.map((token) => {
-        const annotationId = annotationIdByTokenId.get(token.id);
-        return annotationId ? { ...token, annotationId } : token;
-      }),
-    })),
-  }));
-
-  return { paragraphs: nextParagraphs, annotations };
-}
-
+// CLI/офлайн-путь: генерирует объяснения для ВСЕХ word-токенов урока сразу
+// (веб-путь этого не делает — там контент лениво тянется по клику, см.
+// generateLessonPipeline.ts). Каждый word-токен — своя цель, группировки
+// больше нет ни на этом шаге, ни раньше него.
 export async function generateAnnotationsForLesson(
-  paragraphs: Paragraph[],
-  phraseGroups: PhraseGroup[],
+  sentences: Sentence[],
   languageConfig: LanguageConfig,
   options: { level: string; sourceLanguage: string; concurrency?: number; onProgress?: (done: number, total: number, failed: number) => void },
   apiKey: string,
   model: string,
-): Promise<{ paragraphs: Paragraph[]; annotations: Annotation[] }> {
-  const targets = collectAnnotationTargets(paragraphs, phraseGroups);
+): Promise<Annotation[]> {
+  const targets: AnnotationTarget[] = sentences.flatMap((sentence) =>
+    sentence.tokens.filter((t) => t.type === 'word').map((t) => ({ tokenId: t.id, sentence })),
+  );
   const concurrency = options.concurrency ?? 2;
 
   let done = 0;
   let failed = 0;
   const results = await mapWithConcurrency(targets, concurrency, async (target) => {
     try {
-      const content = await generateAnnotationContent(target, languageConfig, options.level, options.sourceLanguage, apiKey, model);
+      const annotation = await generateAnnotationContent(target, languageConfig, options.level, options.sourceLanguage, apiKey, model);
       done++;
       options.onProgress?.(done, targets.length, failed);
-      return { target, content };
+      return annotation;
     } catch (err) {
       failed++;
       options.onProgress?.(done, targets.length, failed);
-      console.error(`\n✗ "${target.displayText}":`, err instanceof Error ? err.message : err);
+      console.error(`\n✗ "${targetToken(target).text}":`, err instanceof Error ? err.message : err);
       return null;
     }
   });
 
-  return mergeAnnotationResults(paragraphs, results);
+  return results.filter((a): a is Annotation => a !== null);
 }

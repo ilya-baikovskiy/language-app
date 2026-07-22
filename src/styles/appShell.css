@@ -220,12 +220,6 @@
   background: var(--accent);
   color: #fff;
 }
-.progress-step-count {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-  color: var(--ink-faint);
-}
 .progress-warning {
   font-size: 13px;
   color: var(--ink-faint);

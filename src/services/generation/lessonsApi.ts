@@ -4,15 +4,10 @@
 // сервере (Vercel env).
 
 import type { InputSource, GeneratedText } from '../../../lib/pipeline/generateText';
-import type { PhraseGroup } from '../../../lib/pipeline/markPhrases';
-import type {
-  AnnotationBasicContent,
-  AnnotationDetailsContent,
-  AnnotationTarget,
-} from '../../../lib/pipeline/generateAnnotations';
+import type { AnnotationTarget } from '../../../lib/pipeline/generateAnnotations';
 import type { LanguageCode } from '../../../lib/pipeline/languageConfig';
 import type { AlignmentReport } from '../../../lib/pipeline/alignmentReport';
-import type { AudioProvider, Lesson, Sentence, Token } from '../../types/lesson';
+import type { AudioProvider, AnnotationSummary, DetailSection, Lesson, Token } from '../../types/lesson';
 import type { TokenSpan } from '../../lib/lessonText';
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -41,18 +36,14 @@ export function fetchGeneratedText(input: InputSource, level: string, words: num
   return postJson('/api/generate-text', { input, level, words, language });
 }
 
-export async function fetchPhraseGroups(sentence: Sentence, language: LanguageCode): Promise<PhraseGroup[]> {
-  const { groups } = await postJson<{ groups: PhraseGroup[] }>('/api/mark-phrases', { sentence, language });
-  return groups;
-}
-
-// Тир 1 — по клику по слову (лёгкое базовое объяснение).
-export function fetchAnnotationBasic(target: AnnotationTarget, level: string, language: LanguageCode): Promise<AnnotationBasicContent> {
+// Тир 1 — по клику по слову (короткое объяснение). Один токен — своя цель,
+// нет больше пре-пасса разметки фраз (см. AI_PIPELINE.md, «Bottom Sheet v2»).
+export function fetchAnnotationBasic(target: AnnotationTarget, level: string, language: LanguageCode): Promise<AnnotationSummary> {
   return postJson('/api/generate-annotation', { target, level, tier: 'basic', language });
 }
 
-// Тир 2 — по клику «Подробнее» (грамматика и формы).
-export function fetchAnnotationDetails(target: AnnotationTarget, level: string, language: LanguageCode): Promise<AnnotationDetailsContent> {
+// Тир 2 — по клику «Подробнее» (типизированные секции).
+export function fetchAnnotationDetails(target: AnnotationTarget, level: string, language: LanguageCode): Promise<{ sections: DetailSection[] }> {
   return postJson('/api/generate-annotation', { target, level, tier: 'details', language });
 }
 

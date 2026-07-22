@@ -3,31 +3,22 @@
 // сервере). Каждый await здесь — то, что видно как прогресс в GenerationProgress.
 
 import { tokenizeParagraphs } from '../../../lib/pipeline/tokenize';
-import { collectAnnotationTargets, stampAnnotationTargets } from '../../../lib/pipeline/generateAnnotations';
 import type { InputSource } from '../../../lib/pipeline/generateText';
 import { getLanguageConfig, type LanguageCode } from '../../../lib/pipeline/languageConfig';
 import { buildLessonText } from '../../lib/lessonText';
 import type { AudioProvider, Lesson, Paragraph, Token } from '../../types/lesson';
-import {
-  fetchGeneratedText,
-  fetchPhraseGroups,
-  fetchGeneratedAudio,
-  fetchAudioAlignment,
-  saveLesson,
-} from './lessonsApi';
+import { fetchGeneratedText, fetchGeneratedAudio, fetchAudioAlignment, saveLesson } from './lessonsApi';
 
-// Аннотации больше не генерируются на этапе создания урока (CLAUDE.md) — это
-// было доминирующей статьёй времени генерации (90-150 вызовов OpenAI, по
-// одному на слово/фразу). Разметка фраз (stage 'phrases') остаётся: она
-// дешёвая (~1 вызов на предложение) и структурно необходима — именно она
-// говорит читалке, что несколько токенов подряд («s'est levé») — одна
-// кликабельная единица. Сам текст объяснения подгружается лениво по клику
-// (см. useSelectedAnnotation.ts), поэтому здесь только stampAnnotationTargets
-// (чистая функция, без сети) — lesson.annotations стартует пустым массивом.
+// Аннотации не генерируются на этапе создания урока (CLAUDE.md) — контент
+// объяснения подгружается лениво по клику (см. useSelectedAnnotation.ts).
+// Разметки фраз на этом шаге тоже больше нет (Bottom Sheet v2, AI_PIPELINE.md):
+// раньше AI заранее решал, какие токены объединить в одну кликабельную
+// единицу — теперь каждый word-токен кликабелен сам по себе, «связанная
+// фраза» решается внутри самого объяснения, по клику, не заранее. Поэтому
+// здесь просто токенизация — ни AI-вызовов, ни какой-либо разметки токенов.
 
 export type GenerationProgress =
   | { stage: 'text' }
-  | { stage: 'phrases'; done: number; total: number }
   | { stage: 'audio' }
   | { stage: 'align' }
   | { stage: 'saving' };
@@ -55,17 +46,6 @@ export async function generateLesson(
   const generated = await fetchGeneratedText(input, options.level, options.words, language);
 
   const paragraphs: Paragraph[] = tokenizeParagraphs(generated.paragraphs, languageConfig.bcp47);
-  const sentences = paragraphs.flatMap((p) => p.sentences);
-
-  const phraseGroups = [];
-  for (let i = 0; i < sentences.length; i++) {
-    onProgress({ stage: 'phrases', done: i, total: sentences.length });
-    phraseGroups.push(...(await fetchPhraseGroups(sentences[i], language)));
-  }
-  onProgress({ stage: 'phrases', done: sentences.length, total: sentences.length });
-
-  const targets = collectAnnotationTargets(paragraphs, phraseGroups);
-  const stampedParagraphs = stampAnnotationTargets(paragraphs, targets);
   const slug = slugify(generated.title);
 
   const lessonForAudio: Lesson = {
@@ -77,14 +57,14 @@ export async function generateLesson(
     title: generated.title,
     translatedTitle: generated.translatedTitle,
     estimatedMinutes: generated.estimatedMinutes,
-    paragraphs: stampedParagraphs,
+    paragraphs,
     annotations: [],
     audioProvider,
   };
 
   onProgress({ stage: 'audio' });
   const { text, spans } = buildLessonText(lessonForAudio);
-  const wordTokens: Token[] = stampedParagraphs
+  const wordTokens: Token[] = paragraphs
     .flatMap((p) => p.sentences)
     .flatMap((s) => s.tokens)
     .filter((t) => t.type === 'word');

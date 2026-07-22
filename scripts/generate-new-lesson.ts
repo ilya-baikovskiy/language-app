@@ -12,7 +12,6 @@ import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
 import { generateText, type InputSource } from '../lib/pipeline/generateText.js';
 import { tokenizeParagraphs } from '../lib/pipeline/tokenize.js';
-import { markPhrasesForLesson } from '../lib/pipeline/markPhrases.js';
 import { generateAnnotationsForLesson } from '../lib/pipeline/generateAnnotations.js';
 import { generateAudioAndTimestamps } from '../lib/pipeline/generateAudio.js';
 import { generateAndAlignElevenLabs, finalizeAlignment, evaluateQualityGate } from '../lib/pipeline/audioProviders.js';
@@ -61,9 +60,9 @@ async function main() {
   const sourceLanguage = 'Russian';
   const input = await resolveInputSource(opts);
 
-  console.log(`[1/6] Вход: ${input.kind} (язык: ${languageConfig.displayName}, озвучка: ${opts.provider})`);
+  console.log(`[1/5] Вход: ${input.kind} (язык: ${languageConfig.displayName}, озвучка: ${opts.provider})`);
 
-  console.log(`[2/6] Генерирую текст (уровень ${opts.level}, ~${opts.words} слов)...`);
+  console.log(`[2/5] Генерирую текст (уровень ${opts.level}, ~${opts.words} слов)...`);
   const generated = await generateText(
     input,
     { level: opts.level, targetWords: opts.words, sourceLanguage },
@@ -73,19 +72,18 @@ async function main() {
   );
   console.log(`  ✓ «${generated.title}» — ${generated.paragraphs.length} абзацев`);
 
-  console.log('[3/6] Токенизация...');
+  console.log('[3/5] Токенизация...');
   const paragraphs = tokenizeParagraphs(generated.paragraphs, languageConfig.bcp47);
   const wordCount = paragraphs.flatMap((p) => p.sentences).flatMap((s) => s.tokens).filter((t) => t.type === 'word').length;
   console.log(`  ✓ ${paragraphs.length} абзацев, ${wordCount} слов`);
 
-  console.log('[4/6] Разметка фраз...');
-  const phraseGroups = await markPhrasesForLesson(paragraphs, languageConfig, openaiKey, model);
-  console.log(`  ✓ найдено ${phraseGroups.length} фразовых групп`);
-
-  console.log('[5/6] Генерация объяснений (это займёт несколько минут)...');
-  const { paragraphs: annotatedParagraphs, annotations } = await generateAnnotationsForLesson(
-    paragraphs,
-    phraseGroups,
+  // Разметки фраз больше нет (Bottom Sheet v2, AI_PIPELINE.md) — каждое слово
+  // кликабельно само по себе, связанная фраза решается внутри объяснения по
+  // клику, не заранее отдельным AI-шагом.
+  console.log('[4/5] Генерация объяснений (это займёт несколько минут)...');
+  const sentences = paragraphs.flatMap((p) => p.sentences);
+  const annotations = await generateAnnotationsForLesson(
+    sentences,
     languageConfig,
     {
       level: opts.level,
@@ -107,12 +105,12 @@ async function main() {
     title: generated.title,
     translatedTitle: generated.translatedTitle,
     estimatedMinutes: generated.estimatedMinutes,
-    paragraphs: annotatedParagraphs,
+    paragraphs,
     annotations,
     audioProvider: opts.provider,
   };
 
-  console.log('[6/6] Озвучка + таймкоды...');
+  console.log('[5/5] Озвучка + таймкоды...');
   const wordTokens = collectWordTokens(lessonWithoutAudio);
 
   const { audioBuffer, timestampsByToken, report } =

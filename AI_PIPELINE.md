@@ -14,89 +14,69 @@
 | Контекст для генерации Bottom Sheet | Полное предложение, а не пара соседних слов — иначе не хватает смысла для объяснения выбора времени (imparfait/passé composé) и похожих грамматических развилок |
 | UI пошаговой генерации урока (материал → настройки → результат) | Сначала статический UI (по аналогии с Этапом 1 самого ридера), реальная генерация подключается после того, как определимся с провайдером текста/разметки |
 
-## Шаблон генерации аннотации (Bottom Sheet)
+## Bottom Sheet v2 — per-token клик, markPhrases убран
 
-Вызывается один раз на клик по слову/фразе (в будущем — один раз при подготовке
-урока для всех содержательных единиц сразу, не на каждый клик пользователя).
+В отличие от заголовка файла выше, это **реализовано и работает**, не
+черновик. Записано по итогам сессии 2026-07-22.
 
-**System prompt:**
+Источник — внешне подготовленный пакет `greek-bottom-sheet-handoff/`
+(продуктовый контракт + `content-example.json` + скриншоты), повод —
+пользователь заметил, что клик по «Μετά» открывал объяснение на всю фразу
+«Μετά το φαγητό»: не баг конкретной AI-разметки, а следствие архитектуры —
+`markPhrases.ts` заранее (на этапе генерации урока) решал, какие соседние
+токены слипаются в одну кликабельную группу (`token.annotationId`).
 
-```
-You are a French-language teaching assistant embedded in a reading app.
-A learner (Russian-speaking, CEFR level {level}) clicked on a word or
-phrase while reading. Explain it the way a good teacher would in a short,
-live aside — not a dictionary entry.
+**Решение (согласовано с пользователем, без обратной совместимости):**
+- `markPhrases.ts` и `api/mark-phrases.ts` удалены целиком — AI-шаг разметки
+  фраз на этапе генерации урока больше не существует.
+- Каждый word-токен кликабелен независимо и всегда; `Annotation.id ===
+  token.id` напрямую (составные id вида `gen-t71-t72-t73` ушли).
+- «Связанная фраза» вокруг слова (например `στον` → `στον σταθμό`) решается
+  внутри самого вызова объяснения по клику (`generateAnnotationBasic`,
+  поле `relatedTokenIds` в сыром ответе модели, провалидировано
+  `isValidRelatedSpan` — последовательный отрезок word-токенов, включающий
+  сам целевой) — это подсказка ВНУТРИ объяснения одного токена, не смена
+  цели клика.
+- Уже сохранённые уроки (старая форма `Annotation`) не мигрируются —
+  чистый разрыв, перегенерируются по необходимости. `src/data/sampleLesson.ts`
+  лишился ручных/сгенерированных аннотаций по той же причине — слова там
+  теперь идут по тому же ленивому AI-пути, что и у сгенерированных уроков.
 
-Rules:
-- All explanatory text (contextualMeaning, grammarSummary, grammarDetails,
-  constructionExplanation, otherMeanings[].note) must be written in
-  Russian, natural and concise.
-- shortTranslation is a short Russian gloss (a few words), not a full
-  sentence.
-- lemma, displayText, pronunciation, partOfSpeech, grammarLabel and
-  examples[].targetText stay in French (examples[].translation is
-  Russian).
-- contextualMeaning must explain the MEANING IN THIS SPECIFIC SENTENCE
-  first — never open with a generic dictionary definition.
-- If the target spans multiple tokens (a fixed phrase, a verb+preposition
-  construction, a reflexive verb with its auxiliary), keep them together
-  and explain as one unit — do not explain sub-parts separately.
-- grammarSummary: 1–2 sentences, plain language, no textbook jargon.
-- grammarDetails (only if there's a genuinely useful deeper point — tense
-  contrast, an irregular form, a common learner mistake): 2–4 sentences
-  max.
-- Provide exactly 2 examples: short, natural French sentences roughly at
-  the learner's level, using the same word/construction, each with a
-  Russian translation.
-- Never invent grammar that isn't true. If unsure, omit grammarDetails
-  rather than guess.
-- Output strictly the JSON object per the provided schema — no prose
-  outside it.
-```
+**Модель данных** (`src/types/lesson.ts`) — короткое `AnnotationSummary`
+(показывается сразу: часть речи, форма, перевод, аудио-текст, `context` с
+двухтировой подсветкой выбранного слова внутри связанной фразы внутри
+предложения) + `details.sections: DetailSection[]` — типизированный
+полиморфный массив (`explanation`/`table`/`bilingualPairs`/`grammarNote`),
+подгружается лениво по клику «Подробнее», не фиксированный набор карточек —
+модель возвращает только секции, добавляющие новое знание конкретному слову.
 
-**User prompt (на каждую единицу):**
+**Найденный при живой проверке баг схемы** (не гипотетический риск из
+плана — реально воспроизведён): OpenAI strict structured outputs отклоняет
+`anyOf`-варианты, где дискриминатор задан только через `const` без `type`
+рядом (`"schema must have a 'type' key"`). Фикс — `{ type: 'string', const:
+'explanation' }` вместо `{ const: 'explanation' }` для всех 4 вариантов
+`SECTION_SCHEMA` в `lib/pipeline/generateAnnotations.ts`. Живой прогон после
+фикса подтверждён: `/api/generate-annotation` с реальным предложением
+«Η Άννα πήγε στον σταθμό.» — `πήγε` (basic) корректно не показывает связанную
+фразу, `στον` (basic) корректно находит `στον σταθμό`; оба `details`-запроса
+(тир 2) прошли строгую схему без ошибок.
 
-```
-Language: French
-Learner level: {level}                 // напр. "A2–B1"
-Full sentence: "{sentenceText}"
-Target span in the sentence: "{targetText}"   // точная подстрока клика
-Token type: {"word" | "phrase"}
-```
+Реализация — `lib/pipeline/generateAnnotations.ts`
+(`generateAnnotationBasic`/`generateAnnotationDetails`/
+`generateAnnotationsForLesson`, оба тира — structured output через
+`response_format: json_schema`, `strict: true`), эндпоинт
+`api/generate-annotation.ts` (тир выбирается полем `tier` в теле запроса),
+клиент — `useSelectedAnnotation.ts` (ключ по `token.id` напрямую, кэш на
+сессию), рендер — `ExplanationSheet.tsx` (рендерит `details.sections` по
+`section.type`, не по фиксированным полям).
 
-**Схема ответа** — один в один поля `Annotation` из `src/types/lesson.ts`,
-кроме `id`/`type`/`tokenIds` (их присваивает приложение, а не AI — оно уже
-знает, какие токены кликнули и слово это или фраза):
-
-```json
-{
-  "displayText": "string",
-  "lemma": "string",
-  "pronunciation": "string | null",
-  "partOfSpeech": "string | null",
-  "grammarLabel": "string | null",
-  "shortTranslation": "string",
-  "contextualMeaning": "string",
-  "constructionExplanation": "string | null",
-  "grammarSummary": "string | null",
-  "grammarDetails": "string | null",
-  "otherMeanings": [{ "translation": "string", "note": "string | null" }],
-  "examples": [{ "targetText": "string", "translation": "string" }]
-}
-```
-
-Реализация — через structured output (`response_format: json_schema` у
-OpenAI, tool-use у Claude и т.п.), чтобы не парсить свободный текст.
-
-## Открытые вопросы (обсудить перед реализацией)
+## Открытые вопросы
 
 - Какой AI-провайдер для текста/грамматики (может отличаться от TTS-провайдера).
-- Генерировать аннотации на лету при клике, или заранее для всех
-  содержательных слов при подготовке урока (склоняюсь ко второму — дешевле,
-  быстрее для пользователя, легче проверить качество один раз).
-- Как определять, какие слова/фразы вообще достойны аннотации (сейчас это
-  делает человек вручную) — отдельный AI-шаг разметки константных
-  конструкций до генерации объяснений.
+- Пороги/эвристики качества AI-объяснений (когда показывать связанную фразу,
+  сколько секций деталей уместно) — калибруются на глаз по промпту, не на
+  статистике реальных прогонов; ожидаемо потребуют пересмотра по мере
+  накопления опыта на разных языках/уровнях.
 
 ## Озвучка v2 — тайминги, recovery-слой, quality gate, мультиязычность
 

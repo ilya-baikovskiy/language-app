@@ -1,5 +1,4 @@
-import type { AnnotationTarget } from '../../lib/pipeline/generateAnnotations';
-import type { Lesson } from '../types/lesson';
+import type { Lesson, Sentence, Token } from '../types/lesson';
 
 export type TokenSpan = { tokenId: string; start: number; end: number };
 
@@ -49,13 +48,21 @@ export function findTokenAtOffset(spans: TokenSpan[], offset: number): TokenSpan
 
 // Текст одного токена по id — для прогрева клипа произношения сразу при
 // выборе слова (useUnitPronunciation.prefetch в ReaderPage), раньше, чем
-// придёт ответ AI-объяснения (см. resolveAnnotationTarget — тот же паттерн
-// для фраз, эта функция — для одиночного токена, когда annotationId ещё нет).
+// придёт ответ AI-объяснения.
 export function findTokenText(lesson: Lesson, tokenId: string): string | null {
+  return findTokenAndSentence(lesson, tokenId)?.token.text ?? null;
+}
+
+// Токен + его предложение целиком по id — нужно и для запроса объяснения
+// (/api/generate-annotation получает {tokenId, sentence}, см.
+// lib/pipeline/generateAnnotations.ts), и для сборки "В контексте" в
+// useSelectedAnnotation.ts. Bottom Sheet v2: id аннотации всегда равен
+// token.id напрямую (нет больше составного annotationId фразовой группы).
+export function findTokenAndSentence(lesson: Lesson, tokenId: string): { token: Token; sentence: Sentence } | null {
   for (const paragraph of lesson.paragraphs) {
     for (const sentence of paragraph.sentences) {
       const token = sentence.tokens.find((t) => t.id === tokenId);
-      if (token) return token.text;
+      if (token) return { token, sentence };
     }
   }
   return null;
@@ -67,29 +74,6 @@ export function firstWordTokenId(lesson: Lesson): string | null {
       for (const token of sentence.tokens) {
         if (token.type === 'word') return token.id;
       }
-    }
-  }
-  return null;
-}
-
-// Восстанавливает AnnotationTarget по одному annotationId — нужно для ленивой
-// подгрузки контента объяснения (useSelectedAnnotation.ts): на этапе
-// генерации токены уже помечены annotationId (stampAnnotationTargets в
-// lib/pipeline/generateAnnotations.ts), а сама цель для запроса
-// /api/generate-annotation восстанавливается прямо из сохранённого урока —
-// отдельно её нигде хранить не нужно. По построению все токены с одним
-// annotationId соседние и лежат в одном предложении.
-export function resolveAnnotationTarget(lesson: Lesson, annotationId: string): AnnotationTarget | null {
-  for (const paragraph of lesson.paragraphs) {
-    for (const sentence of paragraph.sentences) {
-      const tokens = sentence.tokens.filter((token) => token.annotationId === annotationId);
-      if (tokens.length === 0) continue;
-      return {
-        tokenIds: tokens.map((token) => token.id),
-        displayText: tokens.map((token) => token.text).join(' '),
-        sentenceText: sentence.text,
-        type: tokens.length > 1 ? 'phrase' : 'word',
-      };
     }
   }
   return null;

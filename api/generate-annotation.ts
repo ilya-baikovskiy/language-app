@@ -20,7 +20,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const { target, level, sourceLanguage, tier, language } = (await request.json()) as {
-      target: AnnotationTarget;
+      target: AnnotationTarget; // { tokenId, sentence } — см. lib/pipeline/generateAnnotations.ts
       level: string;
       sourceLanguage?: string;
       tier?: 'basic' | 'details';

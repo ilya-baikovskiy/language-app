@@ -1,14 +1,13 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment } from 'react';
 import type { Lesson } from '../types/lesson';
 import type { SentenceTranslation } from '../hooks/useSentenceTranslations';
 import { InteractiveSentence } from './InteractiveSentence';
 
 type Props = {
   lesson: Lesson;
-  selectedAnnotationId: string | null;
   selectedTokenId: string | null;
   activeTokenId: string | null;
-  onSelectGroup: (tokenId: string, annotationId: string | null) => void;
+  onSelectToken: (tokenId: string) => void;
   translationMode: boolean;
   translations: Map<string, SentenceTranslation>;
   onRetryTranslation: (sentenceId: string) => void;
@@ -16,19 +15,13 @@ type Props = {
 
 export function ArticleContent({
   lesson,
-  selectedAnnotationId,
   selectedTokenId,
   activeTokenId,
-  onSelectGroup,
+  onSelectToken,
   translationMode,
   translations,
   onRetryTranslation,
 }: Props) {
-  const annotationsById = useMemo(
-    () => new Map(lesson.annotations.map((annotation) => [annotation.id, annotation])),
-    [lesson.annotations],
-  );
-
   // Режим перевода: каждое предложение — блок с русской строкой под ним. Обычный
   // режим — предложения инлайн внутри абзаца (как в ридере по умолчанию).
   if (translationMode) {
@@ -40,11 +33,9 @@ export function ArticleContent({
               <div className="sentence-block" key={sentence.id}>
                 <InteractiveSentence
                   sentence={sentence}
-                  annotationsById={annotationsById}
-                  selectedAnnotationId={selectedAnnotationId}
                   selectedTokenId={selectedTokenId}
                   activeTokenId={activeTokenId}
-                  onSelectGroup={onSelectGroup}
+                  onSelectToken={onSelectToken}
                 />
                 <TranslationRow
                   translation={translations.get(sentence.id)}
@@ -67,11 +58,9 @@ export function ArticleContent({
               {index > 0 ? ' ' : null}
               <InteractiveSentence
                 sentence={sentence}
-                annotationsById={annotationsById}
-                selectedAnnotationId={selectedAnnotationId}
                 selectedTokenId={selectedTokenId}
                 activeTokenId={activeTokenId}
-                onSelectGroup={onSelectGroup}
+                onSelectToken={onSelectToken}
               />
             </Fragment>
           ))}

@@ -6,7 +6,7 @@ const STORAGE_KEY = 'context-reader:saved';
 // сохранённого пока нет (см. BOTTOM_SHEET_WIP.md, Этап D).
 export type SavedUnit = {
   lessonId: string;
-  annotationId: string;
+  tokenId: string;
   displayText: string;
   shortTranslation: string;
   savedAt: number;
@@ -22,13 +22,13 @@ function loadStored(): SavedUnit[] {
   }
 }
 
-function keyOf(lessonId: string, annotationId: string): string {
-  return `${lessonId}::${annotationId}`;
+function keyOf(lessonId: string, tokenId: string): string {
+  return `${lessonId}::${tokenId}`;
 }
 
 export function useSavedUnits(): {
   savedUnits: SavedUnit[];
-  isSaved: (lessonId: string, annotationId: string) => boolean;
+  isSaved: (lessonId: string, tokenId: string) => boolean;
   toggleSave: (unit: Omit<SavedUnit, 'savedAt'>) => void;
 } {
   const [savedUnits, setSavedUnits] = useState<SavedUnit[]>(() => loadStored());
@@ -42,17 +42,16 @@ export function useSavedUnits(): {
   }, [savedUnits]);
 
   const isSaved = useCallback(
-    (lessonId: string, annotationId: string) =>
-      savedUnits.some((u) => u.lessonId === lessonId && u.annotationId === annotationId),
+    (lessonId: string, tokenId: string) => savedUnits.some((u) => u.lessonId === lessonId && u.tokenId === tokenId),
     [savedUnits],
   );
 
   const toggleSave = useCallback((unit: Omit<SavedUnit, 'savedAt'>) => {
     setSavedUnits((prev) => {
-      const k = keyOf(unit.lessonId, unit.annotationId);
-      const exists = prev.some((u) => keyOf(u.lessonId, u.annotationId) === k);
+      const k = keyOf(unit.lessonId, unit.tokenId);
+      const exists = prev.some((u) => keyOf(u.lessonId, u.tokenId) === k);
       if (exists) {
-        return prev.filter((u) => keyOf(u.lessonId, u.annotationId) !== k);
+        return prev.filter((u) => keyOf(u.lessonId, u.tokenId) !== k);
       }
       return [...prev, { ...unit, savedAt: Date.now() }];
     });

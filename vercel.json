@@ -6,7 +6,6 @@
     "api/generate-audio.ts": { "maxDuration": 60 },
     "api/align-audio.ts": { "maxDuration": 60 },
     "api/generate-text.ts": { "maxDuration": 30 },
-    "api/mark-phrases.ts": { "maxDuration": 30 },
     "api/generate-annotation.ts": { "maxDuration": 30 },
     "api/translate-sentence.ts": { "maxDuration": 30 },
     "api/speak-unit.ts": { "maxDuration": 30 },

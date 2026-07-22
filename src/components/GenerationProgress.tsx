@@ -1,14 +1,13 @@
 import type { GenerationProgress as Progress } from '../services/generation/generateLessonPipeline';
 
-type StepKey = 'text' | 'phrases' | 'audio' | 'align' | 'saving';
+type StepKey = 'text' | 'audio' | 'align' | 'saving';
 
-// Шаг «Объясняем слова» убран — объяснения слов/фраз теперь подгружаются лениво,
-// по клику читателя (см. CLAUDE.md/PROGRESS.md), а не для всего урока на этапе
-// генерации. Разметка фраз (phrases) остаётся: она дешёвая и структурно нужна
-// сразу, чтобы клики по фразам работали как единое целое.
+// Шаги «Объясняем слова» и «Размечаем фразы» убраны — объяснения подгружаются
+// лениво, по клику читателя (см. AI_PIPELINE.md, «Bottom Sheet v2»), а
+// разметки фраз на этапе генерации больше нет вообще: каждое слово кликабельно
+// само по себе, связанная фраза решается внутри объяснения по клику, не заранее.
 const STEPS: { key: StepKey; label: string }[] = [
   { key: 'text', label: 'Пишем текст' },
-  { key: 'phrases', label: 'Размечаем фразы' },
   { key: 'audio', label: 'Озвучиваем' },
   { key: 'align', label: 'Синхронизируем аудио' },
   { key: 'saving', label: 'Сохраняем' },
@@ -28,16 +27,12 @@ export function GenerationProgress({ progress }: Props) {
         const isActive = index === currentIndex;
         const className = `progress-step${isActive ? ' is-active' : ''}${isDone ? ' is-done' : ''}`;
 
-        let count: string | null = null;
-        if (isActive && progress.stage === 'phrases') count = `${progress.done}/${progress.total}`;
-
         return (
           <div className={className} key={step.key}>
             <span className="progress-step-icon" aria-hidden="true">
               {isDone ? '✓' : isActive ? <SpinnerIcon /> : ''}
             </span>
             <span>{step.label}</span>
-            {count && <span className="progress-step-count">{count}</span>}
           </div>
         );
       })}

@@ -486,24 +486,10 @@
 .sheet-close:hover {
   color: var(--ink);
 }
-.sheet-lemma {
-  margin: 10px 0 0;
+.sheet-pos {
+  margin: 0 0 4px;
   font-size: 13px;
-  color: var(--ink-soft);
-}
-.sheet-lemma b {
-  color: var(--ink);
-  font-weight: 600;
-}
-.sheet-tag {
-  display: inline-block;
-  font-size: 11px;
-  letter-spacing: 0.03em;
-  color: var(--ink-soft);
-  background: var(--surface-2);
-  border-radius: 6px;
-  padding: 2px 7px;
-  margin-left: 6px;
+  color: var(--ink-faint);
 }
 .sheet-translation {
   margin: 12px 0 0;
@@ -580,19 +566,6 @@ details.sheet-more .sheet-more-body p:last-child {
   margin-bottom: 0;
 }
 
-.example {
-  margin: 0 0 10px;
-}
-.example .fr {
-  font-family: var(--font-article);
-  font-size: 15px;
-}
-.example .ru {
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  margin-top: 2px;
-}
-
 .act-btn {
   display: inline-flex;
   align-items: center;
@@ -648,15 +621,6 @@ details.sheet-more .sheet-more-body p:last-child {
 }
 
 /* ---------- sheet: two-tier content ---------- */
-.sheet-unit-label {
-  display: inline-block;
-  font-size: 11px;
-  letter-spacing: 0.03em;
-  color: var(--ink-soft);
-  background: var(--surface-2);
-  border-radius: 6px;
-  padding: 2px 7px;
-}
 .icon-btn-sm.is-loading {
   opacity: 0.5;
   cursor: default;
@@ -666,75 +630,43 @@ details.sheet-more .sheet-more-body p:last-child {
   font-size: 16px;
   line-height: 1.55;
 }
+.sheet-context-translation {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 6px 0 0;
+}
 .sheet-target {
   background: var(--accent-soft);
   color: inherit;
   border-radius: 4px;
   padding: 0 2px;
+  font-weight: 550;
   box-shadow: inset 0 -2px 0 0 var(--accent-underline);
 }
-.sheet-forms {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.form-line {
-  padding: 10px 12px;
+/* Связанная фраза (раздел 3 хэндоффа, п.5): мягкий серый фон, акцент
+   выбранного слова остаётся видимым внутри. Отдельная строка над «В
+   контексте» — не то же самое, что подсветка related внутри предложения
+   (.sheet-related-inline), которая просто оборачивает кусок текста на месте. */
+.sheet-related {
   background: var(--surface-2);
   border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 0 0;
 }
-.form-line-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.form-line-label {
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.form-line .fr,
-.breakdown-part .fr,
-.whole-phrase .fr,
-.form-variant .fr {
+.sheet-related-source {
   font-family: var(--font-article);
-  font-size: 15.5px;
-  color: var(--ink);
+  font-size: 15px;
+  margin: 0;
 }
-.form-line .ru,
-.breakdown-part .ru,
-.whole-phrase .ru,
-.form-variant .ru {
+.sheet-related-translation {
   font-size: 13px;
   color: var(--ink-soft);
-  margin-top: 2px;
+  margin: 4px 0 0;
 }
-.breakdown-part {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
-.breakdown-part:last-child {
-  border-bottom: none;
-}
-.breakdown-part-head,
-.whole-phrase-head,
-.form-variant-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.breakdown-note {
-  font-size: 12px;
-  color: var(--ink-faint);
-  font-style: italic;
-  margin-top: 1px;
-}
-.whole-phrase {
-  padding: 10px 12px;
-  background: var(--accent-soft);
-  border-radius: 10px;
+.sheet-related-inline {
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 0 2px;
 }
 .sheet-note {
   font-size: 13.5px;
@@ -746,7 +678,10 @@ details.sheet-more .sheet-more-body p:last-child {
   margin: 0;
 }
 .sheet-more-toggle {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
   text-align: left;
   border: 1px dashed var(--border);
@@ -762,17 +697,61 @@ details.sheet-more .sheet-more-body p:last-child {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
-.form-variant {
-  padding: 8px 10px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-}
-.form-variant.is-current {
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px var(--accent-underline);
-}
-.form-variant-note {
+.sheet-more-sub {
   color: var(--ink-faint);
+  font-weight: 400;
+}
+/* Секции подробностей (тир 2, DetailSection[]) — раздел 4/7 хэндоффа: без
+   заголовков в CAPS, без серых карточек вокруг таблиц, тонкие разделители. */
+.sheet-table-wrap {
+  overflow-x: auto;
+}
+.sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.sheet-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  padding: 0 10px 8px 0;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.sheet-table td {
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+}
+.sheet-table tr:last-child td {
+  border-bottom: none;
+}
+.sheet-table tr.is-highlighted td {
+  background: var(--accent-soft);
+}
+.bilingual-pair {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.bilingual-pair:last-child {
+  border-bottom: none;
+}
+.bilingual-pair-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bilingual-pair-head .foreign {
+  font-family: var(--font-article);
+  font-size: 15px;
+  color: var(--ink);
+}
+.bilingual-pair .native {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 2px;
 }
 .sheet-toast {
   position: absolute;

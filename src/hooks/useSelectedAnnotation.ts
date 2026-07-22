@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { resolveAnnotationTarget } from '../lib/lessonText';
+import { findTokenAndSentence } from '../lib/lessonText';
 import { fetchAnnotationBasic, fetchAnnotationDetails } from '../services/generation/lessonsApi';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
-import type { Annotation, Lesson, Token } from '../types/lesson';
+import type { Annotation, Lesson } from '../types/lesson';
 
 // lesson.languageCode — свободная строка (см. types/lesson.ts), но по
 // построению всегда одно из значений LanguageCode — мы сами его туда пишем.
@@ -18,50 +18,22 @@ export type DetailsStatus = 'idle' | 'loading' | 'ready' | 'error';
 export type SheetSelection =
   | { kind: 'annotation'; annotation: Annotation; sentenceText: string; detailsStatus: DetailsStatus }
   | { kind: 'loading'; displayText: string; sentenceText: string }
-  | { kind: 'error'; displayText: string; sentenceText: string }
-  | { kind: 'fallback'; word: string; sentenceText: string };
+  | { kind: 'error'; displayText: string; sentenceText: string };
 
 type FetchStatus = 'loading' | 'error';
 
-function findTokenAndSentenceText(lesson: Lesson, tokenId: string): { token: Token; sentenceText: string } | null {
-  for (const paragraph of lesson.paragraphs) {
-    for (const sentence of paragraph.sentences) {
-      const token = sentence.tokens.find((t) => t.id === tokenId);
-      if (token) return { token, sentenceText: sentence.text };
-    }
-  }
-  return null;
-}
-
-// Есть ли у аннотации контент второго тира. Предзаполненные уроки (sampleLesson)
-// и уже дозагруженные аннотации проходят эту проверку — второй запрос им не
-// нужен. Базовая (тир-1) аннотация из ленивого фетча её не проходит, пока
-// пользователь не откроет «Подробнее».
-function annotationHasDetails(a: Annotation): boolean {
-  return (
-    (a.examples?.length ?? 0) > 0 ||
-    a.grammarSummary != null ||
-    a.grammarDetails != null ||
-    a.grammarLabel != null ||
-    a.constructionExplanation != null ||
-    a.formVariants != null ||
-    (a.otherMeanings?.length ?? 0) > 0
-  );
-}
-
-// Резолвит, что показывать в Bottom Sheet, по одним лишь id — источник истины
-// остаётся в id-полях (selectedTokenId/selectedAnnotationId), а не в дублирующем
-// объекте контента (раздел 16 ТЗ).
+// Резолвит, что показывать в Bottom Sheet, по одному id — Bottom Sheet v2:
+// каждый word-токен кликабелен сам по себе, annotation.id === token.id
+// напрямую (нет больше составного annotationId фразовой группы, а значит и
+// отдельного параметра selectedAnnotationId).
 //
-// Ленивая генерация в два тира (CLAUDE.md/PROGRESS.md): annotationId у токена
-// проставлен на этапе генерации (stampAnnotationTargets), а контент тянется по
-// клику. Тир 1 (базовое) — сразу при выборе слова; тир 2 (детали) — только
-// когда пользователь жмёт «Подробнее» (loadDetails). Оба кэшируются на время
-// сессии (без записи обратно в Blob — упрощение v1).
+// Ленивая генерация в два тира (CLAUDE.md/PROGRESS.md): тир 1 (базовое) —
+// сразу при выборе слова; тир 2 (детали) — только когда пользователь жмёт
+// «Подробнее» (loadDetails). Оба кэшируются на время сессии (без записи
+// обратно в Blob — упрощение v1).
 export function useSelectedAnnotation(
   lesson: Lesson,
   selectedTokenId: string | null,
-  selectedAnnotationId: string | null,
 ): {
   selection: SheetSelection | null;
   retry: () => void;
@@ -76,43 +48,39 @@ export function useSelectedAnnotation(
   const [detailsRetryNonce, setDetailsRetryNonce] = useState(0);
 
   const found = useMemo(
-    () => (selectedTokenId ? findTokenAndSentenceText(lesson, selectedTokenId) : null),
+    () => (selectedTokenId ? findTokenAndSentence(lesson, selectedTokenId) : null),
     [lesson, selectedTokenId],
   );
 
-  const persistedAnnotation = selectedAnnotationId
-    ? lesson.annotations.find((a) => a.id === selectedAnnotationId)
-    : undefined;
-  const cachedAnnotation = selectedAnnotationId ? cache[selectedAnnotationId] : undefined;
+  const persistedAnnotation = selectedTokenId ? lesson.annotations.find((a) => a.id === selectedTokenId) : undefined;
+  const cachedAnnotation = selectedTokenId ? cache[selectedTokenId] : undefined;
   // Кэш при наличии предпочтительнее: для сгенерированных уроков persisted нет
   // вовсе, а после дозагрузки деталей склеенная аннотация лежит именно в кэше.
   const resolvedAnnotation = cachedAnnotation ?? persistedAnnotation;
 
-  const needsBasicFetch = !!selectedAnnotationId && !resolvedAnnotation && !!found?.token.annotationId;
+  const needsBasicFetch = !!selectedTokenId && !!found && !resolvedAnnotation;
 
   useEffect(() => {
-    if (!needsBasicFetch || !selectedAnnotationId) return;
-    const target = resolveAnnotationTarget(lesson, selectedAnnotationId);
-    if (!target) return;
+    if (!needsBasicFetch || !selectedTokenId || !found) return;
 
     let cancelled = false;
-    setBasicStatusById((prev) => ({ ...prev, [selectedAnnotationId]: 'loading' }));
+    setBasicStatusById((prev) => ({ ...prev, [selectedTokenId]: 'loading' }));
 
-    fetchAnnotationBasic(target, lesson.level, lessonLanguage(lesson))
-      .then((content) => {
+    fetchAnnotationBasic({ tokenId: selectedTokenId, sentence: found.sentence }, lesson.level, lessonLanguage(lesson))
+      .then((summary) => {
         if (cancelled) return;
-        const annotation: Annotation = { id: selectedAnnotationId, type: target.type, tokenIds: target.tokenIds, ...content };
-        setCache((prev) => ({ ...prev, [selectedAnnotationId]: annotation }));
+        const annotation: Annotation = { id: selectedTokenId, summary };
+        setCache((prev) => ({ ...prev, [selectedTokenId]: annotation }));
         setBasicStatusById((prev) => {
           const next = { ...prev };
-          delete next[selectedAnnotationId];
+          delete next[selectedTokenId];
           return next;
         });
       })
       .catch((err) => {
         if (cancelled) return;
-        console.error(`Не удалось объяснить "${target.displayText}":`, err);
-        setBasicStatusById((prev) => ({ ...prev, [selectedAnnotationId]: 'error' }));
+        console.error(`Не удалось объяснить "${found.token.text}":`, err);
+        setBasicStatusById((prev) => ({ ...prev, [selectedTokenId]: 'error' }));
       });
 
     return () => {
@@ -120,88 +88,78 @@ export function useSelectedAnnotation(
     };
     // retryNonce намеренно в зависимостях — заново запустить запрос после «Повторить».
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needsBasicFetch, selectedAnnotationId, lesson, retryNonce]);
+  }, [needsBasicFetch, selectedTokenId, found, lesson, retryNonce]);
 
-  const detailsWanted = !!selectedAnnotationId && !!detailsWantedById[selectedAnnotationId];
-  const needsDetailsFetch =
-    !!selectedAnnotationId && detailsWanted && !!resolvedAnnotation && !annotationHasDetails(resolvedAnnotation);
+  const detailsWanted = !!selectedTokenId && !!detailsWantedById[selectedTokenId];
+  const needsDetailsFetch = detailsWanted && !!resolvedAnnotation && !resolvedAnnotation.details;
 
   useEffect(() => {
-    if (!needsDetailsFetch || !selectedAnnotationId) return;
-    const target = resolveAnnotationTarget(lesson, selectedAnnotationId);
-    if (!target) return;
+    if (!needsDetailsFetch || !selectedTokenId || !found) return;
     // База, на которую домёрживаем детали — уже разрешённая аннотация тир-1.
-    const base = cache[selectedAnnotationId] ?? persistedAnnotation;
+    const base = cache[selectedTokenId] ?? persistedAnnotation;
     if (!base) return;
 
     let cancelled = false;
-    setDetailsStatusById((prev) => ({ ...prev, [selectedAnnotationId]: 'loading' }));
+    setDetailsStatusById((prev) => ({ ...prev, [selectedTokenId]: 'loading' }));
 
-    fetchAnnotationDetails(target, lesson.level, lessonLanguage(lesson))
+    fetchAnnotationDetails({ tokenId: selectedTokenId, sentence: found.sentence }, lesson.level, lessonLanguage(lesson))
       .then((details) => {
         if (cancelled) return;
-        setCache((prev) => ({ ...prev, [selectedAnnotationId]: { ...base, ...details } }));
+        setCache((prev) => ({ ...prev, [selectedTokenId]: { ...base, details } }));
         setDetailsStatusById((prev) => {
           const next = { ...prev };
-          delete next[selectedAnnotationId];
+          delete next[selectedTokenId];
           return next;
         });
       })
       .catch((err) => {
         if (cancelled) return;
-        console.error(`Не удалось загрузить детали "${target.displayText}":`, err);
-        setDetailsStatusById((prev) => ({ ...prev, [selectedAnnotationId]: 'error' }));
+        console.error(`Не удалось загрузить детали "${found.token.text}":`, err);
+        setDetailsStatusById((prev) => ({ ...prev, [selectedTokenId]: 'error' }));
       });
 
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needsDetailsFetch, selectedAnnotationId, lesson, detailsRetryNonce]);
+  }, [needsDetailsFetch, selectedTokenId, found, lesson, detailsRetryNonce]);
 
   const retry = useCallback(() => setRetryNonce((n) => n + 1), []);
 
   const loadDetails = useCallback(() => {
-    if (!selectedAnnotationId) return;
-    setDetailsWantedById((prev) => ({ ...prev, [selectedAnnotationId]: true }));
-  }, [selectedAnnotationId]);
+    if (!selectedTokenId) return;
+    setDetailsWantedById((prev) => ({ ...prev, [selectedTokenId]: true }));
+  }, [selectedTokenId]);
 
   const retryDetails = useCallback(() => {
-    if (!selectedAnnotationId) return;
+    if (!selectedTokenId) return;
     setDetailsStatusById((prev) => {
       const next = { ...prev };
-      delete next[selectedAnnotationId];
+      delete next[selectedTokenId];
       return next;
     });
     setDetailsRetryNonce((n) => n + 1);
-  }, [selectedAnnotationId]);
+  }, [selectedTokenId]);
 
   const selection = useMemo<SheetSelection | null>(() => {
     if (!selectedTokenId || !found) return null;
 
-    if (selectedAnnotationId) {
-      if (resolvedAnnotation) {
-        const detailsStatus: DetailsStatus = annotationHasDetails(resolvedAnnotation)
-          ? 'ready'
-          : detailsStatusById[selectedAnnotationId] === 'loading'
-            ? 'loading'
-            : detailsStatusById[selectedAnnotationId] === 'error'
-              ? 'error'
-              : 'idle';
-        return { kind: 'annotation', annotation: resolvedAnnotation, sentenceText: found.sentenceText, detailsStatus };
-      }
-      if (found.token.annotationId) {
-        const target = resolveAnnotationTarget(lesson, selectedAnnotationId);
-        const displayText = target?.displayText ?? found.token.text;
-        if (basicStatusById[selectedAnnotationId] === 'error') {
-          return { kind: 'error', displayText, sentenceText: found.sentenceText };
-        }
-        return { kind: 'loading', displayText, sentenceText: found.sentenceText };
-      }
+    if (resolvedAnnotation) {
+      const detailsStatus: DetailsStatus = resolvedAnnotation.details
+        ? 'ready'
+        : detailsStatusById[selectedTokenId] === 'loading'
+          ? 'loading'
+          : detailsStatusById[selectedTokenId] === 'error'
+            ? 'error'
+            : 'idle';
+      return { kind: 'annotation', annotation: resolvedAnnotation, sentenceText: found.sentence.text, detailsStatus };
     }
 
-    return { kind: 'fallback', word: found.token.text, sentenceText: found.sentenceText };
-  }, [lesson, selectedTokenId, selectedAnnotationId, found, resolvedAnnotation, basicStatusById, detailsStatusById]);
+    if (basicStatusById[selectedTokenId] === 'error') {
+      return { kind: 'error', displayText: found.token.text, sentenceText: found.sentence.text };
+    }
+    return { kind: 'loading', displayText: found.token.text, sentenceText: found.sentence.text };
+  }, [selectedTokenId, found, resolvedAnnotation, basicStatusById, detailsStatusById]);
 
   return { selection, retry, loadDetails, retryDetails };
 }
