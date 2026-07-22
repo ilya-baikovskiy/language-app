@@ -502,11 +502,12 @@
   border-top: 1px solid var(--border);
   margin: 16px 0;
 }
+/* Хэндофф §7 / критерии приёмки: никаких заголовков в CAPS внутри шита,
+   умеренное начертание вместо тяжёлого bold. */
 .sheet-section-title {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
   margin: 0 0 8px;
 }
 .sheet-body p {
@@ -630,6 +631,16 @@ details.sheet-more .sheet-more-body p:last-child {
   font-size: 16px;
   line-height: 1.55;
 }
+/* Хэндофф §7: «контекст может находиться на мягком сером фоне» — во всех
+   эталонных скриншотах он именно так и показан. */
+.sheet-context-card {
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.sheet-context-card .sheet-sentence {
+  margin: 0;
+}
 .sheet-context-translation {
   font-size: 13.5px;
   color: var(--ink-soft);
@@ -663,10 +674,13 @@ details.sheet-more .sheet-more-body p:last-child {
   color: var(--ink-soft);
   margin: 4px 0 0;
 }
+/* Внутри .sheet-context-card фон уже --surface-2, поэтому связанная фраза
+   тонируется полупрозрачным --border (он translucent-ink и работает в обеих
+   темах), иначе получилось бы серое на сером. */
 .sheet-related-inline {
-  background: var(--surface-2);
+  background: var(--border);
   border-radius: 4px;
-  padding: 0 2px;
+  padding: 2px 2px;
 }
 .sheet-note {
   font-size: 13.5px;

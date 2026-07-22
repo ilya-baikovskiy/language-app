@@ -186,8 +186,11 @@ Section types available — use whichever fit, in a sensible reading order:
   form works" (e.g. why this tense/case is used here).
 - "table": a small comparison (e.g. tense across present/past/future, or a short paradigm). Compare
   forms using the SAME grammatical person/number throughout — do not mix a form from the sentence with
-  other persons in the same row logic. Set highlightRow only if genuinely useful, never just to mark
-  the clicked form.
+  other persons in the same row logic. EVERY table that lists ${languageConfig.promptLanguageName}
+  forms must carry a ${sourceLanguage} column translating them — never a grid of bare forms with no
+  translation (a singular/plural grid of forms alone is NOT acceptable; use one row per person with a
+  ${sourceLanguage} column instead). Set highlightRow to null almost always: it must never be used
+  merely to point at the form the learner clicked — they already know which one that is.
 - "bilingualPairs": 2-4 short ${languageConfig.promptLanguageName} examples with idiomatic (never
   mechanically literal) ${sourceLanguage} translations — similar constructions, not random sentences.
 - "grammarNote": one short technical line (e.g. "aorist, 3rd person singular"), only if a learner would
@@ -284,6 +287,22 @@ export async function generateAnnotationBasic(
   };
 }
 
+// Критерий приёмки хэндоффа: «в таблице текущая форма не выделена отдельным
+// цветом или плашкой». Промпт об этом просит, но модель устойчиво подсвечивает
+// именно кликнутую форму (наблюдалось на πήγε/αποφάσισαν/όμορφη/στην), поэтому
+// правило добивается детерминированно: подсветка строки, содержащей выбранное
+// слово, снимается на сервере.
+export function dropSelfHighlight(sections: DetailSection[], targetText: string): DetailSection[] {
+  const target = targetText.toLowerCase();
+  return sections.map((section) => {
+    if (section.type !== 'table' || section.highlightRow === null) return section;
+    const row = section.rows[section.highlightRow];
+    if (!row) return { ...section, highlightRow: null };
+    const marksTarget = row.some((cell) => cell.toLowerCase().split(/[^\p{L}\p{N}]+/u).includes(target));
+    return marksTarget ? { ...section, highlightRow: null } : section;
+  });
+}
+
 // Тир 2 — секции по запросу «Подробнее». Тяжелее — генерим только когда
 // пользователь реально захотел деталей.
 export async function generateAnnotationDetails(
@@ -294,7 +313,7 @@ export async function generateAnnotationDetails(
   apiKey: string,
   model: string,
 ): Promise<{ sections: DetailSection[] }> {
-  return callAnnotationModel(
+  const { sections } = await callAnnotationModel<{ sections: DetailSection[] }>(
     'annotation_details',
     DETAILS_SCHEMA,
     detailsSystemPrompt(languageConfig, sourceLanguage),
@@ -302,6 +321,7 @@ export async function generateAnnotationDetails(
     apiKey,
     model,
   );
+  return { sections: dropSelfHighlight(sections, targetToken(target).text) };
 }
 
 // Полный контент (оба тира сразу) — для CLI/офлайн-прогона, где урок
