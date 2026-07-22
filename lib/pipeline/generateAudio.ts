@@ -1,10 +1,14 @@
-// Шаг 6 пайплайна — обобщение scripts/generate-lesson-audio.ts: озвучка +
-// word-level таймкоды через Whisper, с тем же merge-recovery для элизий/
-// дефисов (общий алгоритм, специфики под конкретный текст в нём нет).
+// OpenAI-провайдер шага 6 пайплайна: озвучка (gpt-4o-mini-tts) + word-level
+// таймкоды через Whisper. Whisper *распознаёт* готовое аудио заново и
+// сопоставляется с нашими токенами эвристикой (alignTokensToWhisper) — в
+// отличие от ElevenLabs-пути (elevenLabsAudio.ts), где тайминги приходят как
+// побочный продукт самого синтеза. Оба провайдера отдают одинаковую форму
+// результата через lib/pipeline/audioProviders.ts.
 
 import type { LanguageConfig } from './languageConfig.js';
 import { buildLessonText, findTokenAtOffset, type TokenSpan } from '../../src/lib/lessonText.js';
 import type { Lesson, Token } from '../../src/types/lesson.js';
+import type { RecoveryEntry, TimedRange } from './timingRecovery.js';
 
 type WhisperWord = { word: string; start: number; end: number };
 
@@ -14,7 +18,7 @@ export async function generateSpeech(text: string, languageConfig: LanguageConfi
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts',
-      voice: languageConfig.ttsVoice,
+      voice: languageConfig.voices.openaiVoice,
       input: text,
       response_format: 'mp3',
       instructions: `Speak as a native ${languageConfig.promptLanguageName} narrator reading a short story aloud, deliberately a bit slower and more clearly-articulated than normal conversational pace — the audience is language learners. Natural rhythm and intonation, warm and calm, not rushed, not robotic, not exaggeratedly slow either.`,
@@ -68,9 +72,14 @@ function collectWordTokens(lesson: Lesson): Token[] {
   return tokens;
 }
 
-function alignTokensToWhisper(tokens: Token[], whisperWords: WhisperWord[]) {
-  const result: Record<string, { startTime: number; endTime: number }> = {};
-  const unmatched: string[] = [];
+// recoveryLog собирает только 'guessed' — случаи, когда точное текстовое
+// совпадение не нашлось и Whisper-слово присвоено токену как best-effort
+// (последняя ветка ниже). Успешные merge-recovery (элизии/дефисы в обе
+// стороны) — это НЕ recovery в смысле AlignmentReport: там текст сошёлся
+// точно, просто с других длин по обе стороны, а не эвристическая догадка.
+function alignTokensToWhisper(tokens: Token[], whisperWords: WhisperWord[]): { result: Record<string, TimedRange>; recoveryLog: RecoveryEntry[] } {
+  const result: Record<string, TimedRange> = {};
+  const recoveryLog: RecoveryEntry[] = [];
   let wi = 0;
 
   for (let ti = 0; ti < tokens.length; ti++) {
@@ -78,7 +87,6 @@ function alignTokensToWhisper(tokens: Token[], whisperWords: WhisperWord[]) {
     const target = normalize(token.text);
 
     if (wi >= whisperWords.length) {
-      unmatched.push(`${token.text} (закончились слова Whisper)`);
       continue;
     }
     const w = whisperWords[wi];
@@ -138,12 +146,15 @@ function alignTokensToWhisper(tokens: Token[], whisperWords: WhisperWord[]) {
       }
     }
 
-    unmatched.push(`"${token.text}" (ожидали "${target}", Whisper дал "${w.word}")`);
+    // Ни точное, ни merge-совпадение не нашлись — присваиваем Whisper-слово
+    // как есть, чтобы не потерять синхронизацию со следующими токенами, но
+    // помечаем как 'guessed': AlignmentReport и quality gate должны это видеть.
     result[token.id] = { startTime: w.start, endTime: w.end };
+    recoveryLog.push({ tokenId: token.id, kind: 'guessed' });
     wi++;
   }
 
-  return { result, unmatched };
+  return { result, recoveryLog };
 }
 
 // Раздельно от TTS — так каждый HTTP-вызов (api/generate-audio.ts делает TTS,
@@ -153,16 +164,16 @@ export async function transcribeAndAlign(
   wordTokens: Token[],
   languageConfig: LanguageConfig,
   apiKey: string,
-): Promise<{ timestampsByToken: Record<string, { startTime: number; endTime: number }>; unmatched: string[] }> {
+): Promise<{ timestampsByToken: Record<string, TimedRange>; recoveryLog: RecoveryEntry[] }> {
   const whisperWords = await transcribeWithTimestamps(audioBuffer, languageConfig, apiKey);
-  const { result, unmatched } = alignTokensToWhisper(wordTokens, whisperWords);
+  const { result, recoveryLog } = alignTokensToWhisper(wordTokens, whisperWords);
 
-  const rounded: Record<string, { startTime: number; endTime: number }> = {};
+  const rounded: Record<string, TimedRange> = {};
   for (const [id, v] of Object.entries(result)) {
     rounded[id] = { startTime: Math.round(v.startTime * 1000) / 1000, endTime: Math.round(v.endTime * 1000) / 1000 };
   }
 
-  return { timestampsByToken: rounded, unmatched };
+  return { timestampsByToken: rounded, recoveryLog };
 }
 
 // Удобная обёртка для CLI (весь урок целиком, локально, без разделения на два HTTP-вызова).
@@ -170,16 +181,12 @@ export async function generateAudioAndTimestamps(
   lesson: Lesson,
   languageConfig: LanguageConfig,
   apiKey: string,
-): Promise<{
-  audioBuffer: Buffer;
-  timestampsByToken: Record<string, { startTime: number; endTime: number }>;
-  unmatched: string[];
-}> {
+): Promise<{ audioBuffer: Buffer; timestampsByToken: Record<string, TimedRange>; recoveryLog: RecoveryEntry[] }> {
   const { text } = buildLessonText(lesson);
   const audioBuffer = await generateSpeech(text, languageConfig, apiKey);
   const wordTokens = collectWordTokens(lesson);
-  const { timestampsByToken, unmatched } = await transcribeAndAlign(audioBuffer, wordTokens, languageConfig, apiKey);
-  return { audioBuffer, timestampsByToken, unmatched };
+  const { timestampsByToken, recoveryLog } = await transcribeAndAlign(audioBuffer, wordTokens, languageConfig, apiKey);
+  return { audioBuffer, timestampsByToken, recoveryLog };
 }
 
 export { collectWordTokens };

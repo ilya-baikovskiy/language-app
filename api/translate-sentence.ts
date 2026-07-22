@@ -3,7 +3,7 @@
 // тумблер «Перевод» (см. useSentenceTranslations.ts).
 
 import { translateSentence } from '../lib/pipeline/translateSentence.js';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
+import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
 
 export const maxDuration = 30;
 
@@ -12,12 +12,13 @@ export async function POST(request: Request): Promise<Response> {
   if (!apiKey) return new Response('Server misconfigured: OPENAI_API_KEY missing', { status: 500 });
 
   try {
-    const { sentenceText, level, sourceLanguage } = (await request.json()) as {
+    const { sentenceText, level, sourceLanguage, language } = (await request.json()) as {
       sentenceText: string;
       level?: string;
       sourceLanguage?: string;
+      language?: LanguageCode;
     };
-    const languageConfig = getLanguageConfig('fr');
+    const languageConfig = getLanguageConfig(language ?? 'fr');
     const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o';
     const translation = await translateSentence(
       sentenceText,

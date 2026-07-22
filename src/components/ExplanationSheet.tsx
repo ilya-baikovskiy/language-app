@@ -3,12 +3,23 @@ import type { SheetSelection } from '../hooks/useSelectedAnnotation';
 import type { Annotation, BreakdownPart, FormPair } from '../types/lesson';
 import { ExampleList } from './ExampleList';
 
+type SpeakFn = (text: string, onError?: (error: Error) => void, contextText?: string) => void;
+type IsLoadingFn = (text: string) => boolean;
+
 type Props = {
   selection: SheetSelection | null;
   isOpen: boolean;
   onClose: () => void;
   onContinue: () => void;
-  onSpeak: (text: string, onError?: (error: Error) => void, contextText?: string) => void;
+  // Предложение целиком — нарезка дорожки урока (там коартикуляция уместна и
+  // ожидаема на слух).
+  onSpeak: SpeakFn;
+  // Слово/фраза/форма — отдельный TTS-клип (useUnitPronunciation), не нарезка:
+  // нарезка на границах слов резала звук (découvrir звучало как couvrir), а для
+  // текста, которого в уроке нет дословно (формы, разбор фразы по частям), её
+  // вообще не существовало — там раньше была кнопка-заглушка с тостом.
+  onSpeakUnit: SpeakFn;
+  isUnitLoading: IsLoadingFn;
   onRetry: () => void;
   onLoadDetails: () => void;
   onRetryDetails: () => void;
@@ -22,15 +33,15 @@ type Props = {
 //
 // Двухтировый контент (CLAUDE.md/PROGRESS.md): Уровень 1 (базовое — что значит
 // ЗДЕСЬ, без грамматических терминов) виден сразу; грамматика и формы (тир 2)
-// прячутся за «Подробнее» и догружаются лениво (onLoadDetails). Реальная озвучка
-// (onSpeak, дорожка урока) — только у заголовка и предложения; у сгенерированных
-// строк (формы, примеры) её в аудиодорожке нет, поэтому там кнопка-стаб с тостом.
+// прячутся за «Подробнее» и догружаются лениво (onLoadDetails).
 export function ExplanationSheet({
   selection,
   isOpen,
   onClose,
   onContinue,
   onSpeak,
+  onSpeakUnit,
+  isUnitLoading,
   onRetry,
   onLoadDetails,
   onRetryDetails,
@@ -63,10 +74,9 @@ export function ExplanationSheet({
     toastTimer.current = setTimeout(() => setToast(null), 1800);
   }
 
-  const showStubToast = () => showToast('Озвучивание будет добавлено позже');
-  // Реальная озвучка (заголовок/предложение) может не найтись в аудиодорожке
-  // урока (см. onError у narration.speakSelection) — показываем тост вместо
-  // того, чтобы ронять весь плеер в состояние ошибки.
+  // И клип (onSpeakUnit), и нарезка дорожки (onSpeak) могут не получиться —
+  // сеть/квота у клипа, текст не нашёлся в уроке у нарезки. Один тост на оба
+  // случая, чтобы не ронять весь плеер в состояние ошибки.
   const showPlaybackErrorToast = () => showToast('Не удалось воспроизвести звук');
 
   function handleMore() {
@@ -92,7 +102,8 @@ export function ExplanationSheet({
                 selection={selection}
                 onClose={onClose}
                 onSpeak={onSpeak}
-                onStub={showStubToast}
+                onSpeakUnit={onSpeakUnit}
+                isUnitLoading={isUnitLoading}
                 onPlaybackError={showPlaybackErrorToast}
                 expanded={expanded}
                 onMore={handleMore}
@@ -145,14 +156,14 @@ export function ExplanationSheet({
                 <div className="sheet-top">
                   <div className="sheet-head-row">
                     <div className="sheet-head">{selection.word}</div>
-                    <button
-                      className="icon-btn-sm"
-                      type="button"
-                      aria-label="Прослушать"
-                      onClick={() => onSpeak(selection.word, showPlaybackErrorToast, selection.sentenceText)}
-                    >
-                      <SpeakerIcon />
-                    </button>
+                    <UnitSpeakerButton
+                      text={selection.word}
+                      contextText={selection.sentenceText}
+                      onSpeakUnit={onSpeakUnit}
+                      isUnitLoading={isUnitLoading}
+                      onPlaybackError={showPlaybackErrorToast}
+                      label="Прослушать"
+                    />
                   </div>
                   <CloseButton onClose={onClose} />
                 </div>
@@ -203,8 +214,9 @@ export function ExplanationSheet({
 type AnnotationViewProps = {
   selection: Extract<SheetSelection, { kind: 'annotation' }>;
   onClose: () => void;
-  onSpeak: (text: string, onError?: (error: Error) => void, contextText?: string) => void;
-  onStub: () => void;
+  onSpeak: SpeakFn;
+  onSpeakUnit: SpeakFn;
+  isUnitLoading: IsLoadingFn;
   onPlaybackError: () => void;
   expanded: boolean;
   onMore: () => void;
@@ -215,7 +227,8 @@ function AnnotationView({
   selection,
   onClose,
   onSpeak,
-  onStub,
+  onSpeakUnit,
+  isUnitLoading,
   onPlaybackError,
   expanded,
   onMore,
@@ -230,14 +243,14 @@ function AnnotationView({
         <div>
           <div className="sheet-head-row">
             <div className="sheet-head">{a.displayText}</div>
-            <button
-              className="icon-btn-sm"
-              type="button"
-              aria-label="Прослушать"
-              onClick={() => onSpeak(a.displayText, onPlaybackError, selection.sentenceText)}
-            >
-              <SpeakerIcon />
-            </button>
+            <UnitSpeakerButton
+              text={a.displayText}
+              contextText={selection.sentenceText}
+              onSpeakUnit={onSpeakUnit}
+              isUnitLoading={isUnitLoading}
+              onPlaybackError={onPlaybackError}
+              label="Прослушать"
+            />
             <span className="sheet-unit-label">{unitLabel}</span>
           </div>
           {a.pronunciation && <p className="sheet-pron">{a.pronunciation}</p>}
@@ -275,8 +288,12 @@ function AnnotationView({
 
       {(a.baseForm || a.formInText) && (
         <div className="sheet-body sheet-forms">
-          {a.baseForm && <FormLine label="Базовая форма" pair={a.baseForm} onStub={onStub} />}
-          {a.formInText && <FormLine label="Форма в тексте" pair={a.formInText} onStub={onStub} />}
+          {a.baseForm && (
+            <FormLine label="Базовая форма" pair={a.baseForm} onSpeakUnit={onSpeakUnit} isUnitLoading={isUnitLoading} onPlaybackError={onPlaybackError} />
+          )}
+          {a.formInText && (
+            <FormLine label="Форма в тексте" pair={a.formInText} onSpeakUnit={onSpeakUnit} isUnitLoading={isUnitLoading} onPlaybackError={onPlaybackError} />
+          )}
         </div>
       )}
 
@@ -287,7 +304,13 @@ function AnnotationView({
             <div className="breakdown-part" key={part.text}>
               <div className="breakdown-part-head">
                 <span className="fr">{part.text}</span>
-                <StubSpeakerButton onStub={onStub} label={`Прослушать ${part.text}`} />
+                <UnitSpeakerButton
+                  text={part.text}
+                  onSpeakUnit={onSpeakUnit}
+                  isUnitLoading={isUnitLoading}
+                  onPlaybackError={onPlaybackError}
+                  label={`Прослушать ${part.text}`}
+                />
               </div>
               <div className="ru">{part.meaning}</div>
               {part.note && <div className="breakdown-note">{part.note}</div>}
@@ -302,7 +325,13 @@ function AnnotationView({
           <div className="whole-phrase">
             <div className="whole-phrase-head">
               <span className="fr">{a.wholePhrase.text}</span>
-              <StubSpeakerButton onStub={onStub} label="Прослушать фразу" />
+              <UnitSpeakerButton
+                text={a.wholePhrase.text}
+                onSpeakUnit={onSpeakUnit}
+                isUnitLoading={isUnitLoading}
+                onPlaybackError={onPlaybackError}
+                label="Прослушать фразу"
+              />
             </div>
             <div className="ru">{a.wholePhrase.meaning}</div>
           </div>
@@ -321,18 +350,30 @@ function AnnotationView({
         </button>
       )}
 
-      {expanded && <DetailsView selection={selection} onStub={onStub} onRetryDetails={onRetryDetails} />}
+      {expanded && (
+        <DetailsView
+          selection={selection}
+          onSpeakUnit={onSpeakUnit}
+          isUnitLoading={isUnitLoading}
+          onPlaybackError={onPlaybackError}
+          onRetryDetails={onRetryDetails}
+        />
+      )}
     </>
   );
 }
 
 function DetailsView({
   selection,
-  onStub,
+  onSpeakUnit,
+  isUnitLoading,
+  onPlaybackError,
   onRetryDetails,
 }: {
   selection: Extract<SheetSelection, { kind: 'annotation' }>;
-  onStub: () => void;
+  onSpeakUnit: SpeakFn;
+  isUnitLoading: IsLoadingFn;
+  onPlaybackError: () => void;
   onRetryDetails: () => void;
 }) {
   const a = selection.annotation;
@@ -386,7 +427,13 @@ function DetailsView({
             <div className={`form-variant${variant.isCurrent ? ' is-current' : ''}`} key={variant.text}>
               <div className="form-variant-head">
                 <span className="fr">{variant.text}</span>
-                <StubSpeakerButton onStub={onStub} label={`Прослушать ${variant.text}`} />
+                <UnitSpeakerButton
+                  text={variant.text}
+                  onSpeakUnit={onSpeakUnit}
+                  isUnitLoading={isUnitLoading}
+                  onPlaybackError={onPlaybackError}
+                  label={`Прослушать ${variant.text}`}
+                />
               </div>
               <div className="ru">
                 {variant.meaning}
@@ -411,24 +458,65 @@ function DetailsView({
   );
 }
 
-function FormLine({ label, pair, onStub }: { label: string; pair: FormPair; onStub: () => void }) {
+function FormLine({
+  label,
+  pair,
+  onSpeakUnit,
+  isUnitLoading,
+  onPlaybackError,
+}: {
+  label: string;
+  pair: FormPair;
+  onSpeakUnit: SpeakFn;
+  isUnitLoading: IsLoadingFn;
+  onPlaybackError: () => void;
+}) {
   return (
     <div className="form-line">
       <div className="form-line-top">
         <span className="form-line-label">{label}</span>
         <span className="fr">{pair.text}</span>
-        <StubSpeakerButton onStub={onStub} label={`Прослушать ${pair.text}`} />
+        <UnitSpeakerButton
+          text={pair.text}
+          onSpeakUnit={onSpeakUnit}
+          isUnitLoading={isUnitLoading}
+          onPlaybackError={onPlaybackError}
+          label={`Прослушать ${pair.text}`}
+        />
       </div>
       <div className="ru">{pair.meaning}</div>
     </div>
   );
 }
 
-// Кнопка озвучки для сгенерированных строк, которых нет в аудиодорожке урока:
-// вместо реального воспроизведения показывает тост-заглушку.
-function StubSpeakerButton({ onStub, label }: { onStub: () => void; label: string }) {
+// Кнопка озвучки слова/фразы/формы — клип через useUnitPronunciation
+// (см. Props.onSpeakUnit), с индикацией загрузки на время первого запроса
+// (повторные клики по тому же тексту берут кэш на сервере и почти мгновенны).
+function UnitSpeakerButton({
+  text,
+  contextText,
+  onSpeakUnit,
+  isUnitLoading,
+  onPlaybackError,
+  label,
+}: {
+  text: string;
+  contextText?: string;
+  onSpeakUnit: SpeakFn;
+  isUnitLoading: IsLoadingFn;
+  onPlaybackError: () => void;
+  label: string;
+}) {
+  const loading = isUnitLoading(text);
   return (
-    <button className="icon-btn-sm is-stub" type="button" aria-label={label} onClick={onStub}>
+    <button
+      className={`icon-btn-sm${loading ? ' is-loading' : ''}`}
+      type="button"
+      aria-label={label}
+      aria-busy={loading}
+      disabled={loading}
+      onClick={() => onSpeakUnit(text, onPlaybackError, contextText)}
+    >
       <SpeakerIcon />
     </button>
   );

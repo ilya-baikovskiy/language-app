@@ -1,3 +1,13 @@
+// Связка «TTS + выравнивание». Провайдер выбирается один на оба шага: Forced
+// Alignment должен получать ровно ту дорожку, которую сам же и озвучил, а
+// Whisper-маппинг настроен под артикуляцию gpt-4o-mini-tts — смешивать нельзя.
+export type AudioProvider = 'openai' | 'elevenlabs';
+
+// import type — типовая (не рантайм) циклическая ссылка: AlignmentReport
+// сам ссылается на Token/AudioProvider отсюда. TS резолвит такие type-only
+// циклы без проблем (verbatimModuleSyntax стирает import type при сборке).
+import type { AlignmentReport } from '../../lib/pipeline/alignmentReport.js';
+
 export type Lesson = {
   id: string;
   language: string;
@@ -9,6 +19,18 @@ export type Lesson = {
   coverImage?: string;
   paragraphs: Paragraph[];
   annotations: Annotation[];
+  // Чем озвучен урок. Опционально: у уроков, сгенерированных до появления
+  // выбора провайдера (и у fixtures), поля нет — это всегда означает 'openai'.
+  audioProvider?: AudioProvider;
+  // Код языка урока ('fr'|'de'|'en'|'el', см. LanguageConfig) — свободная
+  // строка, а не импорт LanguageCode, по тому же принципу, что language/
+  // sourceLanguage/level уже строки: тип пайплайна не должен диктовать форму
+  // это тип-декларации ридера. Отсутствует у уроков до мультиязычности — тогда 'fr'.
+  languageCode?: string;
+  // Отчёт о качестве выравнивания на момент генерации — сохраняется вместе с
+  // уроком, чтобы можно было постфактум понять, насколько плоха/хороша
+  // подсветка, не переслушивая весь урок целиком.
+  alignmentReport?: AlignmentReport;
 };
 
 export type Paragraph = {

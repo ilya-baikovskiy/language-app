@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveAnnotationTarget } from '../lib/lessonText';
 import { fetchAnnotationBasic, fetchAnnotationDetails } from '../services/generation/lessonsApi';
+import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import type { Annotation, Lesson, Token } from '../types/lesson';
+
+// lesson.languageCode — свободная строка (см. types/lesson.ts), но по
+// построению всегда одно из значений LanguageCode — мы сами его туда пишем.
+function lessonLanguage(lesson: Lesson): LanguageCode {
+  return (lesson.languageCode as LanguageCode | undefined) ?? 'fr';
+}
 
 // Статус второго тира (детали за «Подробнее»): idle — ещё не запрашивали;
 // loading — грузим; ready — детали уже есть (в кэше, в предзаполненном уроке
@@ -91,7 +98,7 @@ export function useSelectedAnnotation(
     let cancelled = false;
     setBasicStatusById((prev) => ({ ...prev, [selectedAnnotationId]: 'loading' }));
 
-    fetchAnnotationBasic(target, lesson.level)
+    fetchAnnotationBasic(target, lesson.level, lessonLanguage(lesson))
       .then((content) => {
         if (cancelled) return;
         const annotation: Annotation = { id: selectedAnnotationId, type: target.type, tokenIds: target.tokenIds, ...content };
@@ -130,7 +137,7 @@ export function useSelectedAnnotation(
     let cancelled = false;
     setDetailsStatusById((prev) => ({ ...prev, [selectedAnnotationId]: 'loading' }));
 
-    fetchAnnotationDetails(target, lesson.level)
+    fetchAnnotationDetails(target, lesson.level, lessonLanguage(lesson))
       .then((details) => {
         if (cancelled) return;
         setCache((prev) => ({ ...prev, [selectedAnnotationId]: { ...base, ...details } }));

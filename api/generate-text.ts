@@ -2,7 +2,7 @@
 // безопасный по таймауту serverless-функции (см. AI_PIPELINE.md/план).
 
 import { generateText, type InputSource } from '../lib/pipeline/generateText.js';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
+import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
 
 export const maxDuration = 30;
 
@@ -16,8 +16,9 @@ export async function POST(request: Request): Promise<Response> {
       level: string;
       words: number;
       sourceLanguage?: string;
+      language?: LanguageCode;
     };
-    const languageConfig = getLanguageConfig('fr');
+    const languageConfig = getLanguageConfig(body.language ?? 'fr');
     const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o';
     const result = await generateText(
       body.input,

@@ -2,7 +2,7 @@
 // предложении — клиент вызывает это в цикле по всем предложениям урока.
 
 import { markPhrasesForSentence } from '../lib/pipeline/markPhrases.js';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
+import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
 import type { Sentence } from '../src/types/lesson.js';
 
 export const maxDuration = 30;
@@ -12,8 +12,8 @@ export async function POST(request: Request): Promise<Response> {
   if (!apiKey) return new Response('Server misconfigured: OPENAI_API_KEY missing', { status: 500 });
 
   try {
-    const { sentence } = (await request.json()) as { sentence: Sentence };
-    const languageConfig = getLanguageConfig('fr');
+    const { sentence, language } = (await request.json()) as { sentence: Sentence; language?: LanguageCode };
+    const languageConfig = getLanguageConfig(language ?? 'fr');
     const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o';
     const groups = await markPhrasesForSentence(sentence, languageConfig, apiKey, model);
     return Response.json({ groups });

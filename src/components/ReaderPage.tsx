@@ -4,7 +4,9 @@ import { useSelectedAnnotation } from '../hooks/useSelectedAnnotation';
 import { useSentenceTranslations } from '../hooks/useSentenceTranslations';
 import { useSavedUnits } from '../hooks/useSavedUnits';
 import { useNarration } from '../hooks/useNarration';
+import { useUnitPronunciation } from '../hooks/useUnitPronunciation';
 import { orderedWordTokenIds } from '../lib/lessonText';
+import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import type { Lesson } from '../types/lesson';
 import { ReaderHeader } from './ReaderHeader';
 import { ArticleContent } from './ArticleContent';
@@ -36,6 +38,10 @@ type Props = {
 export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
   const { theme, setTheme, fontSize, setFontSize, translationMode, setTranslationMode } = useReaderPreferences();
   const narration = useNarration(lesson, audioSrc);
+  const unitPronunciation = useUnitPronunciation(
+    (lesson.languageCode as LanguageCode | undefined) ?? 'fr',
+    lesson.audioProvider ?? 'openai',
+  );
   const [selection, setSelection] = useState<SelectionState>(INITIAL_SELECTION);
 
   const { translations, retry: retryTranslation } = useSentenceTranslations(lesson, translationMode);
@@ -74,6 +80,17 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
     if (narration.playbackStatus === 'playing') narration.pause();
     else narration.play();
   }, [narration]);
+
+  // Слово/фраза — отдельный клип (useUnitPronunciation), с запасным вариантом
+  // на нарезку дорожки урока, если клип не получился (сеть/квота). Нарезка
+  // сработает только для текста, который дословно есть в уроке — для форм/
+  // разборов фраз (их в аудио нет вообще) сработает только клип.
+  const handleSpeakUnit = useCallback(
+    (text: string, onError?: (error: Error) => void, contextText?: string) => {
+      unitPronunciation.speak(text, () => narration.speakSelection(text, onError, contextText));
+    },
+    [unitPronunciation, narration],
+  );
 
   const savedAnnotation = sheetSelection?.kind === 'annotation' ? sheetSelection.annotation : null;
   const isCurrentSaved = savedAnnotation ? isSaved(lesson.id, savedAnnotation.id) : false;
@@ -167,6 +184,8 @@ export function ReaderPage({ lesson, audioSrc, onBack }: Props) {
         onClose={closeSheet}
         onContinue={handleContinueFromSelection}
         onSpeak={narration.speakSelection}
+        onSpeakUnit={handleSpeakUnit}
+        isUnitLoading={unitPronunciation.isLoading}
         onRetry={retryAnnotation}
         onLoadDetails={loadDetails}
         onRetryDetails={retryDetails}

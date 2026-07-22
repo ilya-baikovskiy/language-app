@@ -12,7 +12,7 @@ import { buildLessonText, orderedWordTokenIds } from '../../../src/lib/lessonTex
 import { collectWordTokens } from '../../../lib/pipeline/generateAudio.js';
 import type { Token } from '../../../src/types/lesson.js';
 import { getForcedAlignment } from './elevenLabsClient.js';
-import { mapCharactersToTokens, type UnmappedToken } from './mapCharactersToTokens.js';
+import { mapCharactersToTokens, type UnmappedToken } from '../../../lib/pipeline/mapCharactersToTokens.js';
 import { computeCoverage, computePairedDiffs, percentile, round3, type CoverageReport, type PairedDiff, type TimedToken } from './metrics.js';
 
 const EVAL_DIR = path.resolve(import.meta.dirname, '..');

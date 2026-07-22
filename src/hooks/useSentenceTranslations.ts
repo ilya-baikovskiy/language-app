@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchSentenceTranslation } from '../services/generation/lessonsApi';
+import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import type { Lesson } from '../types/lesson';
+
+function lessonLanguage(lesson: Lesson): LanguageCode {
+  return (lesson.languageCode as LanguageCode | undefined) ?? 'fr';
+}
 
 // Статус перевода предложения в режиме «Перевод». ready — перевод есть (fixture
 // в уроке или уже дозагружен); loading — грузим; error — упало; idle — ещё не
@@ -64,7 +69,7 @@ export function useSentenceTranslations(
 
     mapWithConcurrency(pending, 3, async (sentence) => {
       try {
-        const text = await fetchSentenceTranslation(sentence.text, lesson.level);
+        const text = await fetchSentenceTranslation(sentence.text, lesson.level, lessonLanguage(lesson));
         if (cancelled) return;
         setFetched((prev) => ({ ...prev, [sentence.id]: { status: 'ready', text } }));
       } catch (err) {

@@ -1,10 +1,23 @@
 import { useState } from 'react';
 import type { InputSource } from '../../lib/pipeline/generateText';
 import { generateLesson, type GenerationProgress as Progress } from '../services/generation/generateLessonPipeline';
-import type { Lesson } from '../types/lesson';
+import { getLanguageConfig, listLanguageConfigs, type LanguageCode } from '../../lib/pipeline/languageConfig';
+import type { AudioProvider, Lesson } from '../types/lesson';
 import { GenerationProgress } from './GenerationProgress';
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
+
+// Временный переключатель для A/B-сравнения провайдеров озвучки (см.
+// PROGRESS.md) — не постоянный UX-элемент, уберётся или закрепится по итогам
+// сравнения OpenAI+Whisper vs ElevenLabs на живой генерации. ElevenLabs —
+// дефолт (with-timestamps даёт тайминги как побочный продукт синтеза, а не
+// пост-анализом — см. AI_PIPELINE.md), OpenAI+Whisper остаётся как fallback.
+const AUDIO_PROVIDERS: { value: AudioProvider; label: string }[] = [
+  { value: 'elevenlabs', label: 'ElevenLabs' },
+  { value: 'openai', label: 'OpenAI + Whisper' },
+];
+
+const LANGUAGES = listLanguageConfigs();
 
 type InputKind = 'text' | 'topic';
 
@@ -19,11 +32,14 @@ export function GenerateLessonPage({ onBack, onGenerated }: Props) {
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState('A2');
   const [words, setWords] = useState(150);
+  const [audioProvider, setAudioProvider] = useState<AudioProvider>('elevenlabs');
+  const [language, setLanguage] = useState<LanguageCode>('fr');
   const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const isGenerating = progress !== null;
   const canSubmit = kind === 'text' ? text.trim().length > 0 : topic.trim().length > 0;
+  const languageConfig = getLanguageConfig(language);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -35,7 +51,7 @@ export function GenerateLessonPage({ onBack, onGenerated }: Props) {
     const input: InputSource = kind === 'text' ? { kind: 'text', content: text } : { kind: 'topic', prompt: topic };
 
     try {
-      const { lesson, audioUrl } = await generateLesson(input, { level, words }, setProgress);
+      const { lesson, audioUrl } = await generateLesson(input, { level, words, audioProvider, language }, setProgress);
       onGenerated(lesson, audioUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось сгенерировать урок');
@@ -53,7 +69,7 @@ export function GenerateLessonPage({ onBack, onGenerated }: Props) {
         </button>
         <div className="shell-header-text">
           <h1 className="shell-title">Новый урок</h1>
-          <p className="shell-subtitle">Французский · займёт пару минут</p>
+          <p className="shell-subtitle">{languageConfig.displayName} · займёт пару минут</p>
         </div>
       </div>
 
@@ -103,6 +119,29 @@ export function GenerateLessonPage({ onBack, onGenerated }: Props) {
             </div>
           )}
 
+          <div className="form-field">
+            <label className="form-label" htmlFor="language-select">
+              Язык
+            </label>
+            <select
+              id="language-select"
+              className="form-select"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as LanguageCode)}
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.displayName}
+                </option>
+              ))}
+            </select>
+            {!languageConfig.voiceVerified && (
+              <p className="form-hint">
+                Голос для этого языка ещё не проверен на слух — качество озвучки может быть хуже, чем для французского.
+              </p>
+            )}
+          </div>
+
           <div className="form-row">
             <div className="form-field">
               <label className="form-label" htmlFor="level-select">
@@ -134,6 +173,22 @@ export function GenerateLessonPage({ onBack, onGenerated }: Props) {
             </div>
           </div>
           <p className="form-hint">Объём ограничен снизу — так шаг озвучки надёжно укладывается в лимит хостинга.</p>
+
+          <div className="form-field">
+            <span className="form-label">Озвучка (A/B-сравнение)</span>
+            <div className="input-kind-toggle" role="group" aria-label="Провайдер озвучки">
+              {AUDIO_PROVIDERS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={audioProvider === value}
+                  onClick={() => setAudioProvider(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {error && <p className="form-error">{error}</p>}
 

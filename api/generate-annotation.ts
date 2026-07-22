@@ -7,7 +7,7 @@ import {
   generateAnnotationDetails,
   type AnnotationTarget,
 } from '../lib/pipeline/generateAnnotations.js';
-import { getLanguageConfig } from '../lib/pipeline/languageConfig.js';
+import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
 
 export const maxDuration = 30;
 
@@ -19,13 +19,14 @@ export async function POST(request: Request): Promise<Response> {
   if (!apiKey) return new Response('Server misconfigured: OPENAI_API_KEY missing', { status: 500 });
 
   try {
-    const { target, level, sourceLanguage, tier } = (await request.json()) as {
+    const { target, level, sourceLanguage, tier, language } = (await request.json()) as {
       target: AnnotationTarget;
       level: string;
       sourceLanguage?: string;
       tier?: 'basic' | 'details';
+      language?: LanguageCode;
     };
-    const languageConfig = getLanguageConfig('fr');
+    const languageConfig = getLanguageConfig(language ?? 'fr');
     const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o';
     const generate = tier === 'details' ? generateAnnotationDetails : generateAnnotationBasic;
     const content = await generate(target, languageConfig, level, sourceLanguage ?? 'Russian', apiKey, model);

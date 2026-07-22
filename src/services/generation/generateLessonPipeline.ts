@@ -5,8 +5,9 @@
 import { tokenizeParagraphs } from '../../../lib/pipeline/tokenize';
 import { collectAnnotationTargets, stampAnnotationTargets } from '../../../lib/pipeline/generateAnnotations';
 import type { InputSource } from '../../../lib/pipeline/generateText';
+import { getLanguageConfig, type LanguageCode } from '../../../lib/pipeline/languageConfig';
 import { buildLessonText } from '../../lib/lessonText';
-import type { Lesson, Paragraph, Token } from '../../types/lesson';
+import type { AudioProvider, Lesson, Paragraph, Token } from '../../types/lesson';
 import {
   fetchGeneratedText,
   fetchPhraseGroups,
@@ -43,19 +44,23 @@ function slugify(title: string): string {
 
 export async function generateLesson(
   input: InputSource,
-  options: { level: string; words: number },
+  options: { level: string; words: number; audioProvider?: AudioProvider; language?: LanguageCode },
   onProgress: (progress: GenerationProgress) => void,
 ): Promise<{ lesson: Lesson; audioUrl: string }> {
-  onProgress({ stage: 'text' });
-  const generated = await fetchGeneratedText(input, options.level, options.words);
+  const audioProvider = options.audioProvider ?? 'openai';
+  const language = options.language ?? 'fr';
+  const languageConfig = getLanguageConfig(language);
 
-  const paragraphs: Paragraph[] = tokenizeParagraphs(generated.paragraphs);
+  onProgress({ stage: 'text' });
+  const generated = await fetchGeneratedText(input, options.level, options.words, language);
+
+  const paragraphs: Paragraph[] = tokenizeParagraphs(generated.paragraphs, languageConfig.bcp47);
   const sentences = paragraphs.flatMap((p) => p.sentences);
 
   const phraseGroups = [];
   for (let i = 0; i < sentences.length; i++) {
     onProgress({ stage: 'phrases', done: i, total: sentences.length });
-    phraseGroups.push(...(await fetchPhraseGroups(sentences[i])));
+    phraseGroups.push(...(await fetchPhraseGroups(sentences[i], language)));
   }
   onProgress({ stage: 'phrases', done: sentences.length, total: sentences.length });
 
@@ -65,7 +70,8 @@ export async function generateLesson(
 
   const lessonForAudio: Lesson = {
     id: slug,
-    language: 'French',
+    language: languageConfig.promptLanguageName,
+    languageCode: language,
     sourceLanguage: 'Russian',
     level: options.level,
     title: generated.title,
@@ -73,21 +79,35 @@ export async function generateLesson(
     estimatedMinutes: generated.estimatedMinutes,
     paragraphs: stampedParagraphs,
     annotations: [],
+    audioProvider,
   };
 
   onProgress({ stage: 'audio' });
-  const { text } = buildLessonText(lessonForAudio);
-  const { audioUrl } = await fetchGeneratedAudio(text, slug);
-
-  onProgress({ stage: 'align' });
+  const { text, spans } = buildLessonText(lessonForAudio);
   const wordTokens: Token[] = stampedParagraphs
     .flatMap((p) => p.sentences)
     .flatMap((s) => s.tokens)
     .filter((t) => t.type === 'word');
-  const { timestampsByToken } = await fetchAudioAlignment(audioUrl, wordTokens);
+
+  const audioResult = await fetchGeneratedAudio(text, slug, audioProvider, language, spans, wordTokens);
+
+  // ElevenLabs — один вызов, тайминги уже в ответе; OpenAI — только TTS,
+  // тайминги отдельным вызовом (см. комментарий в api/generate-audio.ts про
+  // serverless-таймаут на связке TTS+Whisper).
+  let timestampsByToken: Record<string, { startTime: number; endTime: number }>;
+  let report = audioResult.report;
+  if (audioResult.timestampsByToken && report) {
+    timestampsByToken = audioResult.timestampsByToken;
+  } else {
+    onProgress({ stage: 'align' });
+    const aligned = await fetchAudioAlignment(audioResult.audioUrl, wordTokens, language);
+    timestampsByToken = aligned.timestampsByToken;
+    report = aligned.report;
+  }
 
   const finalLesson: Lesson = {
     ...lessonForAudio,
+    alignmentReport: report,
     paragraphs: lessonForAudio.paragraphs.map((paragraph) => ({
       ...paragraph,
       sentences: paragraph.sentences.map((sentence) => ({
@@ -101,7 +121,7 @@ export async function generateLesson(
   };
 
   onProgress({ stage: 'saving' });
-  await saveLesson(finalLesson, audioUrl);
+  await saveLesson(finalLesson, audioResult.audioUrl);
 
-  return { lesson: finalLesson, audioUrl };
+  return { lesson: finalLesson, audioUrl: audioResult.audioUrl };
 }

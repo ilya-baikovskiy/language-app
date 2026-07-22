@@ -3,7 +3,7 @@
 // библиотеки. Без отдельной базы данных — индекс сам по себе просто Blob.
 
 import { put, list } from '@vercel/blob';
-import type { Lesson } from '../src/types/lesson.js';
+import type { AudioProvider, Lesson } from '../src/types/lesson.js';
 
 export const maxDuration = 30;
 
@@ -18,6 +18,8 @@ type LessonIndexEntry = {
   estimatedMinutes: number;
   lessonUrl: string;
   audioUrl: string;
+  audioProvider?: AudioProvider;
+  languageCode?: string;
   createdAt: string;
 };
 
@@ -51,6 +53,8 @@ export async function POST(request: Request): Promise<Response> {
       estimatedMinutes: lesson.estimatedMinutes,
       lessonUrl: lessonBlob.url,
       audioUrl,
+      audioProvider: lesson.audioProvider,
+      languageCode: lesson.languageCode,
       createdAt: new Date().toISOString(),
     };
     const nextIndex = [entry, ...index.filter((e) => e.slug !== slug)];

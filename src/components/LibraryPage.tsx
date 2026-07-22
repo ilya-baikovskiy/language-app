@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import { sampleLesson } from '../data/sampleLesson';
 import { fetchLessonsIndex, type LessonIndexEntry } from '../services/generation/lessonsApi';
+import { LANGUAGE_CONFIGS, type LanguageCode } from '../../lib/pipeline/languageConfig';
+
+// Не getLanguageConfig (бросает на неизвестном коде) — entry.languageCode
+// приходит из сохранённых данных, а не из кода приложения, безопаснее не
+// уронить список библиотеки на одной странной записи.
+function entryLanguageName(entry: LessonIndexEntry): string {
+  const code = entry.languageCode as LanguageCode | undefined;
+  return (code && LANGUAGE_CONFIGS[code]?.displayName) || 'French';
+}
 
 type Props = {
   onOpenSample: () => void;
@@ -47,7 +56,8 @@ export function LibraryPage({ onOpenSample, onOpenGenerated, onGenerateNew }: Pr
             <div className="lesson-card-title">{entry.title}</div>
             {entry.translatedTitle && <p className="lesson-card-translated">{entry.translatedTitle}</p>}
             <div className="lesson-card-meta">
-              French · {entry.level} · {entry.estimatedMinutes} мин
+              {entryLanguageName(entry)} · {entry.level} · {entry.estimatedMinutes} мин
+              {entry.audioProvider === 'elevenlabs' && ' · ElevenLabs'}
             </div>
           </button>
         ))}

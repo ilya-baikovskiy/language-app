@@ -657,11 +657,9 @@ details.sheet-more .sheet-more-body p:last-child {
   border-radius: 6px;
   padding: 2px 7px;
 }
-.icon-btn-sm.is-stub {
-  opacity: 0.7;
-}
-.icon-btn-sm.is-stub:hover {
-  opacity: 1;
+.icon-btn-sm.is-loading {
+  opacity: 0.5;
+  cursor: default;
 }
 .sheet-sentence {
   font-family: var(--font-article);
