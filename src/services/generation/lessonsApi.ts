@@ -107,8 +107,12 @@ export type LessonIndexEntry = {
   createdAt: string;
 };
 
+// Бросает при недоступном /api/lessons вместо тихого пустого списка: иначе
+// упавший бэкенд выглядит на экране библиотеки ровно как «уроков ещё нет»,
+// и сохранённые уроки кажутся потерянными (реально ловилось на падении
+// `vercel dev`). Состояние ошибки разбирает LibraryPage.
 export async function fetchLessonsIndex(): Promise<LessonIndexEntry[]> {
   const res = await fetch('/api/lessons');
-  if (!res.ok) return [];
+  if (!res.ok) throw new Error(`/api/lessons: ${res.status}`);
   return (await res.json()) as LessonIndexEntry[];
 }

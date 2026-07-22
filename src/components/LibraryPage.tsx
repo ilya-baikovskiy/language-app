@@ -19,16 +19,25 @@ type Props = {
 
 export function LibraryPage({ onOpenSample, onOpenGenerated, onGenerateNew }: Props) {
   const [entries, setEntries] = useState<LessonIndexEntry[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    fetchLessonsIndex().then((index) => {
-      if (!cancelled) setEntries(index);
-    });
+    setFailed(false);
+    fetchLessonsIndex()
+      .then((index) => {
+        if (!cancelled) setEntries(index);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('Не удалось загрузить список уроков:', err);
+        setFailed(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadNonce]);
 
   return (
     <div className="shell">
@@ -63,7 +72,16 @@ export function LibraryPage({ onOpenSample, onOpenGenerated, onGenerateNew }: Pr
         ))}
       </div>
 
-      {entries !== null && entries.length === 0 && (
+      {failed && (
+        <p className="empty-state" role="status">
+          Не удалось загрузить сохранённые уроки — они на месте, просто сейчас недоступны.{' '}
+          <button type="button" className="translation-retry" onClick={() => setReloadNonce((n) => n + 1)}>
+            Повторить
+          </button>
+        </p>
+      )}
+
+      {!failed && entries !== null && entries.length === 0 && (
         <p className="empty-state">Сгенерированных уроков пока нет — начни с «+ Новый урок».</p>
       )}
     </div>
