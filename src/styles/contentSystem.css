@@ -350,6 +350,48 @@
   font-size: 13.5px;
 }
 
+/* ---------- Modal overlay ----------
+   Базовые классы для модалок Content System (SettingsOverlay и т.д.) — их не
+   было ни в одном styles/*.css: SettingsOverlay.tsx использует className
+   "overlay"/"modal"/"modal-inner"/"modal-head", но были определены только
+   специфичные модификаторы вроде .settings-modal, поэтому оверлей рендерился
+   как обычный статичный блок в потоке документа, а не как центрированное
+   модальное окно с задним фоном (см. скриншот бага — модалка прижата к
+   левому верхнему углу, без затемнения). z-index 60 — выше bottom nav (40) и
+   sheet-overlay ридера (50/51) на случай будущих модалок поверх Reader. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--overlay);
+}
+.modal {
+  outline: none;
+  max-width: 100%;
+  max-height: 100%;
+}
+.modal-inner {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-head h2 {
+  margin: 0;
+  font-family: var(--font-article);
+  font-size: 20px;
+  font-weight: 600;
+}
+
 /* ---------- Settings modal ---------- */
 .settings-modal {
   width: min(560px, 100%);
