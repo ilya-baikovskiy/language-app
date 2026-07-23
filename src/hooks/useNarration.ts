@@ -4,6 +4,7 @@ import type { PlaybackStatus } from '../types/reader';
 import { PrecomputedAudioAdapter } from '../services/narration/PrecomputedAudioAdapter';
 import type { NarrationAdapter } from '../services/narration/NarrationAdapter';
 import { firstWordTokenId } from '../lib/lessonText';
+import { track } from '../content-system/analytics/eventClient';
 
 // Раздел 14 ТЗ: React ничего не знает о конкретном провайдере озвучки —
 // сейчас это заранее сгенерированный аудиофайл + word-level timestamps
@@ -27,7 +28,10 @@ export function useNarration(lesson: Lesson, audioSrc: string) {
       setActiveTokenId(tokenId);
       setPlaybackAnchorTokenId(tokenId);
     });
-    adapter.onComplete(() => setPlaybackStatus('completed'));
+    adapter.onComplete(() => {
+      setPlaybackStatus('completed');
+      track('audio_completed', {}, { lessonId: lesson.id });
+    });
     adapter.onError((error) => {
       setErrorMessage(error.message);
       setPlaybackStatus('error');
@@ -43,12 +47,14 @@ export function useNarration(lesson: Lesson, audioSrc: string) {
     adapterRef.current?.playFrom(startTokenId, rate);
     setPlaybackAnchorTokenId(startTokenId);
     setPlaybackStatus('playing');
+    track('audio_started', {}, { lessonId: lesson.id });
   }, [lesson, playbackAnchorTokenId, rate]);
 
   const pause = useCallback(() => {
     adapterRef.current?.pause();
     setPlaybackStatus('paused');
-  }, []);
+    track('audio_paused', {}, { lessonId: lesson.id });
+  }, [lesson.id]);
 
   const stop = useCallback(() => {
     adapterRef.current?.stop();
@@ -59,6 +65,7 @@ export function useNarration(lesson: Lesson, audioSrc: string) {
 
   const setRate = useCallback(
     (nextRate: number) => {
+      track('audio_speed_changed', { fromRate: rate, toRate: nextRate }, { lessonId: lesson.id });
       setRateState(nextRate);
       // Раздел 8.6 ТЗ: смена скорости не возвращает к началу — перезапускаем
       // с текущего произносимого (или последнего) слова новой скоростью.
@@ -67,7 +74,7 @@ export function useNarration(lesson: Lesson, audioSrc: string) {
         if (anchor) adapterRef.current?.playFrom(anchor, nextRate);
       }
     },
-    [playbackStatus, activeTokenId, playbackAnchorTokenId],
+    [playbackStatus, activeTokenId, playbackAnchorTokenId, rate, lesson.id],
   );
 
   // Раздел 7.4/8.5 ТЗ: клик по слову ставит чтение на паузу (если оно шло) и

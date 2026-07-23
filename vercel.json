@@ -13,6 +13,7 @@
     "api/lessons.ts": { "maxDuration": 15 },
     "api/lesson-status.ts": { "maxDuration": 15 },
     "api/app-preferences.ts": { "maxDuration": 15 },
-    "api/language-profiles.ts": { "maxDuration": 15 }
+    "api/language-profiles.ts": { "maxDuration": 15 },
+    "api/events-batch.ts": { "maxDuration": 15 }
   }
 }

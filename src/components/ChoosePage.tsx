@@ -7,7 +7,8 @@
 // на главном экране, mastery/streaks/проценты плана.
 import { useFeed } from '../hooks/useFeed';
 import { ContentCardTile } from './ContentCardTile';
-import type { ContentCard, CEFRLevel } from '../content-system/types';
+import { track } from '../content-system/analytics/eventClient';
+import type { ContentCard, CEFRLevel, FeedSlot } from '../content-system/types';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 
 type Props = {
@@ -19,7 +20,7 @@ type Props = {
 };
 
 export function ChoosePage({ activeLanguage, selectedLevel, enabledTopicIds, enabledCountryOrRegionIds, onRead }: Props) {
-  const { items, loading, error, refresh } = useFeed({
+  const { items, loading, error, refresh, feedBatchId, feedViewedAt } = useFeed({
     activeLanguage,
     selectedLevel,
     enabledTopicIds,
@@ -27,6 +28,15 @@ export function ChoosePage({ activeLanguage, selectedLevel, enabledTopicIds, ena
   });
 
   const [hero, ...rest] = items;
+
+  function handleRead(card: ContentCard, position: number, slot: FeedSlot) {
+    track(
+      'card_opened',
+      { position, slot, timeSinceFeedViewMs: feedViewedAt ? Date.now() - feedViewedAt : 0 },
+      { cardId: card.id, language: activeLanguage, feedBatchId: feedBatchId ?? undefined },
+    );
+    onRead(card);
+  }
 
   return (
     <div className="shell">
@@ -58,9 +68,24 @@ export function ChoosePage({ activeLanguage, selectedLevel, enabledTopicIds, ena
 
       {items.length > 0 && (
         <div className="content-feed">
-          {hero && <ContentCardTile key={hero.card.id} card={hero.card} size="hero" onRead={onRead} />}
+          {hero && (
+            <ContentCardTile
+              key={hero.card.id}
+              card={hero.card}
+              position={hero.position}
+              slot={hero.slot}
+              size="hero"
+              onRead={(card) => handleRead(card, hero.position, hero.slot)}
+            />
+          )}
           {rest.map((item) => (
-            <ContentCardTile key={item.card.id} card={item.card} onRead={onRead} />
+            <ContentCardTile
+              key={item.card.id}
+              card={item.card}
+              position={item.position}
+              slot={item.slot}
+              onRead={(card) => handleRead(card, item.position, item.slot)}
+            />
           ))}
         </div>
       )}

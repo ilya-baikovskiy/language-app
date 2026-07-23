@@ -14,11 +14,13 @@
 // сессии, не построение долгоживущей истории показов (это уже область
 // tracking/AnalyticsEvent, PR 4).
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { composeFixedFeed } from '../content-system/feed';
 import { StaticSeedCardRepository } from '../content-system/repositories/staticSeedCardRepository';
+import { track } from '../content-system/analytics/eventClient';
 import type { ContentCardRepository } from '../content-system/repositories';
 import type { CEFRLevel, ContentCard, FeedSlot } from '../content-system/types';
+import type { FeedSourceKind } from '../content-system/analyticsEvent';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 
 export type FeedDisplayItem = {
@@ -51,6 +53,8 @@ export function useFeed({
   // Каждый вызов load() увеличивает nonce — используется как ручной триггер
   // «Предложить другие» без дублирования логики загрузки.
   const [reloadNonce, setReloadNonce] = useState(0);
+  const [feedBatchId, setFeedBatchId] = useState<string | null>(null);
+  const [feedViewedAt, setFeedViewedAt] = useState<number | null>(null);
 
   const query = useMemo(
     () => ({
@@ -62,10 +66,32 @@ export function useFeed({
     [activeLanguage, selectedLevel, enabledTopicIds, enabledCountryOrRegionIds],
   );
 
+  // Tracking's `feed_viewed.source` (05 §6) must reflect *why* this particular
+  // load ran, not be guessed after the fact from what happens to have changed
+  // in `query` — so we compare against refs captured on the previous run
+  // rather than reasoning from `query` itself.
+  const isFirstLoadRef = useRef(true);
+  const prevReloadNonceRef = useRef(reloadNonce);
+  const prevLangLevelKeyRef = useRef(`${activeLanguage}|${selectedLevel}`);
+  const feedBatchIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
+
+    let source: FeedSourceKind;
+    if (reloadNonce !== prevReloadNonceRef.current) {
+      source = 'refresh';
+    } else if (isFirstLoadRef.current) {
+      source = 'app_open';
+    } else if (`${activeLanguage}|${selectedLevel}` !== prevLangLevelKeyRef.current) {
+      source = 'language_switch';
+    } else {
+      source = 'settings_change';
+    }
+    const previousBatchId = feedBatchIdRef.current;
+
     cardRepository
       .listCandidates(query)
       .then((cards) => {
@@ -80,6 +106,21 @@ export function useFeed({
           .filter((item): item is FeedDisplayItem => item !== null);
         setItems(nextItems);
         setShownCardIds((prev) => Array.from(new Set([...prev, ...nextItems.map((item) => item.card.id)])));
+
+        // Client-side batch id for tracking correlation only (card_impression/
+        // card_opened/feed_refreshed) — NOT a persisted FeedBatch (06 §5.4),
+        // see brief §PR 4 "НЕ полноценный persisted FeedBatch, это отдельная
+        // будущая работа".
+        const newBatchId = crypto.randomUUID();
+        feedBatchIdRef.current = newBatchId;
+        setFeedBatchId(newBatchId);
+        const viewedAt = Date.now();
+        setFeedViewedAt(viewedAt);
+
+        track('feed_viewed', { itemCount: nextItems.length, selectedLevel, source });
+        if (source === 'refresh') {
+          track('feed_refreshed', { previousBatchId: previousBatchId ?? '' });
+        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -89,6 +130,11 @@ export function useFeed({
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
+    isFirstLoadRef.current = false;
+    prevReloadNonceRef.current = reloadNonce;
+    prevLangLevelKeyRef.current = `${activeLanguage}|${selectedLevel}`;
+
     return () => {
       cancelled = true;
     };
@@ -96,9 +142,9 @@ export function useFeed({
     // его сюда зациклило бы загрузку при каждом успешном ответе. reloadNonce —
     // единственный способ форсировать перезапуск без смены query.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, cardRepository, reloadNonce]);
+  }, [query, cardRepository, reloadNonce, activeLanguage, selectedLevel]);
 
   const refresh = useCallback(() => setReloadNonce((n) => n + 1), []);
 
-  return { items, loading, error, refresh };
+  return { items, loading, error, refresh, feedBatchId, feedViewedAt };
 }

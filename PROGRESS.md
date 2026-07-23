@@ -15,7 +15,7 @@
 Кратко, для быстрого старта на другом компе/сессии — детали по каждому PR ниже
 и в `docs/content-system-v1.2/`.
 
-**Где мы:** ветка `content-system-docs-v1.2`, PR 1–3 из
+**Где мы:** ветка `content-system-docs-v1.2`, PR 1–4 из
 `docs/content-system-v1.2/11_CLAUDE_MASTER_IMPLEMENTATION_BRIEF.md` сделаны,
 закоммичены и запушены (см. `git log --oneline`):
 1. PR 1 — storage-independent контракты/repositories (Zod-схемы, seed cards,
@@ -25,33 +25,111 @@
 3. PR 3 — card → Lesson: реальная генерация по клику «Читать» через
    `LessonBlueprint`, идемпотентный `lessonId`, статусы библиотеки
    `creating`/`ready`/`failed`.
-4. Отдельный коммит между PR 2 и PR 3 — фикс CSS-бага (модалка настроек не
+4. PR 4 — tracking: клиентская очередь событий, immutable Blob-батчи,
+   инструментация feed/reader/generation/navigation, dev-only debug-экран.
+   **Feedback-UI (`⋯`-меню) сознательно не строился** — такого элемента в
+   продукте нет, добавлять новый UX внутри трекинговой задачи без
+   обсуждения нельзя (см. запись PR 4 ниже).
+5. Отдельный коммит между PR 2 и PR 3 — фикс CSS-бага (модалка настроек не
    центрировалась, не было базовых стилей `.overlay`/`.modal`).
 
 **Проверено:** `tsc -b`/`oxlint`/`vitest run`/`npm run build` чисты на каждом
-шаге. Дополнительно проверен реальный Vercel preview-деплой этой ветки —
-после того как пользователь подключил Blob store к Preview-окружению и
-пересобрал деплой, `/api/lessons`, `/api/app-preferences`,
+шаге. Дополнительно проверен реальный Vercel preview-деплой этой ветки (до
+PR 4) — после того как пользователь подключил Blob store к Preview-окружению
+и пересобрал деплой, `/api/lessons`, `/api/app-preferences`,
 `/api/language-profiles` отвечают корректно на реальном Blob (не просто
 локальный `tsc`). **Важно:** этот Preview, судя по ответам API, делит один
 Blob store с продакшеном — не дёргать `PATCH`/`POST` эндпоинты (сохранение
-preferences, старт генерации) на preview через curl/скрипты, это пишет в
-настоящее хранилище пользователя; такие вещи проверять только кликами в
-браузере.
+preferences, старт генерации, теперь и `/api/events-batch`) на preview через
+curl/скрипты, это пишет в настоящее хранилище пользователя; такие вещи
+проверять только кликами в браузере.
 
-**Не проверено визуально** (нет browser-инструмента в part этой сессии,
-только curl/HTML-фетч): сам клик-through Choose → генерация карточки →
-Reader, «Повторить» на упавшей записи в Library, реальный вид ленты/
-bottom nav/settings глазами на узком viewport. Стоит открыть preview в
-браузере и пройти этот путь перед тем, как считать PR 1–3 полностью
-принятыми.
+**Не проверено визуально** (нет browser-инструмента в этой сессии, только
+curl/HTML-фетч): сам клик-through Choose → генерация карточки → Reader,
+«Повторить» на упавшей записи в Library, реальный вид ленты/bottom nav/
+settings/debug-экрана глазами на узком viewport, и — специфично для PR 4—
+реальное срабатывание `IntersectionObserver` для `card_impression`. Стоит
+открыть preview в браузере и пройти этот путь перед тем, как считать
+PR 1–4 полностью принятыми.
 
-**Что дальше:** PR 4 — tracking experiment (клиентская очередь событий,
-инструментация feed/reader/tap/feedback, immutable batch-хранение событий в
-Blob), см. `docs/content-system-v1.2/05_TRACKING_EVENTS_AND_METRICS.md` и
-брифа §PR 4. После PR 4 — Storage Decision Gate (написать ADR про durable
-storage, не раньше) и только потом PR 5+ (реальная БД, если решено),
-learning maps (PR 6), adaptive ranking (Phase 7).
+**Что дальше:** после PR 4 по брифу — Storage Decision Gate: собрать
+реальные данные и написать отдельный ADR про durable storage, **не
+подключать БД раньше этого**. Дальше, если ADR решит «да» — PR 5 (реальная
+БД), затем PR 6 (learning maps/passport), Phase 7 (adaptive ranking за
+флагом). `eventTrackingEnabled`/`contentFeedEnabled` сейчас dev-only —
+решение о включении в проде намеренно оставлено отдельным шагом, не принято
+молча по ходу PR 4.
+
+## Текущий статус (2026-07-23): Content System v1.2 — PR 4 (tracking experiment)
+
+Клиентский трекинг событий поверх PR 1–3, без БД и без adaptive-использования
+собранных данных:
+
+- **`src/content-system/analytics/eventClient.ts`** — `track(name, payload,
+  context?)`, no-op при `eventTrackingEnabled: false` (можно звать отовсюду
+  без проверки флага на месте вызова). Очередь в памяти + persist в
+  `localStorage` (`context-reader:v1:analytics-queue`), flush раз в 5с и на
+  `visibilitychange`/`pagehide`, `anonymousSessionId` — per-tab
+  `sessionStorage`. `getSessionEventLog()` — отдельный in-memory лог для
+  debug-экрана, не зависит от того, дошёл ли flush до сервера.
+- **`api/events-batch.ts`** — в отличие от `save-lesson`/`app-preferences`/
+  `language-profiles`, это **не** read-modify-write индекса: каждый batch —
+  новый immutable файл `events/v1/{userId}/{yyyy-mm-dd}/{batchId}.json`,
+  `allowOverwrite: false`. `duplicateCount` всегда `0` — дедупликации нет,
+  нет query-инфраструктуры (честно, не заявлено как реальное).
+- **`analyticsEvent.ts`** — `EventName`/`AnalyticsEventPayloadMap` с ~22
+  событиями (не весь каталог из `05` — только реально инструментированные).
+- Инструментированы: навигация/shell (`global_language_changed`,
+  `bottom_navigation_selected`, `settings_opened`, `topic_preferences_changed`,
+  `country_preferences_changed`), feed (`feed_viewed` с честной классификацией
+  `source` через refs предыдущего состояния, не постфактум-угадыванием;
+  `card_impression` через реальный `IntersectionObserver`, не просто mount;
+  `card_opened`, `feed_refreshed`), generation (`lesson_generation_*` в
+  `cardGeneration.ts`), reader (`lesson_opened/started/progress/completed`,
+  `token_tapped`, `annotation_details_opened`, `learning_unit_saved`,
+  `sentence_translation_toggled`, `audio_started/paused/completed/speed_changed`).
+- **Debug-экран** (`DebugEventsOverlay.tsx`, кнопка в `SettingsOverlay`, только
+  `import.meta.env.DEV`) — сырой лог событий текущей сессии + «Скопировать
+  JSON». Не полноценный dashboard из `05` §16 (там нужны learning-state/
+  completion aggregates, которых ещё нет) — это и есть «debug journey» из
+  брифа для PR 4, не больше.
+
+**Сознательно не реализовано** (см. границы, заданные до старта агента):
+- `feedback` (`⋯`-меню more_like_this/not_interesting/too_hard/…) — такого UI
+  в продукте нет; строить новый видимый UX-элемент внутри трекинговой задачи
+  без обсуждения с пользователем — нарушение конвенции проекта, не техническое
+  ограничение.
+- `card_dismissed` — нет UI отклонения карточки (ни свайпа, ни крестика).
+- `lesson_abandoned` — документ прямо говорит вычислять его серверно (по
+  `started` без `completed` за окно времени) — нет ни query, ни серверной
+  обработки событий, реализовывать нечем.
+- `audio_seeked` — в `NarrationPlayer.tsx` нет скраббера, действия нет.
+
+**Приближения** (нет более точного сигнала в существующем коде, не новые
+трекеры с нуля):
+- `lesson_progress` — из уже существующего `progress` (доля пройденных
+  word-токенов через `activeTokenId`), не отдельный трекер.
+- `lesson_completed.activeReadingSeconds` — накопленное wall-clock время в
+  `playbackStatus === 'playing'`, нет более тонкого сигнала «реально читает».
+  `completionMethod` всегда `'reached_end'` — явной кнопки «отметить как
+  прочитано» в плеере нет.
+- `lesson_opened.entryPoint` — только `'generated_card'` (из card-flow) и
+  `'library'` (sample/ручная генерация/открытие сохранённого); `'resume'`/
+  `'deep_link'` не используются — для них нет ни одного реального пути в
+  текущей навигации `App.tsx`, не выдуманы.
+- `learning_unit_saved` — трекается только на реальное сохранение, не на
+  снятие (в `05` нет отдельного имени события для «unsaved»).
+
+`eventTrackingEnabled: import.meta.env.DEV` — собственное решение (по
+аналогии с уже существующим `contentFeedEnabled`), не буквальное требование
+документа; включение в проде — отдельный шаг для пользователя, не принято
+молча.
+
+Проверено: `tsc -b`/`oxlint`/`vitest run` (88 тестов, +8 на
+`eventClient.ts`)/`npm run build` — чисто; `api/events-batch.ts` отдельно
+проверен `tsc --noEmit` (не входит в `tsc -b`). **Не проверено без браузера**:
+реальное поведение `IntersectionObserver` для `card_impression`, визуальный
+вид debug-экрана и copy-to-clipboard вживую.
 
 ## Текущий статус (2026-07-23): Content System v1.2 — PR 3 (card → Lesson)
 

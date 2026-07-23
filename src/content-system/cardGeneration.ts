@@ -10,8 +10,10 @@ import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import { buildLessonBlueprint, computeLessonId } from './blueprint';
 import { blueprintToGenerationInput } from './blueprintToPrompt';
 import { LOCAL_USER_ID } from './userTypes';
+import { track } from './analytics/eventClient';
 import type { LessonArtifactRepository } from './repositories';
 import type { CEFRLevel, ContentCard } from './types';
+import type { GenerationStage } from './analyticsEvent';
 import type { Lesson } from '../types/lesson';
 
 export async function generateLessonFromCard(
@@ -41,6 +43,20 @@ export async function generateLessonFromCard(
   onProgress({ stage: 'starting' });
   const blueprint = buildLessonBlueprint(card, language, targetLevel);
 
+  // lesson_generation_requested fires here, not earlier — the brief is
+  // explicit that this must be "когда реально стартует генерация", not when
+  // an existing 'ready' lesson is found and opened without regenerating
+  // (see the early return above, which never reaches this point).
+  const startedAt = Date.now();
+  track(
+    'lesson_generation_requested',
+    { cardId: card.id, blueprintId: blueprint.id, language, level: targetLevel },
+    { cardId: card.id, lessonId, language },
+  );
+
+  let currentStage: GenerationStage = 'starting';
+  track('lesson_generation_stage_started', { lessonId, stage: currentStage }, { lessonId, cardId: card.id, language });
+
   await lessonArtifactRepository.startLesson({
     id: lessonId,
     cardId: card.id,
@@ -56,9 +72,28 @@ export async function generateLessonFromCard(
   const { input, words } = blueprintToGenerationInput(blueprint.data);
 
   try {
-    const result = await generateLesson(input, { level: targetLevel, words, language, lessonId }, onProgress);
+    const result = await generateLesson(
+      input,
+      { level: targetLevel, words, language, lessonId },
+      (progress) => {
+        // Stage transitions come from generateLessonPipeline.ts's own
+        // GenerationProgress callback — each call here is "completed the
+        // previous stage, started the next one" (brief §PR 4).
+        track('lesson_generation_stage_completed', { lessonId, stage: currentStage }, { lessonId });
+        currentStage = progress.stage;
+        track('lesson_generation_stage_started', { lessonId, stage: currentStage }, { lessonId });
+        onProgress(progress);
+      },
+    );
+    track('lesson_generation_stage_completed', { lessonId, stage: currentStage }, { lessonId });
+    track('lesson_generation_completed', { lessonId, durationMs: Date.now() - startedAt }, { lessonId });
     return { ...result, lessonId };
   } catch (err) {
+    track(
+      'lesson_generation_failed',
+      { lessonId, errorMessage: err instanceof Error ? err.message : String(err) },
+      { lessonId },
+    );
     await lessonArtifactRepository.markLessonFailed(lessonId).catch(() => {
       // Best-effort — if this also fails, the entry stays 'creating' and the
       // next attempt will still overwrite it (startLesson always allowOverwrite).

@@ -7,7 +7,9 @@
 // JSON) → CTA «Читать». Никаких дополнительных бейджей (страна/уровень/язык/
 // формат/score/«Главная») — язык и уровень читаются из глобального selector
 // в TopBar, не дублируются на карточке.
-import type { ContentCard, ProvenanceType } from '../content-system/types';
+import { useEffect, useRef } from 'react';
+import { track } from '../content-system/analytics/eventClient';
+import type { ContentCard, FeedSlot, ProvenanceType } from '../content-system/types';
 
 const PROVENANCE_LABELS: Record<ProvenanceType, string> = {
   ai_fiction: 'AI-история',
@@ -44,13 +46,43 @@ function durationLabel(estimatedReadingSeconds: number): string {
 
 type Props = {
   card: ContentCard;
+  position: number;
+  slot: FeedSlot;
   size?: 'hero' | 'default';
   onRead: (card: ContentCard) => void;
 };
 
-export function ContentCardTile({ card, size = 'default', onRead }: Props) {
+export function ContentCardTile({ card, position, slot, size = 'default', onRead }: Props) {
+  const articleRef = useRef<HTMLElement>(null);
+  const impressionSentRef = useRef(false);
+
+  // card_impression (05 §6): "отправлять только при реальной видимости" —
+  // real IntersectionObserver visibility, not just mount, and only once per
+  // card/slot occupying this tile (re-armed if the tile gets reused for a
+  // different card after "Предложить другие").
+  useEffect(() => {
+    impressionSentRef.current = false;
+    const node = articleRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !impressionSentRef.current) {
+            impressionSentRef.current = true;
+            track('card_impression', { position, slot, isHero: size === 'hero' }, { cardId: card.id });
+            observer.disconnect();
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [card.id, position, slot, size]);
+
   return (
-    <article className={`content-card ${size === 'hero' ? 'content-card-hero' : ''}`}>
+    <article ref={articleRef} className={`content-card ${size === 'hero' ? 'content-card-hero' : ''}`}>
       <div className="content-card-visual" style={{ background: placeholderFor(card.id) }}>
         <div className="content-card-chips">
           <span className="content-card-chip">{PROVENANCE_LABELS[card.provenanceType]}</span>

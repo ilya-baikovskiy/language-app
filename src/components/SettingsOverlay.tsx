@@ -2,10 +2,11 @@
 // docs/content-system-v1.2/16_APPROVED_MOBILE_UX_AND_NAVIGATION.md §12.
 // Три блока: уровень для каждого языка, общие темы, общие страны/регионы.
 // Открывается из TopBar, не занимает отдельную вкладку bottom nav (16 §2).
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { listLanguageConfigs, type LanguageCode } from '../../lib/pipeline/languageConfig';
 import { CEFR_LEVELS, type CEFRLevel } from '../content-system/types';
 import { TOPICS, COUNTRIES } from '../content-system/catalog';
+import { DebugEventsOverlay } from './DebugEventsOverlay';
 
 const LANGUAGES = listLanguageConfigs();
 
@@ -31,6 +32,7 @@ export function SettingsOverlay({
   onToggleCountry,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [debugOpen, setDebugOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -128,8 +130,18 @@ export function SettingsOverlay({
               })}
             </div>
           </section>
+
+          {import.meta.env.DEV && (
+            <section className="settings-section">
+              <button type="button" className="btn ghost" onClick={() => setDebugOpen(true)}>
+                Debug: события
+              </button>
+            </section>
+          )}
         </div>
       </div>
+
+      {import.meta.env.DEV && <DebugEventsOverlay open={debugOpen} onClose={() => setDebugOpen(false)} />}
     </div>
   );
 }

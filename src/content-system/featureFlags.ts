@@ -19,5 +19,8 @@ export const CONTENT_SYSTEM_FEATURE_FLAGS: ContentSystemFeatureFlags = {
   learningStateUpdatesEnabled: false,
   levelTrialsEnabled: false,
   sourceBasedCardsEnabled: false,
-  eventTrackingEnabled: false,
+  // Dev-only for now, same call as contentFeedEnabled above — PR 4 does not
+  // turn this on in production by itself; enabling it there is a separate
+  // decision for the user to make once the debug journey has been reviewed.
+  eventTrackingEnabled: import.meta.env.DEV,
 };
