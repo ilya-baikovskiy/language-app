@@ -1,0 +1,37 @@
+{
+  "package": "Context Reader Content Feed, Mobile App Shell & Hidden Learning Plan",
+  "generated": "2026-07-23",
+  "version": "1.2-approved-mobile-ux-v8",
+  "purpose": "Implementation-ready documentation package for Claude Code",
+  "documents": [
+    "00_README_IMPLEMENTATION_ORDER.md",
+    "01_IDEAL_PRODUCT_VISION.md",
+    "02_CONTENT_CATALOG_AND_CARD_SYSTEM.md",
+    "03_HIDDEN_LEARNING_PLAN.md",
+    "04_RECOMMENDATION_ALGORITHM.md",
+    "05_TRACKING_EVENTS_AND_METRICS.md",
+    "06_DATA_MODEL_AND_STORAGE.md",
+    "07_AI_CONTENT_GENERATION_PIPELINE.md",
+    "08_FRONTEND_UX_AND_STATES.md",
+    "09_TESTING_EVALUATION_AND_GUARDRAILS.md",
+    "10_MVP_ROADMAP_AND_ACCEPTANCE_CRITERIA.md",
+    "11_CLAUDE_MASTER_IMPLEMENTATION_BRIEF.md",
+    "12_DECISIONS_AND_OPEN_QUESTIONS.md",
+    "13_LANGUAGE_LEARNING_MAP_BOOTSTRAP.md",
+    "14_SOURCE_REGISTRY_AND_EDITORIAL_POLICY.md",
+    "15_STORAGE_OPTIONS_AND_DATABASE_MIGRATION_PLAN.md",
+    "16_APPROVED_MOBILE_UX_AND_NAVIGATION.md"
+  ],
+  "source_context": [
+    "PRODUCT_OVERVIEW.md",
+    "01_product_learning_ux.md"
+  ],
+  "prototype_reference": {
+    "version": "v8",
+    "html": "_prototype_reference/context_reader_content_feed_prototype_v8.html",
+    "site_zip": "_prototype_reference/context-reader-site-v8.zip",
+    "authority": "Visual and interaction reference; production architecture remains React/domain/repository based"
+  },
+  "ux_source_of_truth": "16_APPROVED_MOBILE_UX_AND_NAVIGATION.md",
+  "storage_decision": "No database selected; repository-first MVP; separate ADR required"
+}

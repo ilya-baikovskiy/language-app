@@ -1,0 +1,3858 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Context Reader — Russian editorial titles</title>
+  <style>
+    :root {
+      --bg: #f5f2ea;
+      --surface: rgba(255,255,255,.82);
+      --surface-strong: #fffdfa;
+      --text: #20201f;
+      --muted: #77736d;
+      --line: rgba(32,32,31,.11);
+      --accent: #2f624d;
+      --accent-soft: #dce9df;
+      --accent-2: #c47247;
+      --shadow: 0 18px 50px rgba(45, 41, 34, .09);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(180, 207, 189, .42), transparent 32%),
+        radial-gradient(circle at 90% 5%, rgba(221, 189, 156, .32), transparent 25%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px 22px 70px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      margin: 0 -8px 28px;
+      padding: 14px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(to bottom, rgba(245,242,234,.93), rgba(245,242,234,.66), transparent);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 750;
+      letter-spacing: -.025em;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: var(--accent);
+      box-shadow: 0 9px 22px rgba(47, 98, 77, .25);
+    }
+
+    .top-actions { display: flex; gap: 8px; }
+
+    .icon-btn, .ghost-btn, .primary-btn, .secondary-btn {
+      border: 0;
+      border-radius: 999px;
+      transition: .18s ease;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.72);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .icon-btn:hover, .ghost-btn:hover { transform: translateY(-1px); background: white; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.35fr .65fr;
+      gap: 26px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      max-width: 760px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(38px, 5vw, 70px);
+      line-height: .98;
+      letter-spacing: -.055em;
+      font-weight: 500;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 700px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .today-summary {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.58);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      min-height: 125px;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .11em;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .summary-value {
+      margin-top: 9px;
+      font-size: 27px;
+      line-height: 1.1;
+      font-weight: 760;
+      letter-spacing: -.035em;
+    }
+
+    .summary-note {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .language-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 4px 2px 16px;
+      scrollbar-width: none;
+    }
+    .language-strip::-webkit-scrollbar { display:none; }
+
+    .language-tab {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.62);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 11px 15px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: .2s ease;
+    }
+
+    .language-tab strong { color: inherit; }
+    .language-tab span {
+      font-size: 12px;
+      padding: 3px 7px;
+      background: rgba(0,0,0,.05);
+      border-radius: 999px;
+    }
+
+    .language-tab.active {
+      color: white;
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 12px 28px rgba(47,98,77,.2);
+    }
+
+    .language-tab.active span { background: rgba(255,255,255,.16); }
+
+    .section-head {
+      margin: 12px 0 16px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -.035em;
+    }
+
+    .section-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .ghost-btn {
+      padding: 11px 15px;
+      color: var(--text);
+      background: rgba(255,255,255,.66);
+      border: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    .feed {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .story-card {
+      grid-column: span 4;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      transition: transform .22s ease, box-shadow .22s ease;
+      animation: cardIn .35s ease both;
+    }
+
+    .story-card.featured { grid-column: span 8; }
+
+    .story-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 60px rgba(45,41,34,.14);
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-visual {
+      min-height: 165px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-visual::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -58% auto;
+      width: 220px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 34px solid rgba(255,255,255,.12);
+    }
+
+    .visual-kicker {
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .visual-tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.24);
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .visual-number {
+      opacity: .8;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .visual-symbol {
+      z-index: 1;
+      font-family: Georgia, serif;
+      font-size: 68px;
+      line-height: .7;
+      opacity: .95;
+    }
+
+    .card-body {
+      flex: 1;
+      padding: 21px 21px 18px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .meta-pill {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: #f1efe9;
+      color: #6f6b65;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .story-card h3 {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.08;
+      letter-spacing: -.035em;
+    }
+
+    .story-card.featured h3 { font-size: 29px; }
+
+    .story-card .description {
+      margin: 12px 0 16px;
+      color: var(--muted);
+      line-height: 1.48;
+      font-size: 14px;
+    }
+
+    .learning-focus {
+      margin-top: auto;
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: rgba(47,98,77,.07);
+      color: #3f6655;
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .learning-focus strong { display:block; margin-bottom:2px; }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    .source-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .primary-btn {
+      padding: 11px 16px;
+      color: white;
+      background: var(--accent);
+      font-weight: 730;
+      box-shadow: 0 8px 20px rgba(47,98,77,.16);
+    }
+
+    .primary-btn:hover { transform: translateY(-1px); filter: brightness(.96); }
+
+
+    .recommendation-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      width: fit-content;
+      margin-bottom: 11px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      color: #315a47;
+      background: var(--accent-soft);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .story-card.featured .card-visual {
+      min-height: 210px;
+    }
+
+    .story-card.featured .card-body {
+      padding: 25px 25px 21px;
+    }
+
+    .story-card.featured .description {
+      max-width: 690px;
+      font-size: 15px;
+    }
+
+    .topic-catalogue {
+      margin-top: 44px;
+      padding: 28px;
+      border-radius: var(--radius-xl);
+      background: rgba(255,255,255,.48);
+      border: 1px solid var(--line);
+    }
+
+    .topic-intro {
+      max-width: 720px;
+      margin: 7px 0 22px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 11px;
+    }
+
+    .topic-card {
+      min-height: 145px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: var(--text);
+      background: rgba(255,255,255,.72);
+      transition: .18s ease;
+    }
+
+    .topic-card:hover {
+      transform: translateY(-2px);
+      background: white;
+      box-shadow: 0 12px 30px rgba(45,41,34,.08);
+    }
+
+    .topic-card.active {
+      border-color: rgba(47,98,77,.38);
+      background: var(--accent-soft);
+    }
+
+    .topic-icon {
+      font-family: Georgia, serif;
+      font-size: 25px;
+      color: var(--accent);
+    }
+
+    .topic-title {
+      font-size: 14px;
+      font-weight: 780;
+      letter-spacing: -.015em;
+    }
+
+    .topic-example {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .topic-level {
+      margin-top: auto;
+      color: #4c705f;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .catalogue-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 18px;
+      padding-top: 17px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .plan-preview {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .plan-step {
+      padding: 14px;
+      border-radius: 15px;
+      background: rgba(47,98,77,.06);
+      color: #456654;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .plan-step strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--text);
+    }
+
+    .library {
+      margin-top: 42px;
+      padding-top: 28px;
+      border-top: 1px solid var(--line);
+    }
+
+    .library-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .library-empty {
+      grid-column: 1 / -1;
+      padding: 30px;
+      border: 1px dashed rgba(32,32,31,.18);
+      border-radius: var(--radius-lg);
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,.35);
+    }
+
+    .library-item {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.7);
+      border: 1px solid var(--line);
+    }
+
+    .library-item strong { display:block; margin-bottom:6px; }
+    .library-item small { color: var(--muted); }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(24, 26, 23, .42);
+      backdrop-filter: blur(14px);
+    }
+
+    .overlay.open { display: flex; }
+
+    .modal {
+      width: min(650px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      border-radius: 30px;
+      background: var(--surface-strong);
+      box-shadow: 0 28px 100px rgba(0,0,0,.23);
+      border: 1px solid rgba(255,255,255,.8);
+    }
+
+    .modal-inner { padding: 26px; }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 18px;
+    }
+
+    .modal h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -.04em;
+    }
+
+    .modal p { color: var(--muted); line-height: 1.5; }
+
+    .progress-wrap {
+      margin: 28px 0 10px;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #ebe8e1;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width .65s ease;
+    }
+
+    .steps {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 12px 13px;
+      border-radius: 14px;
+      color: var(--muted);
+      background: #f4f1eb;
+    }
+
+    .step .dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #e5e0d8;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .step.active { color: var(--text); }
+    .step.active .dot { color:white; background: var(--accent); }
+    .step.done .dot { color:white; background: #6b8b79; }
+
+    .reader { display:none; }
+    .reader.open { display:block; }
+
+    .reader-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items:center;
+      margin-bottom: 22px;
+    }
+
+    .reader-title {
+      font-family: Georgia, serif;
+      font-size: 36px;
+      line-height: 1.03;
+      letter-spacing: -.04em;
+      margin: 8px 0 10px;
+    }
+
+    .reader-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .audio-strip {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding: 13px 14px;
+      border-radius: 16px;
+      background: #eff3ef;
+      color: #345b49;
+      margin-bottom: 24px;
+    }
+
+    .play {
+      width: 38px; height:38px; border:0; border-radius:50%;
+      background: var(--accent); color:white;
+    }
+
+    .audio-line { flex:1; height:4px; border-radius:999px; background:#cddbd1; overflow:hidden; }
+    .audio-line span { display:block; width:32%; height:100%; background:var(--accent); }
+
+    .lesson-text {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 24px;
+      line-height: 1.72;
+      letter-spacing: -.01em;
+    }
+
+    .lesson-text p { color: var(--text); }
+
+    .word {
+      border-radius: 5px;
+      transition: .15s ease;
+      cursor: pointer;
+    }
+
+    .word:hover { background: #e5eee7; }
+
+    .reader-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .feedback-wrap { position: relative; }
+    .feedback-menu {
+      position:absolute;
+      right:0;
+      bottom:50px;
+      width:210px;
+      padding:10px;
+      border-radius:16px;
+      background:white;
+      box-shadow: var(--shadow);
+      border:1px solid var(--line);
+      display:none;
+    }
+
+    .feedback-menu.open { display:block; }
+
+    .feedback-menu button {
+      width:100%;
+      text-align:left;
+      border:0;
+      background:transparent;
+      padding:10px;
+      border-radius:10px;
+    }
+
+    .feedback-menu button:hover { background:#f3f1ec; }
+
+    .settings-row {
+      display:grid;
+      grid-template-columns: 1fr 140px;
+      gap:14px;
+      align-items:center;
+      padding:13px 0;
+      border-bottom:1px solid var(--line);
+    }
+
+    .settings-row:last-child { border-bottom:0; }
+    .settings-row small { color:var(--muted); display:block; margin-top:3px; }
+    select {
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      background:white;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 120;
+      transform: translate(-50%, 30px);
+      opacity: 0;
+      padding: 12px 16px;
+      border-radius: 999px;
+      color: white;
+      background: #282b28;
+      box-shadow: var(--shadow);
+      transition: .25s ease;
+      pointer-events:none;
+    }
+
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; }
+      .today-summary { display:none; }
+      .story-card, .story-card.featured { grid-column: span 6; }
+      .library-grid { grid-template-columns: 1fr 1fr; }
+      .topic-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 620px) {
+      .app-shell { padding: 12px 14px 50px; }
+      .hero h1 { font-size: 44px; }
+      .feed { display:block; }
+      .story-card, .story-card.featured { margin-bottom:14px; min-height: 0; }
+      .story-card.featured h3 { font-size:25px; }
+      .section-head { align-items:center; }
+      .section-head p { display:none; }
+      .library-grid { grid-template-columns: 1fr; }
+      .topic-catalogue { padding: 20px 16px; margin-top: 32px; }
+      .topic-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .topic-card { min-height: 132px; padding: 13px; }
+      .plan-preview { grid-template-columns: 1fr; }
+      .catalogue-footer { align-items:flex-start; flex-direction:column; }
+      .modal-inner { padding:21px; }
+      .reader-title { font-size:30px; }
+      .lesson-text { font-size:21px; line-height:1.68; }
+      .settings-row { grid-template-columns:1fr 110px; }
+    }
+  
+    /* v3 — content-first minimal editorial layout */
+    body {
+      background: #f3f1eb;
+    }
+
+    .app-shell {
+      max-width: 1120px;
+      padding-top: 12px;
+    }
+
+    .topbar {
+      margin-bottom: 22px;
+      background: linear-gradient(to bottom, rgba(243,241,235,.96), rgba(243,241,235,.82), transparent);
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      box-shadow: none;
+    }
+
+    .icon-btn {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .hero {
+      display: block;
+      max-width: 790px;
+      margin: 8px 0 26px;
+    }
+
+    .hero h1 {
+      max-width: none;
+      font-size: clamp(38px, 5vw, 56px);
+      line-height: 1.02;
+      letter-spacing: -.05em;
+    }
+
+    .hero p {
+      max-width: 650px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .today-summary {
+      display: none !important;
+    }
+
+    .language-strip {
+      gap: 22px;
+      padding: 2px 0 13px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .language-tab {
+      position: relative;
+      gap: 7px;
+      padding: 10px 1px 11px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #8a867f;
+    }
+
+    .language-tab span {
+      padding: 0;
+      background: transparent;
+      font-size: 11px;
+    }
+
+    .language-tab.active {
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .language-tab.active span {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    .language-tab.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .section-head {
+      margin: 18px 0 15px;
+      align-items: center;
+    }
+
+    .section-head h2 {
+      font-size: 23px;
+    }
+
+    .section-head p {
+      display: none !important;
+    }
+
+    .ghost-btn {
+      padding: 9px 2px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .ghost-btn:hover {
+      background: transparent;
+      color: var(--text);
+    }
+
+    .feed {
+      gap: 18px;
+    }
+
+    .story-card {
+      grid-column: span 6;
+      min-height: 350px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.74);
+      box-shadow: 0 10px 34px rgba(45,41,34,.055);
+    }
+
+    .story-card.featured {
+      grid-column: 1 / -1;
+      min-height: 340px;
+      flex-direction: row;
+    }
+
+    .story-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 42px rgba(45,41,34,.085);
+    }
+
+    .card-visual {
+      min-height: 178px;
+      padding: 17px;
+    }
+
+    .story-card.featured .card-visual {
+      flex: 0 0 48%;
+      min-height: 340px;
+    }
+
+    .story-card.featured .card-body {
+      justify-content: center;
+      padding: 32px 34px 28px;
+    }
+
+    .visual-kicker {
+      justify-content: flex-start;
+    }
+
+    .visual-number {
+      display: none;
+    }
+
+    .visual-tag {
+      padding: 6px 9px;
+      font-size: 11px;
+      font-weight: 650;
+      border-color: rgba(255,255,255,.18);
+      background: rgba(24,28,26,.22);
+    }
+
+    .visual-symbol {
+      font-size: 62px;
+    }
+
+    .card-body {
+      padding: 21px 22px 20px;
+    }
+
+    .recommendation-badge,
+    .meta,
+    .learning-focus,
+    .source-note {
+      display: none !important;
+    }
+
+    .card-meta-line {
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .story-card h3 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 500;
+      font-size: 25px;
+      line-height: 1.08;
+      letter-spacing: -.035em;
+    }
+
+    .story-card.featured h3 {
+      font-size: clamp(31px, 4vw, 43px);
+      line-height: 1.03;
+    }
+
+    .story-card .description {
+      margin: 13px 0 0;
+      color: #6f6b65;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .story-card.featured .description {
+      max-width: 590px;
+      font-size: 15px;
+      line-height: 1.58;
+    }
+
+    .focus-inline {
+      color: #52685c;
+    }
+
+    .card-footer {
+      justify-content: flex-start;
+      margin-top: 19px;
+    }
+
+    .primary-btn {
+      padding: 10px 15px;
+      box-shadow: none;
+      font-size: 13px;
+    }
+
+    .topic-catalogue {
+      display: none !important;
+    }
+
+    .library {
+      margin-top: 38px;
+    }
+
+    .settings-divider {
+      height: 1px;
+      margin: 22px 0;
+      background: var(--line);
+    }
+
+    .topic-settings-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 13px;
+    }
+
+    .topic-settings-head h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.025em;
+    }
+
+    .topic-settings-head p {
+      margin: 5px 0 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .topic-reset {
+      flex: 0 0 auto;
+      padding: 5px 0;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .topic-toggle-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .topic-toggle {
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      transition: .16s ease;
+    }
+
+    .topic-toggle.off {
+      color: #9a968f;
+      background: transparent;
+      text-decoration: line-through;
+      opacity: .72;
+    }
+
+    .topic-settings-note {
+      margin: 13px 0 0 !important;
+      padding: 12px 13px;
+      border-radius: 13px;
+      background: rgba(47,98,77,.065);
+      color: #4d6659 !important;
+      font-size: 12px !important;
+      line-height: 1.45 !important;
+    }
+
+    .feed-empty {
+      grid-column: 1 / -1;
+      padding: 38px 24px;
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      text-align: center;
+      color: var(--muted);
+      background: rgba(255,255,255,.45);
+    }
+
+    @media (max-width: 880px) {
+      .story-card.featured {
+        flex-direction: column;
+      }
+
+      .story-card.featured .card-visual {
+        flex-basis: auto;
+        min-height: 245px;
+      }
+
+      .story-card.featured .card-body {
+        padding: 25px 25px 23px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app-shell {
+        padding: 10px 14px 48px;
+      }
+
+      .topbar {
+        margin-bottom: 14px;
+      }
+
+      .hero {
+        margin-top: 2px;
+        margin-bottom: 21px;
+      }
+
+      .hero h1 {
+        font-size: 40px;
+      }
+
+      .hero p {
+        font-size: 14px;
+      }
+
+      .language-strip {
+        gap: 18px;
+      }
+
+      .story-card,
+      .story-card.featured {
+        border-radius: 19px;
+      }
+
+      .story-card.featured .card-visual {
+        min-height: 210px;
+      }
+
+      .story-card.featured h3 {
+        font-size: 31px;
+      }
+
+      .story-card h3 {
+        font-size: 24px;
+      }
+    }
+
+
+    /* v4 — final cleanup and cross-language interests */
+
+    .hero {
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      margin-bottom: 0;
+    }
+
+    .language-strip {
+      border-bottom: 0 !important;
+      padding-bottom: 2px;
+      margin-bottom: 15px;
+    }
+
+    .language-tab {
+      padding-bottom: 13px;
+    }
+
+    .language-tab.active::after {
+      bottom: 0;
+      height: 2px;
+    }
+
+    .visual-kicker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .visual-tag {
+      white-space: nowrap;
+    }
+
+    .card-meta-line {
+      display: none !important;
+    }
+
+    .focus-inline {
+      color: inherit !important;
+    }
+
+    .story-card .description,
+    .story-card.featured .description {
+      color: #6f6b65;
+    }
+
+    .settings-section {
+      margin-top: 2px;
+    }
+
+    .settings-section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 13px;
+    }
+
+    .settings-section-head h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.025em;
+    }
+
+    .settings-section-head p {
+      margin: 5px 0 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .settings-reset {
+      flex: 0 0 auto;
+      padding: 5px 0;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .settings-chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .settings-chip {
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      transition: .16s ease;
+    }
+
+    .settings-chip.off {
+      color: #9a968f;
+      background: transparent;
+      text-decoration: line-through;
+      opacity: .72;
+    }
+
+    .settings-global-note {
+      margin: 18px 0 0 !important;
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: rgba(47,98,77,.065);
+      color: #4d6659 !important;
+      font-size: 12px !important;
+      line-height: 1.5 !important;
+    }
+
+    .cross-language-note {
+      margin-top: 14px;
+      padding: 12px 13px;
+      border-radius: 13px;
+      background: rgba(255,255,255,.64);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 620px) {
+      .language-strip {
+        margin-left: -14px;
+        margin-right: -14px;
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+    }
+
+
+    /* v5 — mobile-first glass navigation and three top-level sections */
+
+    body {
+      padding-bottom: 116px;
+    }
+
+    .app-shell {
+      padding-bottom: 58px;
+    }
+
+    .icon-btn svg {
+      width: 21px;
+      height: 21px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .app-screen {
+      display: none;
+      animation: screenIn .22s ease both;
+    }
+
+    .app-screen.active {
+      display: block;
+    }
+
+    @keyframes screenIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .screen-hero {
+      margin-bottom: 26px;
+    }
+
+    .bottom-nav-shell {
+      position: fixed;
+      z-index: 48;
+      left: 50%;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      width: min(432px, calc(100vw - 24px));
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .glass-nav {
+      min-height: 72px;
+      padding: 7px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: stretch;
+      gap: 4px;
+      border: 1px solid rgba(255,255,255,.66);
+      border-radius: 27px;
+      background: rgba(248,247,243,.72);
+      box-shadow:
+        0 18px 50px rgba(29,33,30,.15),
+        inset 0 1px 0 rgba(255,255,255,.72);
+      backdrop-filter: blur(24px) saturate(165%);
+      -webkit-backdrop-filter: blur(24px) saturate(165%);
+      pointer-events: auto;
+    }
+
+    .nav-item {
+      min-width: 0;
+      min-height: 58px;
+      padding: 7px 4px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border: 0;
+      border-radius: 20px;
+      color: #827f78;
+      background: transparent;
+      transition:
+        color .18s ease,
+        background .18s ease,
+        transform .18s ease;
+    }
+
+    .nav-item:active {
+      transform: scale(.97);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+      background: rgba(255,255,255,.64);
+      box-shadow:
+        0 4px 15px rgba(41,57,49,.07),
+        inset 0 0 0 1px rgba(255,255,255,.56);
+    }
+
+    .nav-icon {
+      width: 25px;
+      height: 25px;
+      display: grid;
+      place-items: center;
+    }
+
+    .nav-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.65;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-label {
+      max-width: 100%;
+      overflow: hidden;
+      color: inherit;
+      font-size: 10.5px;
+      font-weight: 700;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .continue-reading {
+      margin-bottom: 34px;
+    }
+
+    .continue-card {
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(150px, .8fr) 1.2fr;
+      min-height: 230px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255,255,255,.74);
+      box-shadow: 0 12px 38px rgba(45,41,34,.07);
+      cursor: pointer;
+    }
+
+    .continue-cover {
+      position: relative;
+      min-height: 230px;
+      padding: 17px;
+      display: flex;
+      align-items: flex-end;
+      color: white;
+      background: linear-gradient(145deg, #4c6456, #98a28b);
+    }
+
+    .continue-cover-symbol {
+      font-family: Georgia, serif;
+      font-size: 64px;
+      line-height: 1;
+    }
+
+    .continue-content {
+      padding: 26px 27px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .continue-content h3 {
+      margin: 7px 0 11px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 29px;
+      line-height: 1.08;
+      font-weight: 500;
+      letter-spacing: -.035em;
+    }
+
+    .continue-meta,
+    .library-count,
+    .saved-count {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress-track {
+      height: 5px;
+      margin-top: 19px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e5e3dd;
+    }
+
+    .progress-track span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .progress-label {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .library-page {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .library-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .library-item {
+      position: relative;
+      overflow: hidden;
+      min-height: 214px;
+      padding: 0;
+      border-radius: 21px;
+      background: rgba(255,255,255,.72);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .library-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 36px rgba(45,41,34,.08);
+    }
+
+    .library-item-cover {
+      min-height: 93px;
+      padding: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      color: white;
+    }
+
+    .library-item-symbol {
+      font-family: Georgia, serif;
+      font-size: 35px;
+    }
+
+    .library-status {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(28,31,29,.23);
+      border: 1px solid rgba(255,255,255,.19);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .library-item-body {
+      padding: 15px 16px 16px;
+    }
+
+    .library-item strong {
+      margin: 7px 0 7px;
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      line-height: 1.17;
+      font-weight: 500;
+      letter-spacing: -.02em;
+    }
+
+    .library-item small {
+      display: block;
+      line-height: 1.4;
+    }
+
+    .mini-progress {
+      height: 3px;
+      margin-top: 13px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e6e3dc;
+    }
+
+    .mini-progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .review-card {
+      margin-bottom: 36px;
+      padding: 23px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+      border: 1px solid rgba(47,98,77,.13);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 92% 12%, rgba(255,255,255,.82), transparent 35%),
+        rgba(220,233,223,.64);
+    }
+
+    .review-card .eyebrow {
+      color: #55705f;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .review-card h2 {
+      margin: 6px 0 6px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 28px;
+      line-height: 1.08;
+      font-weight: 500;
+      letter-spacing: -.035em;
+    }
+
+    .review-card p {
+      margin: 0;
+      max-width: 420px;
+      color: #617067;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .learn-language-tabs {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      margin: 0 0 14px;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .learn-language-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .learn-language-tab {
+      flex: 0 0 auto;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.5);
+      font-size: 12px;
+    }
+
+    .learn-language-tab.active {
+      color: white;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .saved-units-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .saved-unit {
+      min-height: 74px;
+      padding: 14px 14px 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 15px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: rgba(255,255,255,.68);
+    }
+
+    .saved-unit-target {
+      margin-bottom: 4px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 19px;
+      line-height: 1.18;
+    }
+
+    .saved-unit-meaning {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .saved-unit-source {
+      margin-top: 5px;
+      color: #9a968f;
+      font-size: 10px;
+    }
+
+    .unit-audio {
+      width: 39px;
+      height: 39px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      color: var(--accent);
+      background: rgba(47,98,77,.08);
+    }
+
+    .unit-audio svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .saved-empty {
+      padding: 30px 20px;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,.42);
+    }
+
+    @media (max-width: 620px) {
+      body {
+        padding-bottom: 106px;
+      }
+
+      .app-shell {
+        padding-bottom: 42px;
+      }
+
+      .bottom-nav-shell {
+        bottom: max(8px, env(safe-area-inset-bottom));
+        width: calc(100vw - 20px);
+      }
+
+      .glass-nav {
+        min-height: 68px;
+        border-radius: 25px;
+      }
+
+      .nav-item {
+        min-height: 54px;
+        border-radius: 18px;
+      }
+
+      .continue-card {
+        grid-template-columns: 1fr;
+      }
+
+      .continue-cover {
+        min-height: 150px;
+      }
+
+      .continue-content {
+        padding: 20px 20px 19px;
+      }
+
+      .continue-content h3 {
+        font-size: 25px;
+      }
+
+      .library-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .library-item {
+        min-height: 0;
+      }
+
+      .library-item-cover {
+        min-height: 108px;
+      }
+
+      .review-card {
+        padding: 20px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .review-card .primary-btn {
+        width: 100%;
+      }
+    }
+
+
+    /* v6 — global language context */
+
+    .topbar {
+      gap: 14px;
+    }
+
+    .top-actions {
+      position: relative;
+      align-items: center;
+    }
+
+    .global-language-control {
+      position: relative;
+    }
+
+    .global-language-button {
+      min-height: 42px;
+      padding: 7px 10px 7px 13px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid rgba(32,32,31,.1);
+      border-radius: 15px;
+      color: var(--text);
+      background: rgba(255,255,255,.62);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+    }
+
+    .global-language-main {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .global-language-main > span:first-child {
+      font-size: 13px;
+      font-weight: 760;
+      letter-spacing: -.015em;
+    }
+
+    .global-language-level {
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .global-language-button svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform .18s ease;
+    }
+
+    .global-language-button.open svg {
+      transform: rotate(180deg);
+    }
+
+    .global-language-menu {
+      position: absolute;
+      z-index: 80;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 224px;
+      padding: 7px;
+      display: none;
+      border: 1px solid rgba(255,255,255,.74);
+      border-radius: 19px;
+      background: rgba(252,251,248,.9);
+      box-shadow: 0 22px 60px rgba(29,33,30,.16);
+      backdrop-filter: blur(22px) saturate(150%);
+      -webkit-backdrop-filter: blur(22px) saturate(150%);
+    }
+
+    .global-language-menu.open {
+      display: grid;
+      gap: 3px;
+      animation: languageMenuIn .16s ease both;
+    }
+
+    @keyframes languageMenuIn {
+      from { opacity: 0; transform: translateY(-4px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .global-language-option {
+      width: 100%;
+      min-height: 47px;
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      border-radius: 13px;
+      color: var(--text);
+      background: transparent;
+      text-align: left;
+    }
+
+    .global-language-option:hover {
+      background: rgba(47,98,77,.065);
+    }
+
+    .global-language-option.active {
+      color: var(--accent);
+      background: rgba(47,98,77,.09);
+    }
+
+    .global-language-option-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .global-language-option-main strong {
+      font-size: 13px;
+    }
+
+    .global-language-option-main small {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .global-language-option-check {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .section-head-with-control {
+      align-items: flex-start;
+    }
+
+    .section-head-side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .scope-switch {
+      padding: 3px;
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      gap: 2px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.48);
+    }
+
+    .scope-option {
+      min-height: 31px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 999px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .scope-option.active {
+      color: var(--text);
+      background: white;
+      box-shadow: 0 4px 12px rgba(45,41,34,.06);
+    }
+
+    .learn-scope-switch {
+      width: fit-content;
+      margin: 0 0 14px;
+    }
+
+    @media (max-width: 620px) {
+      .brand > div:last-child {
+        display: none;
+      }
+
+      .global-language-button {
+        max-width: 184px;
+      }
+
+      .global-language-menu {
+        position: fixed;
+        top: 64px;
+        right: 12px;
+        width: min(256px, calc(100vw - 24px));
+      }
+
+      .section-head-with-control {
+        gap: 12px;
+      }
+
+      .scope-option {
+        padding-left: 9px;
+        padding-right: 9px;
+      }
+    }
+
+
+    /* v7 — one unambiguous global language */
+
+    .global-language-button {
+      background: rgba(255,255,255,.76);
+      border-color: rgba(32,32,31,.13);
+      box-shadow:
+        0 5px 18px rgba(40,43,40,.05),
+        inset 0 1px 0 rgba(255,255,255,.72);
+    }
+
+    .story-card h3 {
+      margin-bottom: 0;
+    }
+
+    .card-title-translation {
+      margin: 7px 0 0;
+      color: #8b877f;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .story-card.featured .card-title-translation {
+      margin-top: 9px;
+      font-size: 13px;
+    }
+
+    .story-card .description {
+      margin-top: 15px;
+    }
+
+    .continue-title-translation {
+      margin-top: -4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .library-title-translation {
+      margin: -1px 0 7px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .reader-title-translation {
+      margin: -8px 0 15px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .scope-switch,
+    .learn-scope-switch,
+    .section-head-side {
+      display: none !important;
+    }
+
+    @media (max-width: 620px) {
+      .card-title-translation {
+        font-size: 11.5px;
+      }
+
+      .story-card.featured .card-title-translation {
+        font-size: 12px;
+      }
+    }
+
+
+    /* v8 — Russian editorial titles, flag in the global language selector */
+
+    .global-language-main {
+      gap: 7px;
+    }
+
+    .global-language-flag {
+      position: relative;
+      top: 1px;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .global-language-option-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .global-language-option-flag {
+      flex: 0 0 auto;
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .card-title-translation,
+    .continue-title-translation,
+    .library-title-translation {
+      display: none !important;
+    }
+
+    .story-card .description {
+      margin-top: 13px;
+    }
+
+</style>
+</head>
+<body>
+  
+  <main class="app-shell">
+    
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <div>Context Reader</div>
+      </div>
+
+      <div class="top-actions">
+        <div class="global-language-control">
+          <button
+            class="global-language-button"
+            id="globalLanguageButton"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+          >
+            <span class="global-language-main">
+              <span class="global-language-flag" id="globalLanguageFlag">🇬🇷</span>
+              <span id="globalLanguageLabel">Ελληνικά</span>
+              <span class="global-language-level" id="globalLanguageLevel">A2</span>
+            </span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m8 10 4 4 4-4"></path>
+            </svg>
+          </button>
+
+          <div class="global-language-menu" id="globalLanguageMenu" role="listbox"></div>
+        </div>
+
+        <button class="icon-btn" id="settingsOpen" title="Настройки" aria-label="Открыть настройки">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z"></path>
+            <path d="M19.4 13.5a7.8 7.8 0 0 0 0-3l2-1.5-2-3.5-2.4 1a8.2 8.2 0 0 0-2.6-1.5L14 2.5h-4L9.6 5A8.2 8.2 0 0 0 7 6.5l-2.4-1-2 3.5 2 1.5a7.8 7.8 0 0 0 0 3l-2 1.5 2 3.5 2.4-1A8.2 8.2 0 0 0 9.6 19l.4 2.5h4l.4-2.5a8.2 8.2 0 0 0 2.6-1.5l2.4 1 2-3.5-2-1.5Z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+
+    <section class="app-screen active" id="screenChoose" data-screen="choose">
+      <section class="hero">
+        <div>
+          <h1>Что почитаем?</h1>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head">
+          <div>
+            <h2>Подобрано для тебя</h2>
+          </div>
+          <button class="ghost-btn" id="refreshBtn">↻ Предложить другие</button>
+        </div>
+
+        <div class="feed" id="feed"></div>
+      </section>
+    </section>
+
+    <section class="app-screen" id="screenLibrary" data-screen="library">
+      <section class="hero screen-hero">
+        <div>
+          <h1>Мои тексты</h1>
+        </div>
+      </section>
+
+      <section class="continue-reading" id="continueReadingSection">
+        <div class="section-head">
+          <div>
+            <h2>Продолжить</h2>
+          </div>
+        </div>
+        <div id="continueReadingCard"></div>
+      </section>
+
+      <section class="library library-page" id="librarySection">
+        <div class="section-head">
+          <div>
+            <h2>Все тексты</h2>
+          </div>
+          <div class="library-count" id="libraryCount"></div>
+        </div>
+        <div class="library-grid" id="libraryGrid"></div>
+      </section>
+    </section>
+
+    <section class="app-screen" id="screenLearn" data-screen="learn">
+      <section class="hero screen-hero">
+        <div>
+          <h1>Учить</h1>
+        </div>
+      </section>
+
+      <section class="review-card">
+        <div>
+          <span class="eyebrow">На сегодня</span>
+          <h2><span id="reviewCount">4</span> слова и фразы</h2>
+          <p>Короткое повторение из уже прочитанных текстов.</p>
+        </div>
+        <button class="primary-btn" id="startReviewBtn">Начать</button>
+      </section>
+
+      <section class="saved-units-section">
+        <div class="section-head">
+          <div>
+            <h2>Сохранённое</h2>
+          </div>
+          <span class="saved-count" id="savedCount"></span>
+        </div>
+
+        <div class="saved-units-list" id="savedUnitsList"></div>
+      </section>
+    </section>
+  </main>
+
+  <nav class="bottom-nav-shell" aria-label="Основные разделы">
+    <div class="glass-nav">
+      <button class="nav-item active" data-nav="choose" aria-label="Выбрать материал">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9-1.9 5.7-1.9-5.7-5.6-1.9L10.1 9 12 3.5Z"></path>
+            <path d="m18.2 3 .7 2 .1.1 2 .7-2 .7-.1.1-.7 2-.7-2-2-.7 2-.7.1-.1.7-2Z"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Выбрать</span>
+      </button>
+
+      <button class="nav-item" data-nav="library" aria-label="Мои тексты">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5.2c2.7-.8 5.3-.3 8 1.4v13c-2.7-1.7-5.3-2.2-8-1.4v-13Z"></path>
+            <path d="M20 5.2c-2.7-.8-5.3-.3-8 1.4v13c2.7-1.7 5.3-2.2 8-1.4v-13Z"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Мои тексты</span>
+      </button>
+
+      <button class="nav-item" data-nav="learn" aria-label="Учить слова и фразы">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="4" width="13" height="15" rx="2.5"></rect>
+            <path d="M8.5 8h6M8.5 11.5h4.5"></path>
+            <path d="m16.5 15.2 1 1 2-2"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Учить</span>
+      </button>
+    </div>
+  </nav>
+
+
+  <div class="overlay" id="generateOverlay">
+    <div class="modal">
+      <div class="modal-inner" id="generationView">
+        <div class="modal-head">
+          <div>
+            <div class="summary-label">Создаём урок</div>
+            <h2 id="generationTitle"></h2>
+          </div>
+          <button class="icon-btn" id="cancelGeneration">×</button>
+        </div>
+        <p>Тема уже выбрана. Теперь система адаптирует материал под твой уровень и подготовит чтение.</p>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="steps" id="steps">
+          <div class="step"><div class="dot">1</div><div>Создаём и адаптируем текст</div></div>
+          <div class="step"><div class="dot">2</div><div>Размечаем слова и фразы</div></div>
+          <div class="step"><div class="dot">3</div><div>Готовим объяснения</div></div>
+          <div class="step"><div class="dot">4</div><div>Добавляем озвучку и тайминги</div></div>
+          <div class="step"><div class="dot">5</div><div>Сохраняем в библиотеку</div></div>
+        </div>
+      </div>
+
+      <div class="modal-inner reader" id="readerView">
+        <div class="reader-toolbar">
+          <button class="ghost-btn" id="closeReader">← В ленту</button>
+          <div class="feedback-wrap">
+            <button class="icon-btn" id="feedbackBtn" title="Оценить материал">⋯</button>
+            <div class="feedback-menu" id="feedbackMenu">
+              <button data-feedback="more">Больше такого</button>
+              <button data-feedback="boring">Неинтересно</button>
+              <button data-feedback="hard">Слишком сложно</button>
+              <button data-feedback="easy">Слишком просто</button>
+              <button data-feedback="school">Слишком учебно</button>
+            </div>
+          </div>
+        </div>
+        <div class="summary-label" id="readerKicker"></div>
+        <h2 class="reader-title" id="readerTitle"></h2>
+        <div class="reader-title-translation" id="readerTitleTranslation"></div>
+        <div class="reader-meta" id="readerMeta"></div>
+        <div class="audio-strip">
+          <button class="play" id="playBtn">▶</button>
+          <div class="audio-line"><span id="audioProgress"></span></div>
+          <strong>0.8×</strong>
+        </div>
+        <article class="lesson-text" id="lessonText"></article>
+        <div class="reader-actions">
+          <span class="source-note" id="readerSource"></span>
+          <button class="primary-btn" id="finishBtn">Закончить чтение</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="settingsOverlay">
+    <div class="modal" style="max-width:700px">
+      <div class="modal-inner">
+        <div class="modal-head">
+          <div>
+            <div class="summary-label">Настройки чтения</div>
+            <h2>Языки, темы и страны</h2>
+          </div>
+          <button class="icon-btn" id="settingsClose">×</button>
+        </div>
+        <p>Уровень задаётся отдельно для каждого языка. Темы и страны действуют для всех языков.</p>
+        <div id="settingsRows"></div>
+        <div class="settings-divider"></div>
+        <div id="topicPreferences"></div>
+        <div class="settings-divider"></div>
+        <div id="countryPreferences"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const languages = {
+  el: { label: "Ελληνικά", name: "греческого", level: "A2", color: "#416b78", symbol: "Ω" },
+  de: { label: "Deutsch", name: "немецкого", level: "A1", color: "#745e45", symbol: "ß" },
+  fr: { label: "Français", name: "французского", level: "A1", color: "#6f5479", symbol: "ç" },
+  en: { label: "English", name: "английского", level: "B2", color: "#3f6d54", symbol: "&" }
+};
+
+const content = {
+  el: [
+    {
+      title: "Утро в маленькой деревне на Наксосе",
+      description: "Спокойная история о женщине, которая открывает семейное кафе до прихода первых посетителей.",
+      type: "Спокойный рассказ", region: "Греция · Наксос", duration: "2 мин", truth: "AI-история",
+      focus: "повседневные действия · утро · кафе · настоящее время", source: "Художественный материал",
+      symbol: "☕", featured: true,
+      text: [
+        "Η Μαρία ξυπνά νωρίς κάθε πρωί. Το χωριό είναι ακόμα ήσυχο και ο ήλιος μόλις βγαίνει πάνω από τη θάλασσα.",
+        "Ανοίγει το μικρό καφέ της οικογένειας, βάζει τα τραπέζια έξω και ετοιμάζει ελληνικό καφέ.",
+        "Λίγο αργότερα, ένας ηλικιωμένος άντρας περνά από την πλατεία. «Καλημέρα, Μαρία», λέει. «Καλημέρα, κύριε Νίκο. Το συνηθισμένο;»",
+        "Ο άντρας χαμογελά και κάθεται στη σκιά. Για τη Μαρία, έτσι αρχίζει σχεδόν κάθε καλοκαιρινή μέρα."
+      ]
+    },
+    {
+      title: "Почему греки говорят «σιγά σιγά»",
+      description: "Коротко о выражении, которое можно услышать в быту, на работе и во время путешествий.",
+      type: "Язык и культура", region: "Греция", duration: "1 мин", truth: "На основе фактов",
+      focus: "темп действий · повтор слов · бытовые выражения", source: "Проверяемый культурный материал",
+      symbol: "≈",
+      text: [
+        "Στην Ελλάδα ακούς συχνά τη φράση «σιγά σιγά». Κυριολεκτικά σημαίνει «αργά, αργά».",
+        "Όμως οι άνθρωποι τη χρησιμοποιούν και με την έννοια «βήμα βήμα» ή «χωρίς βιασύνη».",
+        "Μπορεί κάποιος να πει: «Σιγά σιγά θα μάθεις ελληνικά». Η φράση δεν σημαίνει ότι δεν πρέπει να προσπαθείς. Σημαίνει ότι χρειάζεται χρόνος."
+      ]
+    },
+    {
+      title: "Как мастера строили дома на Санторини",
+      description: "Небольшой фактический материал о белых домах, вулканическом острове и защите от жары.",
+      type: "Архитектура", region: "Греция · Санторини", duration: "2 мин", truth: "На основе источников",
+      focus: "дом · материалы · погода · описание причин", source: "Факты из культурных источников",
+      symbol: "⌂",
+      text: [
+        "Στη Σαντορίνη πολλά παλιά σπίτια είναι χτισμένα μέσα στον ηφαιστειακό βράχο.",
+        "Οι χοντροί τοίχοι βοηθούν τα σπίτια να μένουν δροσερά το καλοκαίρι και πιο ζεστά τον χειμώνα.",
+        "Το λευκό χρώμα αντανακλά το δυνατό φως του ήλιου. Έτσι, η γνωστή εικόνα του νησιού δεν είναι μόνο όμορφη αλλά και πρακτική."
+      ]
+    },
+    {
+      title: "Первый день на новой работе в Афинах",
+      description: "Мини-сцена с естественным диалогом: знакомство с коллегами, рабочее место и планы на день.",
+      type: "Практическая история", region: "Греция · Афины", duration: "2 мин", truth: "AI-история",
+      focus: "знакомство · профессии · офис · вопросы о себе", source: "Художественный материал",
+      symbol: "✦",
+      text: [
+        "Ο Πέτρος ξεκινά σήμερα μια νέα δουλειά σε ένα μικρό γραφείο στην Αθήνα.",
+        "Η Ελένη τον περιμένει στην είσοδο. «Καλώς ήρθες! Εγώ είμαι η Ελένη και δουλεύω στην ομάδα σχεδιασμού».",
+        "Ο Πέτρος χαμογελά. «Χάρηκα πολύ. Πού μπορώ να αφήσω την τσάντα μου;»",
+        "Η Ελένη του δείχνει το γραφείο και μετά πηγαίνουν μαζί για καφέ."
+      ]
+    },
+    {
+      title: "Остров, где почти нет автомобилей",
+      description: "Интересный материал об Идре, пеших улицах и повседневной жизни без обычного городского транспорта.",
+      type: "Интересное место", region: "Греция · Идра", duration: "2 мин", truth: "На основе источников",
+      focus: "транспорт · остров · передвижение · правила", source: "Адаптация фактического материала",
+      symbol: "≈",
+      text: [
+        "Στην Ύδρα δεν κυκλοφορούν συνηθισμένα αυτοκίνητα και μηχανές.",
+        "Οι κάτοικοι και οι επισκέπτες περπατούν, χρησιμοποιούν θαλάσσια ταξί ή μεταφέρουν πράγματα με ζώα.",
+        "Αυτό κάνει το νησί πιο ήσυχο. Τα στενά δρομάκια και το λιμάνι έχουν κρατήσει έναν ιδιαίτερο χαρακτήρα."
+      ]
+    },
+    {
+      title: "Женщина, которая собирала травы на Крите",
+      description: "Небольшой атмосферный рассказ о прогулке в горах, запахах растений и семейной традиции.",
+      type: "Спокойный рассказ", region: "Греция · Крит", duration: "2 мин", truth: "AI-история",
+      focus: "природа · запахи · семья · прошедшее время", source: "Художественный материал",
+      symbol: "⌁",
+      text: [
+        "Η Άννα περπατούσε σε ένα μικρό μονοπάτι στα βουνά της Κρήτης.",
+        "Η γιαγιά της τής είχε μάθει να αναγνωρίζει το θυμάρι, τη ρίγανη και το φασκόμηλο.",
+        "Κάθε φυτό είχε διαφορετική μυρωδιά και διαφορετική ιστορία. Η Άννα μάζεψε λίγα βότανα και τα έβαλε προσεκτικά στο καλάθι της."
+      ]
+    }
+  ],
+  de: [
+    {
+      title: "Ein ruhiger Morgen in Freiburg",
+      description: "Простая сцена: девушка покупает хлеб, встречает соседа и идёт домой через старый город.",
+      type: "Спокойный рассказ", region: "Германия · Фрайбург", duration: "2 мин", truth: "AI-история",
+      focus: "город · покупки · приветствия · настоящее время", source: "Художественный материал",
+      symbol: "☀", featured: true,
+      text: [
+        "Mia wohnt in Freiburg. Am Samstag steht sie früh auf.",
+        "Sie geht zu einer kleinen Bäckerei und kauft Brot und zwei Brötchen.",
+        "Vor der Tür sieht sie ihren Nachbarn. „Guten Morgen, Mia“, sagt er. „Guten Morgen! Wie geht es dir?“",
+        "Dann geht Mia langsam durch die Altstadt nach Hause."
+      ]
+    },
+    {
+      title: "Почему в Германии так много пекарен",
+      description: "Короткий материал о хлебной культуре и привычке покупать свежую выпечку утром.",
+      type: "Культура", region: "Германия", duration: "1 мин", truth: "На основе фактов",
+      focus: "еда · покупки · время дня · частотные глаголы", source: "Адаптация культурного материала",
+      symbol: "◇",
+      text: [
+        "In Deutschland gibt es sehr viele Bäckereien.",
+        "Viele Menschen kaufen morgens frisches Brot oder Brötchen.",
+        "Es gibt verschiedene Sorten: helles Brot, dunkles Brot und Brot mit Körnern.",
+        "Die Bäckerei ist für viele Menschen ein Teil des Alltags."
+      ]
+    },
+    {
+      title: "Первое знакомство в языковой школе",
+      description: "Мини-диалог про имя, страну, работу и причины учить немецкий.",
+      type: "Практическая история", region: "Германия · Берлин", duration: "1 мин", truth: "AI-история",
+      focus: "знакомство · страны · профессии · простые вопросы", source: "Художественный материал",
+      symbol: "…",
+      text: [
+        "Lena ist neu in einer Sprachschule in Berlin.",
+        "„Hallo, ich heiße Lena. Wie heißt du?“",
+        "„Ich bin David. Ich komme aus Spanien. Und du?“",
+        "„Ich komme aus Polen und arbeite als Designerin.“",
+        "Nach dem Kurs trinken sie zusammen einen Kaffee."
+      ]
+    },
+    {
+      title: "Маленький поезд в Баварских Альпах",
+      description: "Простая история о поездке в горы, погоде и планах на день.",
+      type: "Путешествие", region: "Германия · Бавария", duration: "2 мин", truth: "AI-история",
+      focus: "транспорт · погода · планы · направления", source: "Художественный материал",
+      symbol: "↟",
+      text: [
+        "Jonas fährt mit einem kleinen Zug in die Berge.",
+        "Das Wetter ist kühl, aber die Sonne scheint.",
+        "Er möchte an einem See spazieren und später in einem Gasthaus essen.",
+        "Im Zug sitzt eine ältere Frau. Sie zeigt ihm auf der Karte einen schönen Weg."
+      ]
+    },
+    {
+      title: "Почему в Швейцарии несколько языков",
+      description: "Очень короткое объяснение многоязычия страны простыми предложениями.",
+      type: "Языки", region: "Швейцария", duration: "2 мин", truth: "На основе фактов",
+      focus: "страны · языки · регионы · глагол sprechen", source: "Проверяемый фактический материал",
+      symbol: "CH",
+      text: [
+        "Die Schweiz hat mehrere offizielle Sprachen.",
+        "In vielen Regionen sprechen die Menschen Deutsch. In anderen Regionen sprechen sie Französisch, Italienisch oder Rätoromanisch.",
+        "Die Sprache hängt oft von der Region ab. Viele Schweizer lernen deshalb mehr als eine Sprache."
+      ]
+    }
+  ],
+  fr: [
+    {
+      title: "Un café près de la gare",
+      description: "Очень простая сцена: поезд опаздывает, девушка заходит в кафе и разговаривает с официантом.",
+      type: "Сцена с диалогом", region: "Франция · Лион", duration: "2 мин", truth: "AI-история",
+      focus: "кафе · ожидание · время · простые просьбы", source: "Художественный материал",
+      symbol: "☕", featured: true,
+      text: [
+        "Claire attend son train à Lyon. Le train a vingt minutes de retard.",
+        "Elle entre dans un petit café près de la gare.",
+        "« Bonjour, je voudrais un café au lait, s’il vous plaît. »",
+        "Le serveur sourit. « Bien sûr. Vous voulez aussi un croissant ? »",
+        "Claire regarde la pluie derrière la fenêtre et dit oui."
+      ]
+    },
+    {
+      title: "Почему во Франции долго сидят в кафе",
+      description: "Простой культурный материал о встречах, разговорах и городской повседневности.",
+      type: "Культура", region: "Франция", duration: "1 мин", truth: "На основе фактов",
+      focus: "друзья · время · кафе · привычки", source: "Адаптация культурного материала",
+      symbol: "○",
+      text: [
+        "En France, le café est souvent un lieu de rencontre.",
+        "Les gens peuvent boire un petit café et rester longtemps à table.",
+        "Ils parlent avec des amis, lisent un journal ou regardent la rue.",
+        "Le café fait partie de la vie de nombreux quartiers."
+      ]
+    },
+    {
+      title: "Первый день в квартире в Брюсселе",
+      description: "История про переезд, комнаты, соседей и маленькую бытовую проблему.",
+      type: "Полезная лексика", region: "Бельгия · Брюссель", duration: "2 мин", truth: "AI-история",
+      focus: "жильё · комнаты · соседи · il y a", source: "Художественный материал",
+      symbol: "⌂",
+      text: [
+        "Nora arrive dans son nouvel appartement à Bruxelles.",
+        "Il y a une petite cuisine, une chambre claire et un balcon.",
+        "Mais la lumière de la salle de bains ne fonctionne pas.",
+        "Nora frappe à la porte de sa voisine. La voisine est très gentille et appelle le propriétaire."
+      ]
+    },
+    {
+      title: "Откуда появился багет",
+      description: "Короткий материал о французском хлебе без перегруженной исторической лекции.",
+      type: "История еды", region: "Франция", duration: "2 мин", truth: "На основе источников",
+      focus: "еда · прошлое · производство · описание формы", source: "Фактический материал",
+      symbol: "—",
+      text: [
+        "La baguette est aujourd’hui un symbole de la France.",
+        "Mais sa forme moderne est devenue populaire surtout au vingtième siècle.",
+        "Elle est longue, légère et facile à partager.",
+        "Les Français achètent souvent le pain dans une boulangerie près de chez eux."
+      ]
+    },
+    {
+      title: "Прогулка у озера в Швейцарии",
+      description: "Неторопливый рассказ о вечере, горах, воде и коротком разговоре с прохожим.",
+      type: "Спокойный рассказ", region: "Швейцария · Лозанна", duration: "2 мин", truth: "AI-история",
+      focus: "природа · погода · движение · описание места", source: "Художественный материал",
+      symbol: "≈",
+      text: [
+        "Émile marche près du lac à Lausanne.",
+        "Le ciel est clair et les montagnes sont visibles au loin.",
+        "Un homme s’arrête et demande : « Excusez-moi, où est la gare ? »",
+        "Émile montre une rue calme. Puis il continue sa promenade au bord de l’eau."
+      ]
+    }
+  ],
+  en: [
+    {
+      title: "Why some languages feel faster than others",
+      description: "A compact explainer about syllables, information density and why speech rhythm can sound unexpectedly fast.",
+      type: "Language science", region: "Research-based", duration: "3 min", truth: "Adapted source",
+      focus: "linguistics · comparison · cause and effect · academic vocabulary", source: "Adapted from linguistic research",
+      symbol: "Aa", featured: true,
+      text: [
+        "Some languages seem much faster than others, even when speakers communicate roughly the same amount of information.",
+        "One explanation is that languages distribute information differently. A language may use many short syllables, while another packs more information into each syllable.",
+        "Listeners also perceive unfamiliar sound patterns as faster because they cannot easily predict where one word ends and the next begins.",
+        "This means that “fast” speech is not only about the number of sounds per second. It is also about rhythm, familiarity and information density."
+      ]
+    },
+    {
+      title: "The hidden design of a quiet Swiss train",
+      description: "A design-focused piece on acoustic choices, social norms and why public transport can feel calm.",
+      type: "Design & culture", region: "Switzerland", duration: "3 min", truth: "Source-based",
+      focus: "product design · public behavior · sensory vocabulary", source: "Multi-source factual adaptation",
+      symbol: "⌁",
+      text: [
+        "A quiet train carriage is not created by a single rule. It is the result of design choices and shared social expectations.",
+        "Soft materials reduce echoes, doors close with controlled movement, and announcements are kept short.",
+        "Passengers also contribute by lowering their voices and using headphones. The atmosphere is therefore partly engineered and partly cultural.",
+        "Good public design often works this way: people notice the comfort, but not the many small decisions behind it."
+      ]
+    },
+    {
+      title: "What happens when AI writes for a lower reading level",
+      description: "A practical look at simplification: what models remove, what they preserve and where texts become unnatural.",
+      type: "AI & language", region: "Technology", duration: "3 min", truth: "Source-based",
+      focus: "AI · education · critique · precise vocabulary", source: "Research-informed explainer",
+      symbol: "◎",
+      text: [
+        "Simplifying a text is more difficult than replacing long words with short ones.",
+        "A good adaptation preserves the central idea, causal links and tone while reducing unnecessary complexity.",
+        "Models often fail when they remove too much context or repeat the same basic sentence pattern. The result may be technically easy but unpleasant to read.",
+        "For language learners, the best simplified text should remain natural enough to feel like real communication."
+      ]
+    },
+    {
+      title: "A city that redesigned one dangerous street",
+      description: "A small real-world urban design case about speed, crossings and how people reacted after the change.",
+      type: "Urban story", region: "Europe", duration: "3 min", truth: "Source-based",
+      focus: "cities · safety · before/after comparisons · policy vocabulary", source: "Adapted real-world case",
+      symbol: "↔",
+      text: [
+        "The street had been designed mainly for cars, even though hundreds of people crossed it every hour.",
+        "The city narrowed the traffic lanes, added raised crossings and moved parking away from intersections.",
+        "Drivers initially complained that the project would create congestion. Six months later, average speeds were lower and severe crashes had fallen.",
+        "The redesign did not remove traffic. It changed which kind of movement the street prioritized."
+      ]
+    },
+    {
+      title: "How adults actually notice gaps in vocabulary",
+      description: "A concise reading about topic coverage, recognition and why B2 learners can still feel suddenly lost.",
+      type: "Language learning", region: "Evidence-informed", duration: "2 min", truth: "Source-based",
+      focus: "learning · vocabulary · self-assessment · abstract nouns", source: "Research-informed explainer",
+      symbol: "∆",
+      text: [
+        "A learner may understand everyday English comfortably and still struggle with a narrow topic such as architecture, finance or medicine.",
+        "This is not necessarily a problem with general level. Vocabulary develops unevenly because exposure is uneven.",
+        "Reading across different domains reveals these gaps more clearly than taking another broad placement test.",
+        "The useful question is not only “How many words do I know?” but also “In which situations can I use them?”"
+      ]
+    }
+  ]
+};
+
+
+const topicGroups = [
+  { id: "calm", icon: "≈", title: "Спокойные мини-истории", example: "вечер у моря, маленькое кафе, прогулка по городу", level: "A0–C1" },
+  { id: "practical", icon: "↗", title: "Практические ситуации", example: "знакомство, жильё, транспорт, врач, покупки", level: "особенно A0–A2" },
+  { id: "culture", icon: "◌", title: "Культура и повседневность", example: "привычки, общение, традиции и устройство быта", level: "A1–C1" },
+  { id: "history", icon: "⌛", title: "История и эпизоды", example: "один человек, событие или предмет вместо длинной лекции", level: "A2–C1" },
+  { id: "places", icon: "⌂", title: "Места и архитектура", example: "острова, города, необычные здания и маршруты", level: "A1–C1" },
+  { id: "people", icon: "◇", title: "Люди и менталитет", example: "как общаются, работают, отдыхают и принимают решения", level: "A2–C1" },
+  { id: "language", icon: "Aa", title: "Язык и выражения", example: "происхождение слов, живые фразы и варианты языка", level: "A1–C1" },
+  { id: "food", icon: "○", title: "Еда и традиции", example: "местные блюда, рынки, семейные рецепты и история еды", level: "A0–C1" },
+  { id: "travel", icon: "↟", title: "Путешествия и природа", example: "поезда, горы, острова, озёра и небольшие поездки", level: "A1–C1" },
+  { id: "technology", icon: "◎", title: "AI и технологии", example: "новые продукты, исследования и влияние технологий", level: "B1–C1" },
+  { id: "society", icon: "∆", title: "Общество и политика", example: "простое объяснение решений, институтов и изменений", level: "B1–C1" },
+  { id: "current", icon: "•", title: "Свежие события", example: "одна короткая проверенная новость без новостного шума", level: "A2–C1" }
+];
+
+const featuredTitles = {
+  el: [
+    "Почему в Швейцарии несколько языков",
+    "Остров, где почти нет автомобилей",
+    "Почему греки говорят «σιγά σιγά»"
+  ],
+  de: [
+    "Почему в Швейцарии несколько языков",
+    "Маленький поезд в Баварских Альпах",
+    "Почему в Германии так много пекарен"
+  ],
+  fr: [
+    "Почему в Швейцарии несколько языков",
+    "Откуда появился багет",
+    "Прогулка у озера в Швейцарии"
+  ],
+  en: [
+    "Почему в Швейцарии несколько языков",
+    "What happens when AI writes for a lower reading level",
+    "Why some languages feel faster than others"
+  ]
+};
+
+let activeTopic = null;
+
+
+const interestTopics = [
+  { id: "everyday", label: "Повседневная жизнь" },
+  { id: "culture", label: "Культура" },
+  { id: "history", label: "История" },
+  { id: "places", label: "Места и архитектура" },
+  { id: "language", label: "Язык и выражения" },
+  { id: "food", label: "Еда" },
+  { id: "travel", label: "Путешествия и природа" },
+  { id: "technology", label: "AI и технологии" },
+  { id: "society", label: "Общество и политика" },
+  { id: "current", label: "Свежие события" }
+];
+
+const interestCountries = [
+  { id: "greece", label: "Греция" },
+  { id: "greek_islands", label: "Греческие острова" },
+  { id: "cyprus", label: "Кипр: история и культура" },
+  { id: "germany", label: "Германия" },
+  { id: "bavaria", label: "Бавария" },
+  { id: "austria", label: "Австрия" },
+  { id: "switzerland", label: "Швейцария" },
+  { id: "france", label: "Франция" },
+  { id: "belgium", label: "Бельгия" },
+  { id: "luxembourg", label: "Люксембург" },
+  { id: "francophone", label: "Франкоязычные регионы" },
+  { id: "world", label: "Другие страны и регионы" }
+];
+
+function freshPreferenceMap(items) {
+  return Object.fromEntries(items.map(item => [item.id, true]));
+}
+
+function loadGlobalPreferences(storageKey, items) {
+  const defaults = freshPreferenceMap(items);
+
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "null");
+    if (!stored || typeof stored !== "object") return defaults;
+
+    // v3 stored topics separately for every language. Migrate by taking the
+    // union: a topic stays enabled if it was enabled for at least one language.
+    const firstValue = Object.values(stored)[0];
+    if (firstValue && typeof firstValue === "object") {
+      for (const item of items) {
+        const languageValues = Object.values(stored)
+          .map(value => value?.[item.id])
+          .filter(value => typeof value === "boolean");
+
+        if (languageValues.length) {
+          defaults[item.id] = languageValues.some(Boolean);
+        }
+      }
+      return defaults;
+    }
+
+    for (const item of items) {
+      if (typeof stored[item.id] === "boolean") {
+        defaults[item.id] = stored[item.id];
+      }
+    }
+
+    return defaults;
+  } catch {
+    return defaults;
+  }
+}
+
+let topicPreferences = loadGlobalPreferences(
+  "context-reader-topic-preferences",
+  interestTopics
+);
+
+let countryPreferences = loadGlobalPreferences(
+  "context-reader-country-preferences",
+  interestCountries
+);
+
+function saveGlobalPreferences() {
+  localStorage.setItem(
+    "context-reader-topic-preferences",
+    JSON.stringify(topicPreferences)
+  );
+  localStorage.setItem(
+    "context-reader-country-preferences",
+    JSON.stringify(countryPreferences)
+  );
+}
+
+function cardInterestTopics(card) {
+  const text = `${card.title} ${card.description} ${card.focus} ${card.type} ${card.region}`.toLowerCase();
+  const result = new Set();
+  const matches = words => words.some(word => text.includes(word));
+
+  if (matches(["спокой", "практич", "знаком", "работ", "квартир", "morning", "café", "apartment", "everyday"])) result.add("everyday");
+  if (matches(["культур", "традиц", "ментал", "culture", "habit", "швейцар", "греки", "франции", "германии"])) result.add("culture");
+  if (matches(["истор", "стар", "появ", "прошл", "history", "twentieth", "built"])) result.add("history");
+  if (matches(["остров", "санторин", "идр", "город", "архитект", "улиц", "озер", "альп", "place", "city", "street", "train"])) result.add("places");
+  if (matches(["язык", "выраж", "словар", "lingu", "language", "vocabulary"])) result.add("language");
+  if (matches(["еда", "кафе", "хлеб", "багет", "пекар", "food", "bread", "croissant", "herb"])) result.add("food");
+  if (matches(["путеше", "поезд", "вокзал", "остров", "горы", "озеро", "travel", "station", "train", "lake"])) result.add("travel");
+  if (matches(["ai", "технолог", "technology", "product design", "модел"])) result.add("technology");
+  if (matches(["общество", "полит", "policy", "safety", "public behavior", "городск"])) result.add("society");
+  if (matches(["новост", "сегодня", "current event", "today"])) result.add("current");
+
+  if (result.size === 0) result.add("everyday");
+  return [...result];
+}
+
+function cardCountryIds(card) {
+  const text = `${card.title} ${card.region} ${card.description}`.toLowerCase();
+  const result = new Set();
+
+  if (text.includes("греци") || text.includes("афин") || text.includes("greek")) result.add("greece");
+  if (["наксос", "санторин", "идр", "крит", "остров"].some(word => text.includes(word))) result.add("greek_islands");
+  if (text.includes("кипр") || text.includes("cyprus")) result.add("cyprus");
+  if (text.includes("герман") || text.includes("берлин") || text.includes("фрайбург") || text.includes("germany")) result.add("germany");
+  if (text.includes("бавар") || text.includes("bavaria")) result.add("bavaria");
+  if (text.includes("австри") || text.includes("austria")) result.add("austria");
+  if (text.includes("швейцар") || text.includes("лозан") || text.includes("swiss") || text.includes("switzerland")) result.add("switzerland");
+  if (text.includes("франц") || text.includes("лион") || text.includes("france")) result.add("france");
+  if (text.includes("бельг") || text.includes("брюссел") || text.includes("belg")) result.add("belgium");
+  if (text.includes("люксембург") || text.includes("luxembourg")) result.add("luxembourg");
+  if (text.includes("франкоязы") || text.includes("francophone")) result.add("francophone");
+
+  if (result.size === 0) result.add("world");
+  return [...result];
+}
+
+function isCardAllowed(card) {
+  const topicAllowed = cardInterestTopics(card)
+    .some(topicId => topicPreferences[topicId] !== false);
+
+  const countryAllowed = cardCountryIds(card)
+    .some(countryId => countryPreferences[countryId] !== false);
+
+  return topicAllowed && countryAllowed;
+}
+
+const canonicalIdeas = Object.entries(content).flatMap(([originLanguage, cards]) =>
+  cards.map((card, index) => ({
+    ...card,
+    originLanguage,
+    canonicalId: `${originLanguage}-${index}-${card.title
+      .toLowerCase()
+      .replace(/[^a-zа-яё0-9]+/gi, "-")
+      .replace(/^-|-$/g, "")}`
+  }))
+);
+
+
+
+const languageFlags = {
+  el: "🇬🇷",
+  de: "🇩🇪",
+  fr: "🇫🇷",
+  en: "🇬🇧"
+};
+
+const localizedCardTitles = {
+  "Утро в маленькой деревне на Наксосе": {
+    "ru": "Утро в маленькой деревне на Наксосе",
+    "el": "Ένα πρωινό σε ένα μικρό χωριό της Νάξου",
+    "de": "Ein Morgen in einem kleinen Dorf auf Naxos",
+    "fr": "Un matin dans un petit village de Naxos",
+    "en": "A Morning in a Small Village on Naxos"
+  },
+  "Почему греки говорят «σιγά σιγά»": {
+    "ru": "Почему греки говорят «σιγά σιγά»",
+    "el": "Γιατί οι Έλληνες λένε «σιγά σιγά»;",
+    "de": "Warum sagen die Griechen „σιγά σιγά“?",
+    "fr": "Pourquoi les Grecs disent-ils «σιγά σιγά» ?",
+    "en": "Why Do Greeks Say “σιγά σιγά”?"
+  },
+  "Как мастера строили дома на Санторини": {
+    "ru": "Как мастера строили дома на Санторини",
+    "el": "Πώς οι μάστορες έχτιζαν σπίτια στη Σαντορίνη",
+    "de": "Wie Handwerker Häuser auf Santorin bauten",
+    "fr": "Comment les artisans construisaient les maisons à Santorin",
+    "en": "How Craftsmen Built Houses on Santorini"
+  },
+  "Первый день на новой работе в Афинах": {
+    "ru": "Первый день на новой работе в Афинах",
+    "el": "Η πρώτη μέρα σε μια νέα δουλειά στην Αθήνα",
+    "de": "Der erste Tag bei einer neuen Arbeit in Athen",
+    "fr": "Le premier jour dans un nouveau travail à Athènes",
+    "en": "The First Day at a New Job in Athens"
+  },
+  "Остров, где почти нет автомобилей": {
+    "ru": "Остров, где почти нет автомобилей",
+    "el": "Το νησί όπου σχεδόν δεν υπάρχουν αυτοκίνητα",
+    "de": "Die Insel, auf der es fast keine Autos gibt",
+    "fr": "L’île où il n’y a presque pas de voitures",
+    "en": "The Island with Almost No Cars"
+  },
+  "Женщина, которая собирала травы на Крите": {
+    "ru": "Женщина, которая собирала травы на Крите",
+    "el": "Η γυναίκα που μάζευε βότανα στην Κρήτη",
+    "de": "Die Frau, die auf Kreta Kräuter sammelte",
+    "fr": "La femme qui cueillait des herbes en Crète",
+    "en": "The Woman Who Gathered Herbs in Crete"
+  },
+  "Ein ruhiger Morgen in Freiburg": {
+    "ru": "Спокойное утро во Фрайбурге",
+    "el": "Ένα ήρεμο πρωινό στο Φράιμπουργκ",
+    "de": "Ein ruhiger Morgen in Freiburg",
+    "fr": "Un matin tranquille à Fribourg-en-Brisgau",
+    "en": "A Quiet Morning in Freiburg"
+  },
+  "Почему в Германии так много пекарен": {
+    "ru": "Почему в Германии так много пекарен",
+    "el": "Γιατί υπάρχουν τόσοι πολλοί φούρνοι στη Γερμανία;",
+    "de": "Warum gibt es in Deutschland so viele Bäckereien?",
+    "fr": "Pourquoi y a-t-il autant de boulangeries en Allemagne ?",
+    "en": "Why Are There So Many Bakeries in Germany?"
+  },
+  "Первое знакомство в языковой школе": {
+    "ru": "Первое знакомство в языковой школе",
+    "el": "Η πρώτη γνωριμία σε μια σχολή γλωσσών",
+    "de": "Das erste Kennenlernen in einer Sprachschule",
+    "fr": "La première rencontre dans une école de langues",
+    "en": "A First Introduction at Language School"
+  },
+  "Маленький поезд в Баварских Альпах": {
+    "ru": "Маленький поезд в Баварских Альпах",
+    "el": "Ένα μικρό τρένο στις Βαυαρικές Άλπεις",
+    "de": "Ein kleiner Zug in den Bayerischen Alpen",
+    "fr": "Un petit train dans les Alpes bavaroises",
+    "en": "A Small Train in the Bavarian Alps"
+  },
+  "Почему в Швейцарии несколько языков": {
+    "ru": "Почему в Швейцарии несколько языков",
+    "el": "Γιατί η Ελβετία έχει πολλές γλώσσες;",
+    "de": "Warum hat die Schweiz mehrere Sprachen?",
+    "fr": "Pourquoi la Suisse a-t-elle plusieurs langues ?",
+    "en": "Why Does Switzerland Have Several Languages?"
+  },
+  "Un café près de la gare": {
+    "ru": "Кафе рядом с вокзалом",
+    "el": "Ένα καφέ κοντά στον σταθμό",
+    "de": "Ein Café in der Nähe des Bahnhofs",
+    "fr": "Un café près de la gare",
+    "en": "A Café Near the Station"
+  },
+  "Почему во Франции долго сидят в кафе": {
+    "ru": "Почему во Франции долго сидят в кафе",
+    "el": "Γιατί στη Γαλλία κάθονται πολλή ώρα στα καφέ;",
+    "de": "Warum sitzen die Menschen in Frankreich so lange im Café?",
+    "fr": "Pourquoi reste-t-on longtemps au café en France ?",
+    "en": "Why Do People Sit in Cafés for So Long in France?"
+  },
+  "Первый день в квартире в Брюсселе": {
+    "ru": "Первый день в квартире в Брюсселе",
+    "el": "Η πρώτη μέρα σε ένα διαμέρισμα στις Βρυξέλλες",
+    "de": "Der erste Tag in einer Wohnung in Brüssel",
+    "fr": "Le premier jour dans un appartement à Bruxelles",
+    "en": "The First Day in an Apartment in Brussels"
+  },
+  "Откуда появился багет": {
+    "ru": "Откуда появился багет",
+    "el": "Από πού προέρχεται η μπαγκέτα;",
+    "de": "Woher kommt das Baguette?",
+    "fr": "D’où vient la baguette ?",
+    "en": "Where Did the Baguette Come From?"
+  },
+  "Прогулка у озера в Швейцарии": {
+    "ru": "Прогулка у озера в Швейцарии",
+    "el": "Μια βόλτα δίπλα σε μια λίμνη στην Ελβετία",
+    "de": "Ein Spaziergang an einem See in der Schweiz",
+    "fr": "Une promenade au bord d’un lac en Suisse",
+    "en": "A Walk by a Lake in Switzerland"
+  },
+  "Why some languages feel faster than others": {
+    "ru": "Почему одни языки кажутся быстрее других",
+    "el": "Γιατί μερικές γλώσσες ακούγονται πιο γρήγορες από άλλες;",
+    "de": "Warum manche Sprachen schneller klingen als andere",
+    "fr": "Pourquoi certaines langues semblent plus rapides que d’autres",
+    "en": "Why Some Languages Feel Faster Than Others"
+  },
+  "The hidden design of a quiet Swiss train": {
+    "ru": "Скрытый дизайн тихого швейцарского поезда",
+    "el": "Ο κρυφός σχεδιασμός ενός ήσυχου ελβετικού τρένου",
+    "de": "Das verborgene Design eines leisen Schweizer Zuges",
+    "fr": "Le design caché d’un train suisse silencieux",
+    "en": "The Hidden Design of a Quiet Swiss Train"
+  },
+  "What happens when AI writes for a lower reading level": {
+    "ru": "Что происходит, когда AI пишет для более простого уровня чтения",
+    "el": "Τι συμβαίνει όταν η AI γράφει για χαμηλότερο επίπεδο ανάγνωσης;",
+    "de": "Was passiert, wenn KI für ein niedrigeres Leseniveau schreibt?",
+    "fr": "Que se passe-t-il quand l’IA écrit pour un niveau de lecture plus simple ?",
+    "en": "What Happens When AI Writes for a Lower Reading Level"
+  },
+  "A city that redesigned one dangerous street": {
+    "ru": "Город, который перепроектировал одну опасную улицу",
+    "el": "Μια πόλη που ξανασχεδίασε έναν επικίνδυνο δρόμο",
+    "de": "Eine Stadt, die eine gefährliche Straße neu gestaltete",
+    "fr": "Une ville qui a repensé une rue dangereuse",
+    "en": "A City That Redesigned One Dangerous Street"
+  },
+  "How adults actually notice gaps in vocabulary": {
+    "ru": "Как взрослые на самом деле замечают пробелы в словарном запасе",
+    "el": "Πώς οι ενήλικες καταλαβαίνουν τα κενά στο λεξιλόγιό τους",
+    "de": "Wie Erwachsene Lücken in ihrem Wortschatz wirklich bemerken",
+    "fr": "Comment les adultes remarquent vraiment les lacunes de leur vocabulaire",
+    "en": "How Adults Actually Notice Gaps in Vocabulary"
+  }
+};
+
+const russianDescriptionOverrides = {
+  "Why some languages feel faster than others": "Короткое объяснение о слогах, плотности информации и о том, почему ритм речи может казаться неожиданно быстрым.",
+  "The hidden design of a quiet Swiss train": "Материал о дизайне: акустические решения, социальные нормы и причины, по которым общественный транспорт может ощущаться спокойным.",
+  "What happens when AI writes for a lower reading level": "Практический разбор упрощения текста: что модели убирают, что сохраняют и в какой момент текст начинает звучать неестественно.",
+  "A city that redesigned one dangerous street": "Небольшой реальный пример городского дизайна: скорость, переходы и реакция людей после изменений.",
+  "How adults actually notice gaps in vocabulary": "Короткий материал о тематическом словаре и о том, почему даже на B2 можно внезапно потеряться."
+};
+
+const russianFocusOverrides = {
+  "Why some languages feel faster than others": "лингвистика · сравнение · причины и следствия · академическая лексика",
+  "The hidden design of a quiet Swiss train": "продуктовый дизайн · поведение в общественных местах · сенсорная лексика",
+  "What happens when AI writes for a lower reading level": "AI · образование · критическое мышление · точная лексика",
+  "A city that redesigned one dangerous street": "города · безопасность · сравнение до и после · общественная политика",
+  "How adults actually notice gaps in vocabulary": "обучение · словарный запас · самооценка · абстрактные существительные"
+};
+
+function localizedTitle(cardOrTitle, languageCode = currentLanguage) {
+  const canonicalTitle = typeof cardOrTitle === "string"
+    ? cardOrTitle
+    : cardOrTitle.title;
+
+  return localizedCardTitles[canonicalTitle]?.[languageCode]
+    || canonicalTitle;
+}
+
+function russianTitle(cardOrTitle) {
+  const canonicalTitle = typeof cardOrTitle === "string"
+    ? cardOrTitle
+    : cardOrTitle.title;
+
+  return localizedCardTitles[canonicalTitle]?.ru
+    || canonicalTitle;
+}
+
+function russianDescription(card) {
+  return russianDescriptionOverrides[card.title] || card.description;
+}
+
+function russianFocus(card) {
+  return russianFocusOverrides[card.title] || card.focus;
+}
+
+function uiTruthLabel(value) {
+  const labels = {
+    "Adapted source": "На основе источников",
+    "Source-based": "На основе источников",
+    "AI-история": "AI-история",
+    "На основе фактов": "На основе фактов",
+    "На основе источников": "На основе источников"
+  };
+
+  return labels[value] || value;
+}
+
+function uiDurationLabel(value) {
+  return value.replace(/\bmin\b/i, "мин");
+}
+
+const crossLanguageTexts = {
+  switzerland_languages: {
+    el: [
+      "Η Ελβετία έχει τέσσερις εθνικές γλώσσες. Στις περισσότερες περιοχές οι άνθρωποι μιλούν γερμανικά.",
+      "Στη δυτική πλευρά της χώρας μιλούν κυρίως γαλλικά, ενώ στον νότο χρησιμοποιούν ιταλικά. Υπάρχει επίσης η ρομανσική γλώσσα.",
+      "Η γλώσσα εξαρτάται συχνά από την περιοχή. Γι’ αυτό πολλοί άνθρωποι στην Ελβετία μαθαίνουν περισσότερες από μία γλώσσες."
+    ],
+    de: [
+      "Die Schweiz hat vier Landessprachen. In vielen Regionen sprechen die Menschen Deutsch.",
+      "Im Westen sprechen viele Menschen Französisch, im Süden Italienisch. Es gibt auch Rätoromanisch.",
+      "Die Sprache hängt oft von der Region ab. Deshalb lernen viele Schweizer mehr als eine Sprache."
+    ],
+    fr: [
+      "La Suisse a quatre langues nationales. Dans beaucoup de régions, les habitants parlent allemand.",
+      "Dans l’ouest, beaucoup de personnes parlent français. Dans le sud, on parle italien. Il existe aussi le romanche.",
+      "La langue dépend souvent de la région. Beaucoup de Suisses apprennent donc plusieurs langues."
+    ],
+    en: [
+      "Switzerland has four national languages. German is the most widely spoken, especially in the central and eastern parts of the country.",
+      "French is common in the west, Italian in the south, and Romansh is spoken by a smaller community.",
+      "Language is closely connected to region, so many Swiss people grow up using or learning more than one language."
+    ]
+  }
+};
+
+function canonicalTextKey(card) {
+  if (card.title === "Почему в Швейцарии несколько языков") {
+    return "switzerland_languages";
+  }
+  return null;
+}
+
+function adaptedFallbackText(card, language) {
+  const region = card.region || "другого региона";
+
+  const templates = {
+    el: [
+      `Αυτό το σύντομο κείμενο παρουσιάζει ένα ενδιαφέρον θέμα από την περιοχή «${region}».`,
+      "Το υλικό έχει προσαρμοστεί στο επιλεγμένο επίπεδο, με καθαρές προτάσεις και χρήσιμες καθημερινές λέξεις.",
+      "Στην πραγματική εφαρμογή, η ίδια ιδέα θα δημιουργείται ξανά ειδικά για τα ελληνικά και όχι ως απλή μετάφραση."
+    ],
+    de: [
+      `Dieser kurze Text stellt ein interessantes Thema aus der Region „${region}“ vor.`,
+      "Der Inhalt wird an das gewählte Niveau angepasst und benutzt klare Sätze und nützliche Wörter.",
+      "In der echten App wird dieselbe Idee speziell auf Deutsch neu geschrieben und nicht nur wörtlich übersetzt."
+    ],
+    fr: [
+      `Ce texte court présente un sujet intéressant lié à la région « ${region} ».`,
+      "Le contenu est adapté au niveau choisi avec des phrases claires et du vocabulaire utile.",
+      "Dans l’application finale, la même idée sera réécrite spécialement en français et non simplement traduite."
+    ],
+    en: [
+      `This short text explores an interesting subject connected with ${region}.`,
+      "The material is adapted to the selected level, with clear structure and useful vocabulary.",
+      "In the final product, the same idea will be rewritten specifically for English rather than translated word for word."
+    ]
+  };
+
+  return templates[language];
+}
+
+function lessonTextFor(card, language) {
+  const key = canonicalTextKey(card);
+  if (key && crossLanguageTexts[key]?.[language]) {
+    return crossLanguageTexts[key][language];
+  }
+
+  if (card.originLanguage === language) {
+    return card.text;
+  }
+
+  return adaptedFallbackText(card, language);
+}
+
+let currentLanguage = "el";
+let currentCards = [...canonicalIdeas];
+let selectedCard = null;
+let currentSection = "choose";
+let readerOriginSection = "choose";
+let activeReaderLanguage = "el";
+let activeReaderLevel = "A2";
+
+let generatedLessons = [
+  {
+    title: "Утро в маленькой деревне на Наксосе",
+    lang: "el",
+    level: "A2",
+    duration: "2 мин",
+    type: "Спокойный рассказ",
+    progress: 62,
+    status: "Начато"
+  },
+  {
+    title: "Почему в Швейцарии несколько языков",
+    lang: "de",
+    level: "A1",
+    duration: "2 мин",
+    type: "Языки и культура",
+    progress: 24,
+    status: "Начато"
+  },
+  {
+    title: "Why some languages feel faster than others",
+    lang: "en",
+    level: "B2",
+    duration: "3 мин",
+    type: "Language science",
+    progress: 100,
+    status: "Завершено"
+  },
+  {
+    title: "Un café près de la gare",
+    lang: "fr",
+    level: "A1",
+    duration: "2 мин",
+    type: "Сцена с диалогом",
+    progress: 0,
+    status: "Готово"
+  }
+];
+
+const savedUnits = [
+  {
+    lang: "de",
+    target: "mehrere Sprachen",
+    meaning: "несколько языков",
+    source: "Почему в Швейцарии несколько языков"
+  },
+  {
+    lang: "el",
+    target: "σιγά σιγά",
+    meaning: "постепенно, шаг за шагом",
+    source: "Почему греки говорят «σιγά σιγά»"
+  },
+  {
+    lang: "fr",
+    target: "je voudrais…",
+    meaning: "я хотел(а) бы…",
+    source: "Un café près de la gare"
+  },
+  {
+    lang: "en",
+    target: "information density",
+    meaning: "плотность информации",
+    source: "Why some languages feel faster than others"
+  },
+  {
+    lang: "el",
+    target: "μόλις βγαίνει",
+    meaning: "только начинает восходить",
+    source: "Утро в маленькой деревне на Наксосе"
+  },
+  {
+    lang: "de",
+    target: "hängt von der Region ab",
+    meaning: "зависит от региона",
+    source: "Почему в Швейцарии несколько языков"
+  }
+];
+
+const feedEl = document.getElementById("feed");
+const overlay = document.getElementById("generateOverlay");
+const generationView = document.getElementById("generationView");
+const readerView = document.getElementById("readerView");
+const toast = document.getElementById("toast");
+const globalLanguageButton = document.getElementById("globalLanguageButton");
+const globalLanguageMenu = document.getElementById("globalLanguageMenu");
+const globalLanguageFlag = document.getElementById("globalLanguageFlag");
+const globalLanguageLabel = document.getElementById("globalLanguageLabel");
+const globalLanguageLevel = document.getElementById("globalLanguageLevel");
+const appScreens = [...document.querySelectorAll(".app-screen")];
+const navItems = [...document.querySelectorAll(".nav-item")];
+const levels = ["A0", "A1", "A2", "B1", "B2", "C1"];
+
+function renderGlobalLanguageControl() {
+  const activeLanguage = languages[currentLanguage];
+  globalLanguageFlag.textContent = languageFlags[currentLanguage];
+  globalLanguageLabel.textContent = activeLanguage.label;
+  globalLanguageLevel.textContent = activeLanguage.level;
+  globalLanguageMenu.innerHTML = "";
+
+  Object.entries(languages).forEach(([key, language]) => {
+    const option = document.createElement("button");
+    option.className =
+      "global-language-option" + (key === currentLanguage ? " active" : "");
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", key === currentLanguage ? "true" : "false");
+    option.innerHTML = `
+      <span class="global-language-option-content">
+        <span class="global-language-option-flag">${languageFlags[key]}</span>
+        <span class="global-language-option-main">
+          <strong>${language.label}</strong>
+          <small>${language.level} · ${languageGoalLabel(key)}</small>
+        </span>
+      </span>
+      <span class="global-language-option-check">
+        ${key === currentLanguage ? "✓" : ""}
+      </span>`;
+
+    option.onclick = () => selectGlobalLanguage(key);
+    globalLanguageMenu.appendChild(option);
+  });
+}
+
+function languageGoalLabel(languageCode) {
+  const labels = {
+    el: "движение к B1",
+    de: "простое чтение",
+    fr: "простое чтение",
+    en: "словарь и natural input"
+  };
+
+  return labels[languageCode] || "чтение";
+}
+
+function selectGlobalLanguage(languageCode) {
+  currentLanguage = languageCode;
+  currentCards = [...canonicalIdeas];
+  closeGlobalLanguageMenu();
+
+  renderGlobalLanguageControl();
+  renderFeed();
+  renderLibrary();
+  renderSavedUnits();
+
+  showToast(`Активный язык: ${languages[currentLanguage].label}`);
+}
+
+function openGlobalLanguageMenu() {
+  globalLanguageMenu.classList.add("open");
+  globalLanguageButton.classList.add("open");
+  globalLanguageButton.setAttribute("aria-expanded", "true");
+}
+
+function closeGlobalLanguageMenu() {
+  globalLanguageMenu.classList.remove("open");
+  globalLanguageButton.classList.remove("open");
+  globalLanguageButton.setAttribute("aria-expanded", "false");
+}
+
+function updateHero() {}
+
+function colorFor(index) {
+  const palettes = [
+    ["#334f58", "#7f9ca0"],
+    ["#6f5949", "#b18b69"],
+    ["#535a72", "#9297ad"],
+    ["#50684d", "#96a78c"],
+    ["#73535d", "#b1838b"],
+    ["#4d5a6b", "#909daf"]
+  ];
+  const [a,b] = palettes[index % palettes.length];
+  return `linear-gradient(145deg, ${a}, ${b})`;
+}
+
+function rankedCards() {
+  const preferred = featuredTitles[currentLanguage] || [];
+  const eligible = currentCards.filter(isCardAllowed);
+
+  eligible.sort((a, b) => {
+    const ai = preferred.indexOf(a.title);
+    const bi = preferred.indexOf(b.title);
+    const aRank = ai === -1 ? 20 : ai;
+    const bRank = bi === -1 ? 20 : bi;
+    return aRank - bRank;
+  });
+
+  return eligible;
+}
+
+function combinedDescription(card) {
+  const focus = russianFocus(card)
+    .split("·")
+    .map(part => part.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  return `${russianDescription(card)}${focus ? ` В тексте: ${focus}.` : ""}`;
+}
+
+function renderFeed() {
+  feedEl.innerHTML = "";
+  const cards = rankedCards().slice(0,5);
+
+  if (!cards.length) {
+    feedEl.innerHTML = `
+      <div class="feed-empty">
+        Для выбранного сочетания тем и стран пока нет готовых идей.
+        В настоящем продукте система подготовит новую подборку.
+      </div>`;
+    return;
+  }
+
+  cards.forEach((card, index) => {
+    const isFeatured = index === 0;
+    const title = russianTitle(card);
+
+    const element = document.createElement("article");
+    element.className = "story-card" + (isFeatured ? " featured" : "");
+    element.style.animationDelay = `${index * 45}ms`;
+    element.innerHTML = `
+      <div class="card-visual" style="background:${colorFor(index)}">
+        <div class="visual-kicker">
+          <span class="visual-tag">${uiTruthLabel(card.truth)}</span>
+          <span class="visual-tag">${uiDurationLabel(card.duration)}</span>
+        </div>
+        <div class="visual-symbol">${card.symbol}</div>
+      </div>
+      <div class="card-body">
+        <h3>${title}</h3>
+        <p class="description">${combinedDescription(card)}</p>
+        <div class="card-footer">
+          <button class="primary-btn">Читать</button>
+        </div>
+      </div>`;
+
+    element.querySelector(".primary-btn").onclick = () => startGeneration(card);
+    feedEl.appendChild(element);
+  });
+}
+
+function refreshCards() {
+  const all = [...canonicalIdeas];
+  const shift = 1 + Math.floor(Math.random() * Math.max(1, all.length - 1));
+  currentCards = [...all.slice(shift), ...all.slice(0,shift)];
+  renderFeed();
+  showToast("Подобрали другие идеи");
+}
+
+function renderTopics() {
+  // Каталог тем перенесён из основной ленты в настройки.
+}
+
+
+function switchSection(section) {
+  currentSection = section;
+
+  appScreens.forEach(screen => {
+    screen.classList.toggle("active", screen.dataset.screen === section);
+  });
+
+  navItems.forEach(item => {
+    const active = item.dataset.nav === section;
+    item.classList.toggle("active", active);
+    item.setAttribute("aria-current", active ? "page" : "false");
+  });
+
+  if (section === "library") renderLibrary();
+  if (section === "learn") renderSavedUnits();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function findCardForLesson(item) {
+  return canonicalIdeas.find(card => card.title === item.title)
+    || canonicalIdeas.find(card => cardCountryIds(card).includes("switzerland"))
+    || canonicalIdeas[0];
+}
+
+function readerBackLabel() {
+  if (readerOriginSection === "library") return "← К текстам";
+  if (readerOriginSection === "learn") return "← К словам";
+  return "← К выбору";
+}
+
+function populateReader(card, languageCode, lessonLevel) {
+  selectedCard = card;
+  const lessonLanguage = languageCode || currentLanguage;
+  const resolvedLevel = lessonLevel || languages[lessonLanguage].level;
+
+  activeReaderLanguage = lessonLanguage;
+  activeReaderLevel = resolvedLevel;
+
+  document.getElementById("closeReader").textContent = readerBackLabel();
+  document.getElementById("readerKicker").textContent =
+    `${languages[lessonLanguage].label} · ${card.region}`;
+  document.getElementById("readerTitle").textContent =
+    localizedTitle(card, lessonLanguage);
+  document.getElementById("readerTitleTranslation").textContent =
+    russianTitle(card);
+  document.getElementById("readerMeta").textContent =
+    `${resolvedLevel} · ${uiDurationLabel(card.duration)}`;
+  document.getElementById("readerSource").textContent = card.source;
+
+  document.getElementById("lessonText").innerHTML = lessonTextFor(card, lessonLanguage)
+    .map(paragraph =>
+      `<p>${paragraph
+        .split(" ")
+        .map(word => `<span class="word">${word}</span>`)
+        .join(" ")}</p>`
+    )
+    .join("");
+}
+
+function openSavedLesson(item) {
+  const card = findCardForLesson(item);
+  readerOriginSection = "library";
+
+  overlay.classList.add("open");
+  generationView.style.display = "none";
+  readerView.classList.add("open");
+
+  populateReader(card, item.lang, item.level);
+}
+
+function unitAudioIcon() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 10v4h3l4 3V7l-4 3H5Z"></path>
+      <path d="M15 9.2a4 4 0 0 1 0 5.6"></path>
+      <path d="M17.5 6.8a7.3 7.3 0 0 1 0 10.4"></path>
+    </svg>`;
+}
+
+let generationTimer = null;
+
+function startGeneration(card) {
+  readerOriginSection = currentSection;
+  selectedCard = card;
+  overlay.classList.add("open");
+  generationView.style.display = "block";
+  readerView.classList.remove("open");
+  document.getElementById("generationTitle").textContent = russianTitle(card);
+  const steps = [...document.querySelectorAll(".step")];
+  steps.forEach(s => s.className = "step");
+  const progress = document.getElementById("progressBar");
+  progress.style.width = "0%";
+  let i = 0;
+
+  clearInterval(generationTimer);
+  const advance = () => {
+    if (i > 0) {
+      steps[i-1].classList.remove("active");
+      steps[i-1].classList.add("done");
+      steps[i-1].querySelector(".dot").textContent = "✓";
+    }
+    if (i < steps.length) {
+      steps[i].classList.add("active");
+      progress.style.width = `${(i+1) * 20}%`;
+      i++;
+    } else {
+      clearInterval(generationTimer);
+      setTimeout(openReader, 500);
+    }
+  };
+  advance();
+  generationTimer = setInterval(advance, 650);
+}
+
+function openReader() {
+  generationView.style.display = "none";
+  readerView.classList.add("open");
+  populateReader(selectedCard, currentLanguage);
+  saveLesson(selectedCard);
+}
+
+function saveLesson(card) {
+  const exists = generatedLessons.find(
+    item => item.title === card.title && item.lang === currentLanguage
+  );
+
+  if (!exists) {
+    generatedLessons.unshift({
+      title: card.title,
+      lang: currentLanguage,
+      level: languages[currentLanguage].level,
+      duration: card.duration,
+      type: card.type,
+      progress: 8,
+      status: "Начато"
+    });
+  }
+
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const grid = document.getElementById("libraryGrid");
+  const count = document.getElementById("libraryCount");
+  const continueSlot = document.getElementById("continueReadingCard");
+  const continueSection = document.getElementById("continueReadingSection");
+
+  const visibleLessons = generatedLessons
+    .filter(item => item.lang === currentLanguage);
+
+  count.textContent = `${visibleLessons.length} материала`;
+
+  const inProgress = visibleLessons
+    .filter(item => item.progress > 0 && item.progress < 100)
+    .sort((a, b) => b.progress - a.progress)[0];
+
+  if (inProgress) {
+    const card = findCardForLesson(inProgress);
+    continueSection.style.display = "block";
+    continueSlot.innerHTML = `
+      <article class="continue-card" tabindex="0">
+        <div class="continue-cover" style="background:${colorFor(3)}">
+          <div class="continue-cover-symbol">${card.symbol}</div>
+        </div>
+        <div class="continue-content">
+          <div class="continue-meta">
+            ${inProgress.level} · ${uiDurationLabel(inProgress.duration)}
+          </div>
+          <h3>${russianTitle(card)}</h3>
+          <button class="primary-btn">Продолжить</button>
+          <div class="progress-track"><span style="width:${inProgress.progress}%"></span></div>
+          <div class="progress-label">${inProgress.progress}% прочитано</div>
+        </div>
+      </article>`;
+
+    continueSlot.querySelector(".continue-card").onclick =
+      () => openSavedLesson(inProgress);
+  } else {
+    continueSection.style.display = "none";
+    continueSlot.innerHTML = "";
+  }
+
+  if (!visibleLessons.length) {
+    grid.innerHTML = `
+      <div class="library-empty">
+        Для ${languages[currentLanguage].label} пока нет текстов.
+        Выбери первый материал в ленте.
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = "";
+
+  visibleLessons.forEach((item, index) => {
+    const card = findCardForLesson(item);
+    const element = document.createElement("article");
+    element.className = "library-item";
+    element.tabIndex = 0;
+    element.innerHTML = `
+      <div class="library-item-cover" style="background:${colorFor(index + 1)}">
+        <span class="library-item-symbol">${card.symbol}</span>
+        <span class="library-status">${item.status}</span>
+      </div>
+      <div class="library-item-body">
+        <div class="summary-label">
+          ${item.level} · ${uiDurationLabel(item.duration)}
+        </div>
+        <strong>${russianTitle(card)}</strong>
+        <div class="mini-progress">
+          <span style="width:${item.progress}%"></span>
+        </div>
+      </div>`;
+
+    element.onclick = () => openSavedLesson(item);
+    grid.appendChild(element);
+  });
+}
+
+
+function renderSavedUnits() {
+  const list = document.getElementById("savedUnitsList");
+  const count = document.getElementById("savedCount");
+  if (!list || !count) return;
+
+  const filtered = savedUnits
+    .filter(unit => unit.lang === currentLanguage);
+
+  count.textContent = `${filtered.length} сохранено`;
+  document.getElementById("reviewCount").textContent =
+    String(Math.min(4, filtered.length));
+
+  if (!filtered.length) {
+    list.innerHTML = `
+      <div class="saved-empty">
+        Для ${languages[currentLanguage].label} пока ничего не сохранено.
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = "";
+
+  filtered.forEach(unit => {
+    const sourceCard = canonicalIdeas.find(card => card.title === unit.source);
+    const sourceTitle = sourceCard
+      ? russianTitle(sourceCard)
+      : unit.source;
+
+    const element = document.createElement("article");
+    element.className = "saved-unit";
+    element.innerHTML = `
+      <div>
+        <div class="saved-unit-target">${unit.target}</div>
+        <div class="saved-unit-meaning">${unit.meaning}</div>
+        <div class="saved-unit-source">${sourceTitle}</div>
+      </div>
+      <button class="unit-audio" aria-label="Озвучить">
+        ${unitAudioIcon()}
+      </button>`;
+
+    element.querySelector(".unit-audio").onclick = () => {
+      showToast(`Озвучиваем: ${unit.target}`);
+    };
+
+    list.appendChild(element);
+  });
+}
+
+function closeReader() {
+  overlay.classList.remove("open");
+  readerView.classList.remove("open");
+  generationView.style.display = "block";
+  switchSection(readerOriginSection);
+}
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+function renderPreferenceSection({
+  containerId,
+  title,
+  description,
+  items,
+  preferences,
+  resetMessage
+}) {
+  const container = document.getElementById(containerId);
+  container.className = "settings-section";
+  container.innerHTML = `
+    <div class="settings-section-head">
+      <div>
+        <h3>${title}</h3>
+        <p>${description}</p>
+      </div>
+      <button class="settings-reset" type="button">Сбросить</button>
+    </div>
+    <div class="settings-chip-grid"></div>`;
+
+  const grid = container.querySelector(".settings-chip-grid");
+
+  items.forEach(item => {
+    const enabled = preferences[item.id] !== false;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "settings-chip" + (enabled ? "" : " off");
+    button.textContent = item.label;
+
+    button.onclick = () => {
+      const enabledCount = Object.values(preferences).filter(Boolean).length;
+
+      if (preferences[item.id] && enabledCount <= 1) {
+        showToast("Оставь хотя бы один вариант");
+        return;
+      }
+
+      preferences[item.id] = !preferences[item.id];
+      saveGlobalPreferences();
+      renderSettings();
+      renderFeed();
+      showToast(preferences[item.id] ? "Снова включено" : "Отключено");
+    };
+
+    grid.appendChild(button);
+  });
+
+  container.querySelector(".settings-reset").onclick = () => {
+    items.forEach(item => {
+      preferences[item.id] = true;
+    });
+    saveGlobalPreferences();
+    renderSettings();
+    renderFeed();
+    showToast(resetMessage);
+  };
+}
+
+function renderSettings() {
+  const container = document.getElementById("settingsRows");
+  container.innerHTML = "";
+
+  Object.entries(languages).forEach(([key, lang]) => {
+    const row = document.createElement("div");
+    row.className = "settings-row";
+    row.innerHTML = `
+      <div><strong>${lang.label}</strong><small>Уровень новых материалов</small></div>
+      <select>${levels.map(level => `
+        <option ${level === lang.level ? "selected" : ""}>${level}</option>
+      `).join("")}</select>`;
+
+    row.querySelector("select").onchange = event => {
+      lang.level = event.target.value;
+      renderGlobalLanguageControl();
+      renderFeed();
+      renderLibrary();
+      renderSavedUnits();
+      showToast(`Уровень ${lang.label}: ${lang.level}`);
+    };
+
+    container.appendChild(row);
+  });
+
+  renderPreferenceSection({
+    containerId: "topicPreferences",
+    title: "Темы",
+    description: "Общие интересы для греческого, немецкого, французского и английского.",
+    items: interestTopics,
+    preferences: topicPreferences,
+    resetMessage: "Все темы включены"
+  });
+
+  renderPreferenceSection({
+    containerId: "countryPreferences",
+    title: "Страны и регионы",
+    description: "Любую выбранную тему можно читать на любом из изучаемых языков.",
+    items: interestCountries,
+    preferences: countryPreferences,
+    resetMessage: "Все страны и регионы включены"
+  });
+
+  const note = document.createElement("p");
+  note.className = "settings-global-note";
+  note.textContent =
+    "Одна и та же идея может быть адаптирована для любого выбранного языка и уровня. " +
+    "Например, материал о языках Швейцарии доступен на греческом A2, немецком A1, французском A1 и английском B2.";
+  document.getElementById("countryPreferences").appendChild(note);
+}
+
+document.getElementById("refreshBtn").onclick = refreshCards;
+document.getElementById("cancelGeneration").onclick = () => {
+  clearInterval(generationTimer);
+  overlay.classList.remove("open");
+};
+document.getElementById("closeReader").onclick = closeReader;
+document.getElementById("finishBtn").onclick = () => {
+  const item = generatedLessons.find(
+    lesson =>
+      lesson.title === selectedCard?.title &&
+      lesson.lang === activeReaderLanguage
+  );
+
+  if (item) {
+    item.progress = 100;
+    item.status = "Завершено";
+    renderLibrary();
+  }
+
+  showToast("Чтение отмечено как завершённое");
+  setTimeout(closeReader, 500);
+};
+
+
+globalLanguageButton.onclick = event => {
+  event.stopPropagation();
+
+  if (globalLanguageMenu.classList.contains("open")) {
+    closeGlobalLanguageMenu();
+  } else {
+    openGlobalLanguageMenu();
+  }
+};
+
+document.addEventListener("click", event => {
+  if (!event.target.closest(".global-language-control")) {
+    closeGlobalLanguageMenu();
+  }
+});
+
+navItems.forEach(item => {
+  item.onclick = () => switchSection(item.dataset.nav);
+});
+
+document.getElementById("startReviewBtn").onclick = () => {
+  showToast("Режим повторения добавим следующим этапом");
+};
+
+document.getElementById("settingsOpen").onclick = () => {
+  renderSettings();
+  document.getElementById("settingsOverlay").classList.add("open");
+};
+document.getElementById("settingsClose").onclick = () => document.getElementById("settingsOverlay").classList.remove("open");
+document.getElementById("settingsOverlay").onclick = (e) => {
+  if (e.target.id === "settingsOverlay") e.currentTarget.classList.remove("open");
+};
+document.getElementById("feedbackBtn").onclick = () => document.getElementById("feedbackMenu").classList.toggle("open");
+document.querySelectorAll("[data-feedback]").forEach(btn => {
+  btn.onclick = () => {
+    document.getElementById("feedbackMenu").classList.remove("open");
+    showToast("Спасибо — учтём в следующих рекомендациях");
+  };
+});
+
+let playing = false;
+let audioTimer = null;
+document.getElementById("playBtn").onclick = () => {
+  playing = !playing;
+  const btn = document.getElementById("playBtn");
+  btn.textContent = playing ? "Ⅱ" : "▶";
+  clearInterval(audioTimer);
+  if (playing) {
+    let progress = 32;
+    audioTimer = setInterval(() => {
+      progress += 3;
+      if (progress >= 100) {
+        progress = 0;
+        playing = false;
+        btn.textContent = "▶";
+        clearInterval(audioTimer);
+      }
+      document.getElementById("audioProgress").style.width = progress + "%";
+    }, 350);
+  }
+};
+
+renderGlobalLanguageControl();
+renderFeed();
+renderLibrary();
+renderSavedUnits();
+switchSection("choose");
+</script>
+</body>
+</html>
