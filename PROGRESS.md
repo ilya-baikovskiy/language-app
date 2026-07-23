@@ -10,6 +10,64 @@
 куска работы — особенно то, что не восстановить простым чтением кода/git log (мотивация,
 открытые вопросы, отклонённые варианты).**
 
+## Текущий статус (2026-07-23): Content System v1.2 — PR 1 (storage-independent foundation)
+
+Начата новая большая подсистема поверх существующего ридера: лента из 5
+рекомендованных карточек перед генерацией урока, скрытый learning plan,
+детерминированный recommendation-алгоритм. Полный пакет ТЗ (18 файлов) и
+финальный прототип (`context_reader_content_feed_prototype_v8.html`) — в
+`docs/content-system-v1.2/` (ветка `content-system-docs-v1.2`). Реализация
+идёт по порядку из `docs/content-system-v1.2/11_CLAUDE_MASTER_IMPLEMENTATION_BRIEF.md`.
+
+**Phase 0 (сделано):** `docs/content-system/IMPLEMENTATION_DISCOVERY.md` и
+`STORAGE_DISCOVERY.md` — фактическое состояние репо до начала кода. Ключевая
+находка: пакет документации описывает шаг «phrase group annotation» в
+AI-пайплайне генерации, которого больше не существует (`markPhrases.ts` удалён
+в Bottom Sheet v2, см. выше) — annotation теперь per-token, это не будет
+воспроизводиться в новом коде.
+
+**PR 1 (сделано):** контракты + repository interfaces, без UI и без БД —
+- `src/content-system/types.ts`, `userTypes.ts`, `learningPlan.ts`,
+  `analyticsEvent.ts` — Zod-схемы + TS-типы (`ContentCard`, `FeedItem`,
+  `FeedBatch`, `AppPreferences`, `LanguageProfile`, `LessonBlueprintData`,
+  `LearningNode`/`UserLearningNodeState` — только типы, repository для них
+  будет в Phase 6). Zod — новая зависимость, выбрана по прямой рекомендации
+  брифа («используй существующую schema library, если её нет — предпочти Zod»).
+- `src/content-system/repositories.ts` — `AppPreferencesRepository`,
+  `LanguageProfileRepository`, `ContentCardRepository`, `FeedRepository`,
+  `LessonArtifactRepository`, `AnalyticsEventRepository`. `GenerationJobRepository`
+  сознательно не введён — текущая генерация синхронная (progress callback),
+  persistent job system по 06 §3.4 пока не нужен.
+- `StaticSeedCardRepository` — читает `src/content-system/seeds/content-ideas.v1.json`
+  (8 canonical-карточек, черновик на основе тем из prototype v8, **не
+  финальный редакторский текст** — реальный набор 12–30 идей это задача
+  content-writer агента, не архитектурного PR).
+- `BlobLessonArtifactRepository` — тонкая обёртка над существующим
+  `lessonsApi.ts` (`saveLesson`/`fetchLessonsIndex`), Lesson/audio Blob-flow
+  не тронут. Сигнатура `saveLesson(lesson, audioUrl)` — намеренное отклонение
+  от буквального контракта в доке (там `saveLesson(lesson)` без audioUrl):
+  в реальном пайплайне аудио — не поле `Lesson`, а отдельный артефакт.
+- `BlobAppPreferencesRepository`/`BlobLanguageProfileRepository` + новые
+  serverless-эндпоинты `api/app-preferences.ts`, `api/language-profiles.ts` —
+  Blob JSON per user (`app-state/v1/users/{userId}/...`), тот же
+  read-modify-write паттерн, что уже есть в `api/save-lesson.ts`. Выбран
+  **Blob через API**, а не localStorage — это рекомендованный в доке
+  временный путь (cross-device), решение принято по умолчанию из документации,
+  не отдельным пользовательским запросом. `LOCAL_USER_ID` — заглушка вместо
+  реального userId, т.к. auth в проекте нет.
+- Отклонение от буквального REST-пути `/api/language-profiles/:language`:
+  в проекте нет dynamic-route файлов (`[param].ts`), поэтому язык передаётся
+  в теле PATCH-запроса, а не в URL — минимальное совместимое изменение.
+- `src/content-system/featureFlags.ts` — стартовые флаги, `contentFeedEnabled`
+  включён только в dev, всё adaptive/tracking выключено.
+- Тесты на `StaticSeedCardRepository` (`src/content-system/__tests__/`),
+  `tsc -b`/`oxlint`/`vitest run`/`npm run build` — чисто.
+
+**Не сделано намеренно** (следующие PR по брифу): UI (bottom nav, FeedPage,
+global language selector) — PR 2; card → Lesson через blueprint — PR 3;
+tracking/events — PR 4; никакая БД не подключена, ADR по storage не написан
+(Storage Decision Gate — после PR 2–4).
+
 ## Текущий статус (2026-07-22): Bottom Sheet v2 — per-token клик
 
 Редизайн по внешне подготовленному пакету `greek-bottom-sheet-handoff/`

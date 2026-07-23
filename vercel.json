@@ -10,6 +10,8 @@
     "api/translate-sentence.ts": { "maxDuration": 30 },
     "api/speak-unit.ts": { "maxDuration": 30 },
     "api/save-lesson.ts": { "maxDuration": 30 },
-    "api/lessons.ts": { "maxDuration": 15 }
+    "api/lessons.ts": { "maxDuration": 15 },
+    "api/app-preferences.ts": { "maxDuration": 15 },
+    "api/language-profiles.ts": { "maxDuration": 15 }
   }
 }
