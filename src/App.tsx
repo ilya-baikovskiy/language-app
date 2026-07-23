@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LibraryPage } from './components/LibraryPage';
 import { GenerateLessonPage } from './components/GenerateLessonPage';
+import { CardGenerationView } from './components/CardGenerationView';
 import { ReaderPage } from './components/ReaderPage';
 import { TopBar } from './components/TopBar';
 import { BottomNav, type BottomNavTab } from './components/BottomNav';
@@ -10,16 +11,23 @@ import { SettingsOverlay } from './components/SettingsOverlay';
 import { useAppPreferences } from './hooks/useAppPreferences';
 import { useLanguageProfiles } from './hooks/useLanguageProfiles';
 import { sampleLesson } from './data/sampleLesson';
+import { StaticSeedCardRepository } from './content-system/repositories/staticSeedCardRepository';
+import type { CEFRLevel, ContentCard } from './content-system/types';
+import type { LanguageCode } from '../lib/pipeline/languageConfig';
 import type { Lesson } from './types/lesson';
 import type { LessonIndexEntry } from './services/generation/lessonsApi';
 
-// View — см. брифа §PR 2: три постоянных таба (bottom nav) + два полноэкранных
-// оверлея (generate, reader), не входящих в bottom nav (16 §2 — «Reader не
-// является четвёртой вкладкой»). `returnTo` на reader/generate — «возврат из
-// Reader ведёт в тот раздел, из которого пользователь открыл материал» (16 §3).
+const cardRepository = new StaticSeedCardRepository();
+
+// View — см. брифа §PR 2/3: три постоянных таба (bottom nav) + полноэкранные
+// оверлеи (generate, card-generating, reader), не входящие в bottom nav (16
+// §2 — «Reader не является четвёртой вкладкой»). `returnTo` на reader/
+// generate/card-generating — «возврат из Reader ведёт в тот раздел, из
+// которого пользователь открыл материал» (16 §3).
 type View =
   | { tab: BottomNavTab }
   | { kind: 'generate'; returnTo: BottomNavTab }
+  | { kind: 'card-generating'; card: ContentCard; language: LanguageCode; level: CEFRLevel; returnTo: BottomNavTab }
   | { kind: 'reader'; lesson: Lesson; audioSrc: string; returnTo: BottomNavTab };
 
 function App() {
@@ -49,6 +57,20 @@ function App() {
     }
   }
 
+  // ChoosePage's "Читать" CTA — card → Lesson через LessonBlueprint (PR 3).
+  function readCard(card: ContentCard) {
+    setView({ kind: 'card-generating', card, language: activeLanguage, level: getLevel(activeLanguage), returnTo: currentTab });
+  }
+
+  // LibraryPage "Повторить" на 'failed'-записи с cardId — тот же card-
+  // generating flow, но с language/level из самой записи (16 §13), а не из
+  // текущего activeLanguage/уровня, которые могли уже смениться.
+  async function retryCard(cardId: string, language: LanguageCode, level: CEFRLevel) {
+    const card = await cardRepository.getById(cardId);
+    if (!card) return; // seed JSON changed and the card no longer exists — nothing to retry
+    setView({ kind: 'card-generating', card, language, level, returnTo: currentTab });
+  }
+
   if ('kind' in view && view.kind === 'generate') {
     return (
       <GenerateLessonPage
@@ -56,6 +78,18 @@ function App() {
         onGenerated={(lesson, audioUrl) =>
           setView({ kind: 'reader', lesson, audioSrc: audioUrl, returnTo: view.returnTo })
         }
+      />
+    );
+  }
+
+  if ('kind' in view && view.kind === 'card-generating') {
+    return (
+      <CardGenerationView
+        card={view.card}
+        language={view.language}
+        targetLevel={view.level}
+        onCancelToChoose={() => setView({ tab: view.returnTo })}
+        onDone={(lesson, audioUrl) => setView({ kind: 'reader', lesson, audioSrc: audioUrl, returnTo: view.returnTo })}
       />
     );
   }
@@ -79,10 +113,7 @@ function App() {
           selectedLevel={getLevel(activeLanguage)}
           enabledTopicIds={preferences.enabledTopicIds}
           enabledCountryOrRegionIds={preferences.enabledCountryOrRegionIds}
-          // Card → Lesson через LessonBlueprint — PR 3, ещё не реализовано
-          // (см. ContentCardTile.tsx — CTA видимый, но не запускает
-          // генерацию). onRead здесь пока не используется вызывающей стороной.
-          onRead={() => {}}
+          onRead={readCard}
         />
       )}
       {view.tab === 'library' && (
@@ -92,6 +123,7 @@ function App() {
             onOpenSample={openSample}
             onOpenGenerated={openGenerated}
             onGenerateNew={() => setView({ kind: 'generate', returnTo: 'library' })}
+            onRetryCard={retryCard}
           />
           {loadError && (
             <p className="tts-error-note" role="status">

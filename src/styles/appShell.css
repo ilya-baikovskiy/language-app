@@ -99,6 +99,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* creating/failed — статусы библиотеки (16 §9, PR 3). Не кликабельные button,
+   а div — не должны открывать урок, только показывать состояние (+ «Повторить»
+   для failed, если известна исходная карточка). */
+.lesson-card-pending,
+.lesson-card-failed {
+  cursor: default;
+  opacity: 0.75;
+}
+.lesson-card-failed .lesson-card-meta {
+  color: var(--ink-soft);
+}
+.lesson-card-failed .translation-retry {
+  margin-top: 8px;
+}
+
 .empty-state {
   padding: 40px 20px;
   text-align: center;

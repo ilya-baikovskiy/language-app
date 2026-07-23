@@ -9,6 +9,11 @@ export const maxDuration = 30;
 
 const INDEX_PATHNAME = 'lessons/index.json';
 
+// 'creating'/'failed' — статусы placeholder-записей из api/lesson-status.ts
+// (PR 3, card → Lesson). Этот эндпоинт всегда пишет успешный финал —
+// 'ready' — но тип отражает все возможные значения индекса.
+type LessonStatus = 'creating' | 'ready' | 'started' | 'completed' | 'failed';
+
 type LessonIndexEntry = {
   id: string;
   slug: string;
@@ -21,6 +26,9 @@ type LessonIndexEntry = {
   audioProvider?: AudioProvider;
   languageCode?: string;
   createdAt: string;
+  status: LessonStatus;
+  cardId?: string;
+  blueprintId?: string;
 };
 
 async function readIndex(): Promise<LessonIndexEntry[]> {
@@ -33,7 +41,17 @@ async function readIndex(): Promise<LessonIndexEntry[]> {
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const { lesson, audioUrl } = (await request.json()) as { lesson: Lesson; audioUrl: string };
+    const { lesson, audioUrl, cardId, blueprintId } = (await request.json()) as {
+      lesson: Lesson;
+      audioUrl: string;
+      // Опциональные — только у card → Lesson флоу (PR 3). Не переданы явно
+      // клиентом в этом PR (см. cardGeneration.ts) — вместо этого сохраняются
+      // из уже существующей 'creating'-записи (см. ниже), которую создаёт
+      // api/lesson-status.ts до начала генерации. Тело запроса всё же
+      // принимает их напрямую — для прямых вызовов этого эндпоинта в будущем.
+      cardId?: string;
+      blueprintId?: string;
+    };
     const slug = lesson.id;
 
     const lessonBlob = await put(`lessons/${slug}.json`, JSON.stringify(lesson), {
@@ -44,6 +62,7 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     const index = await readIndex();
+    const existing = index.find((e) => e.slug === slug || e.id === lesson.id);
     const entry: LessonIndexEntry = {
       id: lesson.id,
       slug,
@@ -56,6 +75,9 @@ export async function POST(request: Request): Promise<Response> {
       audioProvider: lesson.audioProvider,
       languageCode: lesson.languageCode,
       createdAt: new Date().toISOString(),
+      status: 'ready',
+      cardId: cardId ?? existing?.cardId,
+      blueprintId: blueprintId ?? existing?.blueprintId,
     };
     const nextIndex = [entry, ...index.filter((e) => e.slug !== slug)];
 

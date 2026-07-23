@@ -10,6 +10,75 @@
 куска работы — особенно то, что не восстановить простым чтением кода/git log (мотивация,
 открытые вопросы, отклонённые варианты).**
 
+## Текущий статус (2026-07-23): Content System v1.2 — PR 3 (card → Lesson)
+
+Поверх PR 2 реализован реальный переход «карточка → Lesson» вместо
+inline-заглушки на кнопке «Читать»:
+
+- **`src/content-system/blueprint.ts`** — `computeLessonId(cardId, language,
+  targetLevel)` (детерминированный id вида `card-{cardId}-{language}-{level}`
+  для идемпотентности) и `buildLessonBlueprint(card, language, targetLevel)`
+  — собирает `LessonBlueprintData` из карточки: word-count bands по CEFR из
+  `07` §4 (C1/C2 не описаны документом — экстраполированы, помечено в коде),
+  маппинг `ContentFormat → {tone, discourseType, dialogueRatio?}`,
+  `expectedDifficulty: 0.5` как честный placeholder (модели сложности ещё
+  нет), `outline` — однострочный, взят прямо из описания карточки (реальный
+  AI-outline — будущий Pipeline A, не эта задача).
+- **`src/content-system/blueprintToPrompt.ts`** — адаптер blueprint →
+  существующий `InputSource` (`{kind:'topic', prompt}`), `generateText.ts`
+  не тронут вообще — просто собран content-rich topic-prompt на английском
+  с цитированием русской идеи внутри.
+- **`src/content-system/cardGeneration.ts`** (`generateLessonFromCard`) —
+  оркестрация с идемпотентностью: повторный клик «Читать» по той же
+  карточке/языку/уровню находит уже готовый урок и открывает его без
+  повторной генерации; `creating`/`failed`-записи просто перезапускаются в
+  тот же `lessonId` (самолечение зависших/упавших попыток), а не плодят
+  дубликаты.
+- **Статусы библиотеки**: `LessonSummary`/`LessonIndexEntry` получили
+  `status: 'creating'|'ready'|'started'|'completed'|'failed'` (+`cardId?`,
+  `blueprintId?`). Новый `api/lesson-status.ts` (`start`/`fail`, тот же
+  read-modify-write паттерн, что в `save-lesson.ts`) пишет `creating`-
+  placeholder до начала генерации и переводит в `failed` при ошибке; переход
+  `creating → ready` делает уже существующий `api/save-lesson.ts` (минимально
+  расширен — принимает `cardId`/`blueprintId`, подтягивает их из уже
+  существующей записи, если не переданы явно). `started`/`completed` не
+  реализованы — нет ещё `lastOpenedAt`/progress tracking, это отдельная
+  будущая работа. Старые записи без `status` считаются `'ready'` (не ломаем
+  старые lessons).
+- `generateLessonPipeline.ts` — **единственное изменение**: опциональный
+  `lessonId` в `options` (используется вместо `slugify(title)+Date.now()`,
+  когда передан) + новая стадия прогресса `'starting'`. Ручной
+  `GenerateLessonPage.tsx` не передаёт `lessonId` — его поведение не
+  изменилось.
+- `ContentCardTile`'s «Читать» теперь ведёт в `CardGenerationView.tsx`
+  (переиспользует `GenerationProgress`) → на успехе открывает Reader, на
+  ошибке — «Повторить» (идемпотентно, тот же `lessonId`). `LibraryPage`
+  показывает `creating`/`failed` карточки отдельно (неактивные/с «Повторить»
+  через `cardId`, если он есть — у записей из ручной генерации `cardId` нет,
+  там просто лейбл без кнопки).
+
+Собственное решение там, где бриф противоречил сам себе (единственное
+разрешённое изменение в `generateLessonPipeline.ts` — только `lessonId` —
+против «предпочтительного» варианта передавать `cardId`/`blueprintId` через
+расширенную сигнатуру `saveLesson`, что потребовало бы трогать вызов внутри
+пайплайна): `cardId`/`blueprintId` попадают в индекс не через проброс из
+пайплайна, а потому что `api/save-lesson.ts` подтягивает их из уже
+существующей `creating`-записи (которую `startLesson` создал до начала
+генерации), если тело запроса их не передаёт.
+
+Проверено: `tsc -b`/`oxlint`/`vitest run` (80 тестов, +9 на `blueprint.ts`)/
+`npm run build` — чисто; `api/lesson-status.ts`/`api/save-lesson.ts`/
+`api/app-preferences.ts`/`api/language-profiles.ts` дополнительно проверены
+отдельным `tsc --noEmit` (эти файлы не входят в `tsc -b`/tsconfig.app.json).
+**Не проверено**: реальный round-trip через `vercel dev` + Blob (нет
+`BLOB_READ_WRITE_TOKEN`/browser в этой среде) и визуально — сам клик
+Choose → генерация → Reader, retry на `failed`-записи в библиотеке.
+
+**Не сделано намеренно**: полная `GenerationJob` state machine (07 §8, 12
+стадий) — не нужна, пока флоу синхронный клиентский; статусы
+`started`/`completed`; события/tracking — PR 4; recommendation-алгоритм —
+Phase 7; БД по-прежнему не подключена.
+
 ## Текущий статус (2026-07-23): Content System v1.2 — PR 2 (mobile shell + feed)
 
 Поверх PR 1 (repositories/contracts) реализован approved mobile shell по

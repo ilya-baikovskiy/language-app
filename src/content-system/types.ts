@@ -247,6 +247,12 @@ export type LessonArtifactRef = {
   audioUrl: string;
 };
 
+// Библиотечный статус урока (16 §9). `started`/`completed` объявлены здесь
+// для полноты enum'а из документа, но в этом PR не проставляются нигде
+// (нет ещё lastOpenedAt/reading progress tracking — отдельная будущая
+// работа) — реализованы только переходы `creating -> ready`/`creating -> failed`.
+export type LessonStatus = 'creating' | 'ready' | 'started' | 'completed' | 'failed';
+
 export type LessonSummary = {
   id: string;
   title: string;
@@ -257,4 +263,9 @@ export type LessonSummary = {
   lessonUrl: string;
   audioUrl: string;
   createdAt: string;
+  // Отсутствует у записей до PR 3 — repository-слой маппит такие записи в
+  // 'ready' (см. lessonArtifactRepository.ts), поэтому здесь поле обязательное.
+  status: LessonStatus;
+  cardId?: string;
+  blueprintId?: string;
 };

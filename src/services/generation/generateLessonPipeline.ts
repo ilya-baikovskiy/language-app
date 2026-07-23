@@ -18,6 +18,10 @@ import { fetchGeneratedText, fetchGeneratedAudio, fetchAudioAlignment, saveLesso
 // здесь просто токенизация — ни AI-вызовов, ни какой-либо разметки токенов.
 
 export type GenerationProgress =
+  // 'starting' — только card → Lesson флоу (PR 3, cardGeneration.ts), пока
+  // blueprint строится и placeholder-запись пишется в библиотеку. Ручной
+  // GenerateLessonPage.tsx эту стадию никогда не эмитит.
+  | { stage: 'starting' }
   | { stage: 'text' }
   | { stage: 'audio' }
   | { stage: 'align' }
@@ -35,7 +39,16 @@ function slugify(title: string): string {
 
 export async function generateLesson(
   input: InputSource,
-  options: { level: string; words: number; audioProvider?: AudioProvider; language?: LanguageCode },
+  options: {
+    level: string;
+    words: number;
+    audioProvider?: AudioProvider;
+    language?: LanguageCode;
+    // PR 3 (card → Lesson) — детерминированный id для идемпотентности
+    // (см. content-system/blueprint.ts computeLessonId). Ручной
+    // GenerateLessonPage.tsx его не передаёт — поведение для него не меняется.
+    lessonId?: string;
+  },
   onProgress: (progress: GenerationProgress) => void,
 ): Promise<{ lesson: Lesson; audioUrl: string }> {
   const audioProvider = options.audioProvider ?? 'openai';
@@ -46,7 +59,7 @@ export async function generateLesson(
   const generated = await fetchGeneratedText(input, options.level, options.words, language);
 
   const paragraphs: Paragraph[] = tokenizeParagraphs(generated.paragraphs, languageConfig.bcp47);
-  const slug = slugify(generated.title);
+  const slug = options.lessonId ?? slugify(generated.title);
 
   const lessonForAudio: Lesson = {
     id: slug,

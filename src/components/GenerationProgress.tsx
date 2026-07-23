@@ -1,12 +1,16 @@
 import type { GenerationProgress as Progress } from '../services/generation/generateLessonPipeline';
 
-type StepKey = 'text' | 'audio' | 'align' | 'saving';
+type StepKey = 'starting' | 'text' | 'audio' | 'align' | 'saving';
 
 // Шаги «Объясняем слова» и «Размечаем фразы» убраны — объяснения подгружаются
 // лениво, по клику читателя (см. AI_PIPELINE.md, «Bottom Sheet v2»), а
 // разметки фраз на этапе генерации больше нет вообще: каждое слово кликабельно
 // само по себе, связанная фраза решается внутри объяснения по клику, не заранее.
+// 'starting' — только card → Lesson флоу (PR 3); ручной GenerateLessonPage
+// его никогда не эмитит, поэтому индекс шага просто не найдётся (-1) и первый
+// пункт списка ведёт себя как раньше.
 const STEPS: { key: StepKey; label: string }[] = [
+  { key: 'starting', label: 'Готовим план' },
   { key: 'text', label: 'Пишем текст' },
   { key: 'audio', label: 'Озвучиваем' },
   { key: 'align', label: 'Синхронизируем аудио' },

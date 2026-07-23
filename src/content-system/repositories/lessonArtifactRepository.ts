@@ -8,7 +8,12 @@
 // index + fetch(entry.lessonUrl), поэтому adapter делает то же самое.
 
 import type { Lesson } from '../../types/lesson';
-import { fetchLessonsIndex, saveLesson as saveLessonToBlob } from '../../services/generation/lessonsApi';
+import {
+  fetchLessonsIndex,
+  saveLesson as saveLessonToBlob,
+  startLesson as startLessonOnBlob,
+  markLessonFailed as markLessonFailedOnBlob,
+} from '../../services/generation/lessonsApi';
 import type { LessonArtifactRepository } from '../repositories';
 import type { LessonArtifactRef, LessonSummary } from '../types';
 
@@ -21,7 +26,9 @@ export class BlobLessonArtifactRepository implements LessonArtifactRepository {
   async getLesson(lessonId: string): Promise<Lesson | null> {
     const index = await fetchLessonsIndex();
     const entry = index.find((item) => item.id === lessonId || item.slug === lessonId);
-    if (!entry) return null;
+    // 'creating'/'failed' placeholder-записи (PR 3) не имеют lessonUrl —
+    // не пытаемся их фетчить, а не только полагаемся на res.ok.
+    if (!entry || !entry.lessonUrl) return null;
     const res = await fetch(entry.lessonUrl);
     if (!res.ok) return null;
     return (await res.json()) as Lesson;
@@ -41,6 +48,36 @@ export class BlobLessonArtifactRepository implements LessonArtifactRepository {
       lessonUrl: entry.lessonUrl,
       audioUrl: entry.audioUrl,
       createdAt: entry.createdAt,
+      // Записи до PR 3 не имеют status — правило проекта «не ломать старые
+      // lessons» (см. брифа §PR 3): считаем их 'ready'.
+      status: entry.status ?? 'ready',
+      cardId: entry.cardId,
+      blueprintId: entry.blueprintId,
     }));
+  }
+
+  async startLesson(placeholder: {
+    id: string;
+    cardId: string;
+    blueprintId: string;
+    language: string;
+    level: string;
+    title: string;
+    estimatedMinutes: number;
+  }): Promise<void> {
+    await startLessonOnBlob({
+      id: placeholder.id,
+      slug: placeholder.id,
+      title: placeholder.title,
+      level: placeholder.level,
+      estimatedMinutes: placeholder.estimatedMinutes,
+      languageCode: placeholder.language,
+      cardId: placeholder.cardId,
+      blueprintId: placeholder.blueprintId,
+    });
+  }
+
+  async markLessonFailed(lessonId: string): Promise<void> {
+    await markLessonFailedOnBlob(lessonId);
   }
 }

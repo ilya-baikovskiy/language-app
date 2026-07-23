@@ -9,6 +9,7 @@ import type { LanguageCode } from '../../../lib/pipeline/languageConfig';
 import type { AlignmentReport } from '../../../lib/pipeline/alignmentReport';
 import type { AudioProvider, AnnotationSummary, DetailSection, Lesson, Token } from '../../types/lesson';
 import type { TokenSpan } from '../../lib/lessonText';
+import type { LessonStatus } from '../../content-system/types';
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -89,8 +90,17 @@ export function fetchUnitClip(
   return postJson('/api/speak-unit', { text, language, provider });
 }
 
-export function saveLesson(lesson: Lesson, audioUrl: string): Promise<{ slug: string; lessonUrl: string }> {
-  return postJson('/api/save-lesson', { lesson, audioUrl });
+// meta — cardId/blueprintId для card → Lesson флоу (PR 3). Не используется
+// текущим generateLessonPipeline.ts (единственная правка там — lessonId, см.
+// комментарий в generateLesson) — эти поля сохраняются в индексе через уже
+// существующую 'creating'-запись (api/lesson-status.ts startLesson), которую
+// api/save-lesson.ts подхватывает по id/slug, если meta не передан явно.
+export function saveLesson(
+  lesson: Lesson,
+  audioUrl: string,
+  meta?: { cardId?: string; blueprintId?: string },
+): Promise<{ slug: string; lessonUrl: string }> {
+  return postJson('/api/save-lesson', { lesson, audioUrl, ...meta });
 }
 
 export type LessonIndexEntry = {
@@ -105,7 +115,32 @@ export type LessonIndexEntry = {
   audioProvider?: AudioProvider;
   languageCode?: string;
   createdAt: string;
+  // Отсутствует у записей до PR 3 (легаси) — необязательное, чтобы старые
+  // записи из Blob не ломали типизацию; репозиторий-слой маппит их в 'ready'.
+  status?: LessonStatus;
+  cardId?: string;
+  blueprintId?: string;
 };
+
+export type StartLessonEntry = {
+  id: string;
+  slug: string;
+  title: string;
+  translatedTitle?: string;
+  level: string;
+  estimatedMinutes: number;
+  languageCode?: string;
+  cardId: string;
+  blueprintId: string;
+};
+
+export function startLesson(entry: StartLessonEntry): Promise<{ ok: boolean }> {
+  return postJson('/api/lesson-status', { action: 'start', entry });
+}
+
+export function markLessonFailed(lessonId: string): Promise<{ ok: boolean }> {
+  return postJson('/api/lesson-status', { action: 'fail', lessonId });
+}
 
 // Бросает при недоступном /api/lessons вместо тихого пустого списка: иначе
 // упавший бэкенд выглядит на экране библиотеки ровно как «уроков ещё нет»,

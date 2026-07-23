@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { sampleLesson } from '../data/sampleLesson';
 import { fetchLessonsIndex, type LessonIndexEntry } from '../services/generation/lessonsApi';
 import { LANGUAGE_CONFIGS, type LanguageCode } from '../../lib/pipeline/languageConfig';
+import type { CEFRLevel } from '../content-system/types';
 
 // Не getLanguageConfig (бросает на неизвестном коде) — entry.languageCode
 // приходит из сохранённых данных, а не из кода приложения, безопаснее не
@@ -29,9 +30,12 @@ type Props = {
   onOpenSample: () => void;
   onOpenGenerated: (entry: LessonIndexEntry) => void;
   onGenerateNew: () => void;
+  // 'failed'-запись с cardId → «Повторить» ведёт назад в card-generating flow
+  // с исходными language/level записи (16 §13). См. App.tsx retryCard.
+  onRetryCard: (cardId: string, language: LanguageCode, level: CEFRLevel) => void;
 };
 
-export function LibraryPage({ activeLanguage, onOpenSample, onOpenGenerated, onGenerateNew }: Props) {
+export function LibraryPage({ activeLanguage, onOpenSample, onOpenGenerated, onGenerateNew, onRetryCard }: Props) {
   const [entries, setEntries] = useState<LessonIndexEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -79,16 +83,53 @@ export function LibraryPage({ activeLanguage, onOpenSample, onOpenGenerated, onG
           </button>
         )}
 
-        {languageEntries?.map((entry) => (
-          <button className="lesson-card" type="button" key={entry.slug} onClick={() => onOpenGenerated(entry)}>
-            <div className="lesson-card-title">{entry.title}</div>
-            {entry.translatedTitle && <p className="lesson-card-translated">{entry.translatedTitle}</p>}
-            <div className="lesson-card-meta">
-              {entryLanguageName(entry)} · {entry.level} · {entry.estimatedMinutes} мин
-              {entry.audioProvider === 'elevenlabs' && ' · ElevenLabs'}
-            </div>
-          </button>
-        ))}
+        {languageEntries?.map((entry) => {
+          // Записи до PR 3 не имеют status — считаем их 'ready' (не ломаем
+          // старые lessons, см. брифа §PR 3).
+          const status = entry.status ?? 'ready';
+
+          if (status === 'creating') {
+            return (
+              <div className="lesson-card lesson-card-pending" key={entry.slug} aria-busy="true">
+                <div className="lesson-card-title">{entry.title}</div>
+                <div className="lesson-card-meta">
+                  {entryLanguageName(entry)} · {entry.level} · Готовится…
+                </div>
+              </div>
+            );
+          }
+
+          if (status === 'failed') {
+            return (
+              <div className="lesson-card lesson-card-failed" key={entry.slug}>
+                <div className="lesson-card-title">{entry.title}</div>
+                <div className="lesson-card-meta">
+                  {entryLanguageName(entry)} · {entry.level} · Не удалось сгенерировать
+                </div>
+                {entry.cardId && (
+                  <button
+                    type="button"
+                    className="translation-retry"
+                    onClick={() => onRetryCard(entry.cardId!, entryLanguageCode(entry), entry.level as CEFRLevel)}
+                  >
+                    Повторить
+                  </button>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <button className="lesson-card" type="button" key={entry.slug} onClick={() => onOpenGenerated(entry)}>
+              <div className="lesson-card-title">{entry.title}</div>
+              {entry.translatedTitle && <p className="lesson-card-translated">{entry.translatedTitle}</p>}
+              <div className="lesson-card-meta">
+                {entryLanguageName(entry)} · {entry.level} · {entry.estimatedMinutes} мин
+                {entry.audioProvider === 'elevenlabs' && ' · ElevenLabs'}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {failed && (
