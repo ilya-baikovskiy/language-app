@@ -10,6 +10,49 @@
 куска работы — особенно то, что не восстановить простым чтением кода/git log (мотивация,
 открытые вопросы, отклонённые варианты).**
 
+## Хэндофф на другую машину (2026-07-23, конец сессии)
+
+Кратко, для быстрого старта на другом компе/сессии — детали по каждому PR ниже
+и в `docs/content-system-v1.2/`.
+
+**Где мы:** ветка `content-system-docs-v1.2`, PR 1–3 из
+`docs/content-system-v1.2/11_CLAUDE_MASTER_IMPLEMENTATION_BRIEF.md` сделаны,
+закоммичены и запушены (см. `git log --oneline`):
+1. PR 1 — storage-independent контракты/repositories (Zod-схемы, seed cards,
+   Blob-адаптеры).
+2. PR 2 — mobile shell (bottom nav, глобальный language selector, ChoosePage
+   с лентой из 5 карточек, Library/Learn language-scoped, Settings).
+3. PR 3 — card → Lesson: реальная генерация по клику «Читать» через
+   `LessonBlueprint`, идемпотентный `lessonId`, статусы библиотеки
+   `creating`/`ready`/`failed`.
+4. Отдельный коммит между PR 2 и PR 3 — фикс CSS-бага (модалка настроек не
+   центрировалась, не было базовых стилей `.overlay`/`.modal`).
+
+**Проверено:** `tsc -b`/`oxlint`/`vitest run`/`npm run build` чисты на каждом
+шаге. Дополнительно проверен реальный Vercel preview-деплой этой ветки —
+после того как пользователь подключил Blob store к Preview-окружению и
+пересобрал деплой, `/api/lessons`, `/api/app-preferences`,
+`/api/language-profiles` отвечают корректно на реальном Blob (не просто
+локальный `tsc`). **Важно:** этот Preview, судя по ответам API, делит один
+Blob store с продакшеном — не дёргать `PATCH`/`POST` эндпоинты (сохранение
+preferences, старт генерации) на preview через curl/скрипты, это пишет в
+настоящее хранилище пользователя; такие вещи проверять только кликами в
+браузере.
+
+**Не проверено визуально** (нет browser-инструмента в part этой сессии,
+только curl/HTML-фетч): сам клик-through Choose → генерация карточки →
+Reader, «Повторить» на упавшей записи в Library, реальный вид ленты/
+bottom nav/settings глазами на узком viewport. Стоит открыть preview в
+браузере и пройти этот путь перед тем, как считать PR 1–3 полностью
+принятыми.
+
+**Что дальше:** PR 4 — tracking experiment (клиентская очередь событий,
+инструментация feed/reader/tap/feedback, immutable batch-хранение событий в
+Blob), см. `docs/content-system-v1.2/05_TRACKING_EVENTS_AND_METRICS.md` и
+брифа §PR 4. После PR 4 — Storage Decision Gate (написать ADR про durable
+storage, не раньше) и только потом PR 5+ (реальная БД, если решено),
+learning maps (PR 6), adaptive ranking (Phase 7).
+
 ## Текущий статус (2026-07-23): Content System v1.2 — PR 3 (card → Lesson)
 
 Поверх PR 2 реализован реальный переход «карточка → Lesson» вместо
