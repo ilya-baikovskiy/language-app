@@ -10,6 +10,65 @@
 куска работы — особенно то, что не восстановить простым чтением кода/git log (мотивация,
 открытые вопросы, отклонённые варианты).**
 
+## Текущий статус (2026-07-23): Content System v1.2 — PR 2 (mobile shell + feed)
+
+Поверх PR 1 (repositories/contracts) реализован approved mobile shell по
+`docs/content-system-v1.2/16_APPROVED_MOBILE_UX_AND_NAVIGATION.md`:
+
+- **Bottom nav** (`BottomNav.tsx`) — 3 таба (Выбрать/Мои тексты/Учить),
+  glass-стиль, `aria-current`, safe-area-aware; скрывается на Reader/Generate
+  (это полноэкранные оверлеи вне таб-роутинга, `App.tsx` теперь хранит
+  `{ tab }|{ kind:'generate', returnTo }|{ kind:'reader', returnTo }`, возврат
+  ведёт в исходный таб).
+- **TopBar** (`TopBar.tsx`) — глобальный `activeLanguage` + уровень, dropdown
+  `role="listbox"`, кнопка настроек. `SettingsOverlay.tsx` — уровень по
+  языкам + общие темы/страны (`content-system/catalog.ts`).
+- **ChoosePage** (`ChoosePage.tsx` + `ContentCardTile.tsx`) — лента из 5
+  карточек через `useFeed` → `StaticSeedCardRepository` (PR 1, читает
+  seed JSON) → `content-system/feed.ts` `composeFixedFeed` — **детерминированный
+  fixed slot composer, не recommendation-алгоритм** из `04` (тот — Phase 7,
+  за `adaptiveRankingEnabled=false`). Hero крупнее без бейджа «Главная»,
+  ровно 2 чипсы (provenance + длительность), CTA «Читать» видимый и
+  кликабельный, но **не запускает генерацию** — показывает inline-уведомление
+  «появится в следующем обновлении» (card → Lesson через blueprint — PR 3).
+- **LibraryPage** — минимальный language-фильтр по `activeLanguage`
+  (полноценный блок «Продолжить» по `lastOpenedAt`/статусам creating-ready-
+  started-completed остаётся за PR 3 — этих персистентных полей ещё нет).
+- **LearnPage** — shell по 16 §10 (CTA «Начать» decorative/disabled, SRS не
+  реализован); фильтр сохранённых слов по языку сделан через join
+  `lessonId → languageCode` (`BlobLessonArtifactRepository.listLessons()`),
+  а не через добавление поля `language` в `SavedUnit` — чтобы не потребовалась
+  миграция уже сохранённых unit'ов.
+- Persistence `AppPreferences`/`LanguageProfile` — через Blob-adapters из
+  PR 1 (`/api/app-preferences`, `/api/language-profiles`); если API
+  недоступно (`npm run dev` без `vercel dev`), хуки используют дефолт в
+  памяти сессии, не роняя экран.
+- `GenerateLessonPage` (ручная генерация по своей теме) не удалён, остаётся
+  достижим из Library («+ Новый урок») — параллельный путь к новой ленте,
+  не заменяется ею.
+
+Собственные решения там, где документ оставлял выбор: дефолт
+`activeLanguage='fr'` (единственный полностью проверенный голос в проекте);
+provenance-маппинг `adapted_article`/`current_event`/`user_text` → «На
+основе источников» (в 16 §6 только 3 значения чипсы, схема ContentCard шире);
+placeholder-изображения карточек — детерминированные градиенты по хэшу id
+(не декоративные символы прототипа); флаг для English оставлен 🇬🇧 как
+явно нерешённый по документу вопрос.
+
+Проверено: `tsc -b`/`oxlint`/`vitest run` (53 теста, +6 на
+`composeFixedFeed`)/`npm run build` — чисто; `npm run dev` поднимается,
+модуль отдаётся без ошибок сервера. **Не проверено визуально в браузере**
+(нет browser-инструмента в этой сессии) — стеклянные поверхности
+(`backdrop-filter`/`color-mix()` в `src/styles/contentSystem.css`),
+раскладка hero-карточки и контраст чипсов на плейсхолдерах не смотрены
+глазами, стоит открыть в браузере на реальном узком viewport перед тем,
+как считать PR 2 полностью принятым.
+
+**Не сделано намеренно** (следующие шаги по брифу): card → Lesson через
+`LessonBlueprint`, retry/idempotency, реальные статусы библиотеки — PR 3;
+события/tracking — PR 4; recommendation-алгоритм/explainability — Phase 7;
+никакая БД по-прежнему не подключена.
+
 ## Текущий статус (2026-07-23): Content System v1.2 — PR 1 (storage-independent foundation)
 
 Начата новая большая подсистема поверх существующего ридера: лента из 5
