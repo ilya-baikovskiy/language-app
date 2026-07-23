@@ -19,8 +19,10 @@ export const CONTENT_SYSTEM_FEATURE_FLAGS: ContentSystemFeatureFlags = {
   learningStateUpdatesEnabled: false,
   levelTrialsEnabled: false,
   sourceBasedCardsEnabled: false,
-  // Dev-only for now, same call as contentFeedEnabled above — PR 4 does not
-  // turn this on in production by itself; enabling it there is a separate
-  // decision for the user to make once the debug journey has been reviewed.
-  eventTrackingEnabled: import.meta.env.DEV,
+  // Dev-only by default, same call as contentFeedEnabled above — PR 4 does not
+  // turn this on in production by itself. `VITE_EVENT_TRACKING_ENABLED=true` в
+  // Vercel env (Production/Preview) включает трекинг без code-правки/редеплоя,
+  // когда пользователь решит начать собирать реальные данные (см.
+  // docs/adr/ADR-001-durable-storage.md — это решение отделено от Storage ADR).
+  eventTrackingEnabled: import.meta.env.VITE_EVENT_TRACKING_ENABLED === 'true' || import.meta.env.DEV,
 };
