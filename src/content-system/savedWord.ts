@@ -32,8 +32,12 @@ export const savedWordSchema = z.object({
   translation: z.string(),
   audioText: z.string().optional(), // summary.audioText — готовый текст для /api/speak-unit
 
-  contextSource: z.string().optional(), // summary.context.selectedSource
-  contextTranslation: z.string().optional(), // summary.context.selectedTranslation
+  // Целое предложение-источник (summary.context.source/.translation), НЕ
+  // summary.context.selectedSource/.selectedTranslation — то было бы просто
+  // повтором surfaceForm/translation. Нужно для будущей тренировки "в том же
+  // контексте/фразе", не изолированным словом.
+  contextSource: z.string().optional(),
+  contextTranslation: z.string().optional(),
 
   lessonId: z.string(),
   tokenId: z.string(),

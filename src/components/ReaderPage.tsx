@@ -241,8 +241,11 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
       partOfSpeech: summary.partOfSpeech,
       translation: summary.translation,
       audioText: summary.audioText,
-      contextSource: summary.context.selectedSource,
-      contextTranslation: summary.context.selectedTranslation,
+      // Целое предложение, не только выделенное слово (context.selectedSource
+      // было бы просто повтором surfaceForm) — нужно для будущей тренировки
+      // "в том же контексте/фразе", не изолированным словом.
+      contextSource: summary.context.source,
+      contextTranslation: summary.context.translation,
     });
     // Only tracked on save, not on un-save (05 §9 only defines
     // `learning_unit_saved` — there is no matching "unsaved" event name to
