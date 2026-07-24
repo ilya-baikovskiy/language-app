@@ -11,6 +11,7 @@
 import seedData from '../seeds/content-ideas.v1.json';
 import { contentCardSchema, type ContentCard } from '../types';
 import type { CardCandidateQuery, ContentCardRepository } from '../repositories';
+import { matchesCardQuery } from './cardQuery';
 
 function loadSeedCards(): ContentCard[] {
   return (seedData as unknown[]).map((raw, index) => {
@@ -28,31 +29,7 @@ const SEED_CARDS = loadSeedCards();
 
 export class StaticSeedCardRepository implements ContentCardRepository {
   async listCandidates(query: CardCandidateQuery): Promise<ContentCard[]> {
-    return SEED_CARDS.filter((card) => {
-      if (card.status !== 'active') return false;
-      if (query.excludeCardIds?.includes(card.id)) return false;
-      if (query.language && card.supportedLanguages && !card.supportedLanguages.includes(query.language)) {
-        return false;
-      }
-      if (query.level) {
-        const suitability = query.language ? card.levelSuitability?.[query.language] : undefined;
-        if (suitability) {
-          const levels = ['A0', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-          const levelIndex = levels.indexOf(query.level);
-          if (levelIndex < levels.indexOf(suitability.min) || levelIndex > levels.indexOf(suitability.max)) {
-            return false;
-          }
-        }
-      }
-      if (query.topicIds?.length && !query.topicIds.some((id) => card.topicIds.includes(id))) return false;
-      if (
-        query.countryOrRegionIds?.length &&
-        !query.countryOrRegionIds.some((id) => card.countryOrRegionIds.includes(id))
-      ) {
-        return false;
-      }
-      return true;
-    });
+    return SEED_CARDS.filter((card) => matchesCardQuery(card, query));
   }
 
   async getById(cardId: string): Promise<ContentCard | null> {
