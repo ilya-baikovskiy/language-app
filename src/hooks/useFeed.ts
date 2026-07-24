@@ -26,6 +26,7 @@ import { composeFixedFeed } from '../content-system/feed';
 import { StaticSeedCardRepository } from '../content-system/repositories/staticSeedCardRepository';
 import { BlobGeneratedCardRepository } from '../content-system/repositories/blobGeneratedCardRepository';
 import { CompositeCardRepository } from '../content-system/repositories/compositeCardRepository';
+import { COUNTRIES, TOPICS } from '../content-system/catalog';
 import { track } from '../content-system/analytics/eventClient';
 import type { ContentCardRepository } from '../content-system/repositories';
 import type { CEFRLevel, ContentCard, FeedSlot } from '../content-system/types';
@@ -51,6 +52,15 @@ const DEFAULT_GENERATED_REPOSITORY = new BlobGeneratedCardRepository();
 const DEFAULT_REPOSITORY = new CompositeCardRepository(new StaticSeedCardRepository(), DEFAULT_GENERATED_REPOSITORY);
 const LOW_POOL_THRESHOLD = 8;
 const TOP_UP_DESIRED_COUNT = 20;
+// enabledTopicIds/enabledCountryOrRegionIds пустые ПО УМОЛЧАНИЮ (см.
+// createDefaultAppPreferences в userTypes.ts) — это "без фильтра, показать
+// всё", не "ничего не включено". Реальный баг, найденный по фидбэку "всё
+// равно как по-старому на мобилке": top-up требовал непустые списки и поэтому
+// НИКОГДА не срабатывал для самого частого случая — пользователя, ещё не
+// заходившего в настройки. Пустой список при генерации превращаем в полный
+// каталог тем/стран, а не пропускаем top-up.
+const ALL_TOPIC_IDS = TOPICS.map((t) => t.id);
+const ALL_COUNTRY_IDS = COUNTRIES.map((c) => c.id);
 
 export function useFeed({
   activeLanguage,
@@ -146,23 +156,19 @@ export function useFeed({
           track('feed_refreshed', { previousBatchId: previousBatchId ?? '' });
         }
 
-        // Pipeline A top-up — см. комментарий у attemptedTopUpKeysRef и хедер
-        // файла. Фильтр без тем/стран (пустые массивы) не top-апим — непонятно,
-        // для какой комбинации генерировать.
-        const topUpKey = `${activeLanguage}|${selectedLevel}|${[...enabledTopicIds].sort().join(',')}|${[...enabledCountryOrRegionIds].sort().join(',')}`;
-        if (
-          unseenCount < LOW_POOL_THRESHOLD &&
-          enabledTopicIds.length > 0 &&
-          enabledCountryOrRegionIds.length > 0 &&
-          !attemptedTopUpKeysRef.current.has(topUpKey)
-        ) {
+        // Pipeline A top-up — см. комментарий у attemptedTopUpKeysRef, ALL_TOPIC_IDS
+        // и хедер файла. Пустой enabled-список = "весь каталог", не "пропустить".
+        const topUpTopicIds = enabledTopicIds.length > 0 ? enabledTopicIds : ALL_TOPIC_IDS;
+        const topUpCountryIds = enabledCountryOrRegionIds.length > 0 ? enabledCountryOrRegionIds : ALL_COUNTRY_IDS;
+        const topUpKey = `${activeLanguage}|${selectedLevel}|${[...topUpTopicIds].sort().join(',')}|${[...topUpCountryIds].sort().join(',')}`;
+        if (unseenCount < LOW_POOL_THRESHOLD && !attemptedTopUpKeysRef.current.has(topUpKey)) {
           attemptedTopUpKeysRef.current.add(topUpKey);
           generatedCardRepository
             .generateAndTopUp({
               language: activeLanguage,
               level: selectedLevel,
-              enabledTopicIds,
-              enabledCountryOrRegionIds,
+              enabledTopicIds: topUpTopicIds,
+              enabledCountryOrRegionIds: topUpCountryIds,
               desiredCount: TOP_UP_DESIRED_COUNT,
             })
             .then((added) => {

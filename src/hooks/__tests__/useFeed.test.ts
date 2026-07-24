@@ -11,7 +11,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useFeed } from '../useFeed';
 import { __resetAnalyticsClientForTests } from '../../content-system/analytics/eventClient';
 import type { ContentCardRepository } from '../../content-system/repositories';
-import type { BlobGeneratedCardRepository } from '../../content-system/repositories/blobGeneratedCardRepository';
+import type {
+  BlobGeneratedCardRepository,
+  GenerateAndTopUpRequest,
+} from '../../content-system/repositories/blobGeneratedCardRepository';
 import type { ContentCard } from '../../content-system/types';
 
 // Без vitest test.globals (проект их не включает — см. vite.config.ts)
@@ -61,7 +64,7 @@ function makeMockRepos(cards: ContentCard[]) {
     getById: vi.fn(async () => null),
     saveMany: vi.fn(async () => {}),
   };
-  const generateAndTopUp = vi.fn(async (): Promise<ContentCard[]> => []);
+  const generateAndTopUp = vi.fn(async (_request: GenerateAndTopUpRequest): Promise<ContentCard[]> => []);
   const generatedCardRepository = { generateAndTopUp } as unknown as BlobGeneratedCardRepository;
   return { cardRepository, generatedCardRepository, listCandidates, generateAndTopUp };
 }
@@ -105,7 +108,11 @@ describe('useFeed — Pipeline A top-up trigger', () => {
     expect(generateAndTopUp).not.toHaveBeenCalled();
   });
 
-  it('НЕ запускает top-up без включённых тем/стран (пустые фильтры)', async () => {
+  it('с пустыми фильтрами (дефолт "без ограничений") top-up ВСЁ РАВНО запускается по всему каталогу', async () => {
+    // Реальный баг: createDefaultAppPreferences даёт [] по умолчанию (значит
+    // "весь каталог", см. userTypes.ts) — самый частый случай, пользователь
+    // ещё не заходил в настройки. Первая версия триггера требовала непустые
+    // списки и поэтому НИКОГДА не срабатывала для дефолтных настроек.
     const threeCards = [makeCard('a'), makeCard('b'), makeCard('c')];
     const { cardRepository, generatedCardRepository, generateAndTopUp } = makeMockRepos(threeCards);
 
@@ -113,8 +120,11 @@ describe('useFeed — Pipeline A top-up trigger', () => {
       useFeed({ ...baseParams, enabledTopicIds: [], enabledCountryOrRegionIds: [], cardRepository, generatedCardRepository }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
-    await new Promise((r) => setTimeout(r, 20));
-    expect(generateAndTopUp).not.toHaveBeenCalled();
+    await waitFor(() => expect(generateAndTopUp).toHaveBeenCalledTimes(1));
+
+    const call = generateAndTopUp.mock.calls[0][0];
+    expect(call.enabledTopicIds.length).toBeGreaterThan(1);
+    expect(call.enabledCountryOrRegionIds.length).toBeGreaterThan(1);
   });
 
   it('после успешного top-up перезагружает ленту и подхватывает новые карточки', async () => {
