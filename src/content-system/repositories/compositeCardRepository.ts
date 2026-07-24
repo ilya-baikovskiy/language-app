@@ -8,10 +8,13 @@ import type { ContentCard } from '../types';
 import type { CardCandidateQuery, ContentCardRepository } from '../repositories';
 
 export class CompositeCardRepository implements ContentCardRepository {
-  constructor(
-    private readonly seedRepository: ContentCardRepository,
-    private readonly generatedRepository: ContentCardRepository,
-  ) {}
+  private readonly seedRepository: ContentCardRepository;
+  private readonly generatedRepository: ContentCardRepository;
+
+  constructor(seedRepository: ContentCardRepository, generatedRepository: ContentCardRepository) {
+    this.seedRepository = seedRepository;
+    this.generatedRepository = generatedRepository;
+  }
 
   async listCandidates(query: CardCandidateQuery): Promise<ContentCard[]> {
     const [seedCards, generatedCards] = await Promise.all([
