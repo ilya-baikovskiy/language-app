@@ -1,22 +1,31 @@
 // Лента «Выбрать» — см. docs/content-system-v1.2/16_APPROVED_MOBILE_UX_AND_NAVIGATION.md
 // §5 и 02_CONTENT_CATALOG_AND_CARD_SYSTEM.md §7-8.
 //
-// Полностью клиентский: ContentCardRepository (по умолчанию
-// StaticSeedCardRepository) уже сейчас читает versioned JSON, подключённый в
-// бандл (см. staticSeedCardRepository.ts) — отдельный /api/feed эндпоинт не
-// нужен для PR 2 (seed-first, см. брифа §«Seed-first»). Ranking внутри —
-// composeFixedFeed (детерминированный fixed slot composer, НЕ recommendation
-// алгоритм из 04 — тот выключен флагом adaptiveRankingEnabled).
+// Полностью клиентский: ContentCardRepository по умолчанию — CompositeCardRepository,
+// склеивающий StaticSeedCardRepository (versioned JSON, в бандле) и
+// BlobGeneratedCardRepository (AI-пул, Pipeline A, см. 07 §2) за одним интерфейсом.
+// Ranking внутри — composeFixedFeed (детерминированный fixed slot composer, НЕ
+// recommendation алгоритм из 04 — тот выключен флагом adaptiveRankingEnabled).
 //
 // previouslyShownCardIds хранится в памяти хука на сессию (не persisted) —
 // сознательный минимализм PR 2: цель anti-repeat правила — не показывать те
 // же 5 карточек повторно при нажатии «Предложить другие» внутри одной
 // сессии, не построение долгоживущей истории показов (это уже область
 // tracking/AnalyticsEvent, PR 4).
+//
+// Pipeline A top-up (см. PROGRESS.md 2026-07-24): если для текущего
+// language+level+topics+countries непоказанных карточек в пуле меньше
+// LOW_POOL_THRESHOLD, хук в фоне просит сервер сгенерировать ещё ~20 (решённый
+// размер прогона) и один раз перезагружает ленту, когда они добавлены. Не
+// блокирует текущий рендер и не повторяется для уже опробованного набора
+// фильтров в этой сессии (см. attemptedTopUpKeysRef) — сознательно простая
+// защита от повторных дорогих AI-вызовов, не полноценный retry/backoff.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { composeFixedFeed } from '../content-system/feed';
 import { StaticSeedCardRepository } from '../content-system/repositories/staticSeedCardRepository';
+import { BlobGeneratedCardRepository } from '../content-system/repositories/blobGeneratedCardRepository';
+import { CompositeCardRepository } from '../content-system/repositories/compositeCardRepository';
 import { track } from '../content-system/analytics/eventClient';
 import type { ContentCardRepository } from '../content-system/repositories';
 import type { CEFRLevel, ContentCard, FeedSlot } from '../content-system/types';
@@ -35,9 +44,13 @@ export type UseFeedParams = {
   enabledTopicIds: string[];
   enabledCountryOrRegionIds: string[];
   cardRepository?: ContentCardRepository;
+  generatedCardRepository?: BlobGeneratedCardRepository;
 };
 
-const DEFAULT_REPOSITORY = new StaticSeedCardRepository();
+const DEFAULT_GENERATED_REPOSITORY = new BlobGeneratedCardRepository();
+const DEFAULT_REPOSITORY = new CompositeCardRepository(new StaticSeedCardRepository(), DEFAULT_GENERATED_REPOSITORY);
+const LOW_POOL_THRESHOLD = 8;
+const TOP_UP_DESIRED_COUNT = 20;
 
 export function useFeed({
   activeLanguage,
@@ -45,6 +58,7 @@ export function useFeed({
   enabledTopicIds,
   enabledCountryOrRegionIds,
   cardRepository = DEFAULT_REPOSITORY,
+  generatedCardRepository = DEFAULT_GENERATED_REPOSITORY,
 }: UseFeedParams) {
   const [items, setItems] = useState<FeedDisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +88,11 @@ export function useFeed({
   const prevReloadNonceRef = useRef(reloadNonce);
   const prevLangLevelKeyRef = useRef(`${activeLanguage}|${selectedLevel}`);
   const feedBatchIdRef = useRef<string | null>(null);
+  // Один прогон top-up на уникальный набор фильтров за сессию — не полноценный
+  // retry/backoff, просто защита от повторного дорогого AI-вызова, если
+  // пользователь листает настройки туда-сюда или ре-рендерится несколько раз
+  // на одном и том же наборе фильтров.
+  const attemptedTopUpKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +115,11 @@ export function useFeed({
       .listCandidates(query)
       .then((cards) => {
         if (cancelled) return;
+        // "Сколько ещё непоказанного осталось" считаем ДО этой партии (тот же
+        // shownCardIds, что уже используется composeFixedFeed для anti-repeat) —
+        // это здоровье пула на будущее, не то, что показано прямо сейчас.
+        const unseenCount = cards.filter((card) => !shownCardIds.includes(card.id)).length;
+
         const assignments = composeFixedFeed(cards, shownCardIds);
         const cardsById = new Map(cards.map((card) => [card.id, card]));
         const nextItems = assignments
@@ -120,6 +144,43 @@ export function useFeed({
         track('feed_viewed', { itemCount: nextItems.length, selectedLevel, source });
         if (source === 'refresh') {
           track('feed_refreshed', { previousBatchId: previousBatchId ?? '' });
+        }
+
+        // Pipeline A top-up — см. комментарий у attemptedTopUpKeysRef и хедер
+        // файла. Фильтр без тем/стран (пустые массивы) не top-апим — непонятно,
+        // для какой комбинации генерировать.
+        const topUpKey = `${activeLanguage}|${selectedLevel}|${[...enabledTopicIds].sort().join(',')}|${[...enabledCountryOrRegionIds].sort().join(',')}`;
+        if (
+          unseenCount < LOW_POOL_THRESHOLD &&
+          enabledTopicIds.length > 0 &&
+          enabledCountryOrRegionIds.length > 0 &&
+          !attemptedTopUpKeysRef.current.has(topUpKey)
+        ) {
+          attemptedTopUpKeysRef.current.add(topUpKey);
+          generatedCardRepository
+            .generateAndTopUp({
+              language: activeLanguage,
+              level: selectedLevel,
+              enabledTopicIds,
+              enabledCountryOrRegionIds,
+              desiredCount: TOP_UP_DESIRED_COUNT,
+            })
+            .then((added) => {
+              if (cancelled || added.length === 0) return;
+              // Переиспользуем reloadNonce/'refresh' — нет отдельного
+              // FeedSourceKind под "пул тихо пополнился на фоне" (это не то
+              // же самое, что пользователь нажал «Предложить другие», но
+              // достаточно близко по смыслу: контент ленты обновился не по
+              // смене языка/уровня/фильтров). Отдельный source можно завести
+              // отдельно, если аналитика реально начнёт путать эти два случая.
+              setReloadNonce((n) => n + 1);
+            })
+            .catch((err) => {
+              // Пул остаётся на seed-наборе — top-up это дополнение, не
+              // критическая зависимость ленты (тот же принцип, что у
+              // CompositeCardRepository.listCandidates).
+              console.error('Pipeline A top-up failed:', err);
+            });
         }
       })
       .catch((err) => {
