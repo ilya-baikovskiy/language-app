@@ -16,12 +16,18 @@ import { candidatesToContentCards } from '../src/content-system/cardGenerationPi
 import { COUNTRIES, TOPICS } from '../src/content-system/catalog.js';
 import type { CEFRLevel, ContentCard } from '../src/content-system/types.js';
 import type { LanguageCode } from '../lib/pipeline/languageConfig.js';
+import seedCards from '../src/content-system/seeds/content-ideas.v1.json' with { type: 'json' };
 
 export const maxDuration = 60;
 
 const POOL_PATH = 'content-system/v1/generated-cards/pool.v1.json';
 const TOPIC_LABELS = Object.fromEntries(TOPICS.map((t) => [t.id, t.labelRu]));
 const COUNTRY_LABELS = Object.fromEntries(COUNTRIES.map((c) => [c.id, c.labelRu]));
+// Seed-карточки (git, StaticSeedCardRepository) не проходят через этот
+// эндпоинт вообще, но AI не должен придумывать идею, которая уже есть среди
+// них — иначе в ленте окажутся два разных id с одним и тем же содержанием
+// (см. первый реальный прогон: AI сгенерировал дубль seed-003 "Санторини").
+const SEED_SUBJECT_KEYS = (seedCards as Array<{ canonicalSubjectKey: string }>).map((c) => c.canonicalSubjectKey);
 
 async function readPool(): Promise<ContentCard[]> {
   const { blobs } = await list({ prefix: POOL_PATH, limit: 1 });
@@ -62,7 +68,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const pool = await readPool();
-    const existingSubjectKeys = new Set(pool.map((c) => c.canonicalSubjectKey));
+    const existingSubjectKeys = new Set([...SEED_SUBJECT_KEYS, ...pool.map((c) => c.canonicalSubjectKey)]);
 
     const genRequest: CardGenerationRequest = {
       desiredCount: Math.min(Math.max(body.desiredCount || 20, 1), 30),
