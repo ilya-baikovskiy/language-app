@@ -12,8 +12,8 @@
     "api/save-lesson.ts": { "maxDuration": 30 },
     "api/lessons.ts": { "maxDuration": 15 },
     "api/lesson-status.ts": { "maxDuration": 15 },
-    "api/app-preferences.ts": { "maxDuration": 15 },
-    "api/language-profiles.ts": { "maxDuration": 15 },
-    "api/events-batch.ts": { "maxDuration": 15 }
+    "api/user-state.ts": { "maxDuration": 15 },
+    "api/events-batch.ts": { "maxDuration": 15 },
+    "api/generated-cards.ts": { "maxDuration": 60 }
   }
 }
