@@ -10,6 +10,7 @@ function makeCard(overrides: Partial<ContentCard> = {}): ContentCard {
     canonicalSubjectKey: 'test-subject',
     editorialTitleRu: 'Тестовая карточка',
     editorialDescriptionRu: 'Короткое описание для теста.',
+    emoji: '📘',
     learningFocusLabelRu: 'тестовый фокус',
     topicIds: ['everyday_life'],
     format: 'calm_story',

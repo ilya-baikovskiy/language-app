@@ -10,6 +10,7 @@ function makeCard(id: string): ContentCard {
     canonicalSubjectKey: `subject-${id}`,
     editorialTitleRu: `Заголовок ${id}`,
     editorialDescriptionRu: `Описание ${id}`,
+    emoji: '📘',
     topicIds: ['everyday_life'],
     format: 'calm_story',
     countryOrRegionIds: ['greece'],

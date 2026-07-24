@@ -93,6 +93,10 @@ export const contentCardSchema = z.object({
 
   editorialTitleRu: z.string(),
   editorialDescriptionRu: z.string(),
+  // 1-2 эмодзи (тема + страна), встраивается в начало заголовка на карточке —
+  // см. ContentCardTile.tsx. Не картинка/градиент, не генерируется AI:
+  // подбирается вручную при написании темы (как editorialTitleRu).
+  emoji: z.string(),
   learningFocusLabelRu: z.string().optional(),
 
   topicIds: z.array(z.string()),
