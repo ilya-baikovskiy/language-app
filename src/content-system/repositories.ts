@@ -16,6 +16,7 @@ import type { Lesson } from '../types/lesson';
 import type { AppPreferences, LanguageProfile } from './userTypes';
 import type { AnalyticsEvent } from './analyticsEvent';
 import type { CEFRLevel, ContentCard, FeedBatch, LessonArtifactRef, LessonSummary } from './types';
+import type { SavedWord } from './savedWord';
 
 export type CardCandidateQuery = {
   language?: string;
@@ -50,6 +51,12 @@ export interface FeedRepository {
 
 export interface AnalyticsEventRepository {
   appendBatch(events: AnalyticsEvent[]): Promise<{ acceptedCount: number; duplicateCount: number }>;
+}
+
+export interface SavedWordRepository {
+  listByUser(userId: string): Promise<SavedWord[]>;
+  upsert(word: SavedWord): Promise<SavedWord>;
+  remove(userId: string, wordId: string): Promise<void>;
 }
 
 export interface LessonArtifactRepository {

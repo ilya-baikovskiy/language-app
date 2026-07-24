@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReaderPreferences } from '../hooks/useReaderPreferences';
 import { useSelectedAnnotation } from '../hooks/useSelectedAnnotation';
 import { useSentenceTranslations } from '../hooks/useSentenceTranslations';
-import { useSavedUnits } from '../hooks/useSavedUnits';
+import { useSavedWords } from '../hooks/useSavedWords';
 import { useNarration } from '../hooks/useNarration';
 import { useUnitPronunciation } from '../hooks/useUnitPronunciation';
 import { findTokenAndSentence, findTokenText, orderedWordTokenIds } from '../lib/lessonText';
@@ -51,7 +51,7 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
   const [selection, setSelection] = useState<SelectionState>(INITIAL_SELECTION);
 
   const { translations, retry: retryTranslation } = useSentenceTranslations(lesson, translationMode);
-  const { isSaved, toggleSave } = useSavedUnits();
+  const { isSaved, toggleSave } = useSavedWords();
 
   const wordTokenIds = useMemo(() => orderedWordTokenIds(lesson), [lesson]);
   const progress = narration.activeTokenId
@@ -231,11 +231,18 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
   const handleToggleSave = useCallback(() => {
     if (!savedAnnotation) return;
     const wasSaved = isSaved(lesson.id, savedAnnotation.id);
+    const { summary } = savedAnnotation;
     toggleSave({
       lessonId: lesson.id,
       tokenId: savedAnnotation.id,
-      displayText: savedAnnotation.summary.displayForm,
-      shortTranslation: savedAnnotation.summary.translation,
+      language: appActiveLanguage,
+      level: lesson.level,
+      surfaceForm: summary.displayForm,
+      partOfSpeech: summary.partOfSpeech,
+      translation: summary.translation,
+      audioText: summary.audioText,
+      contextSource: summary.context.selectedSource,
+      contextTranslation: summary.context.selectedTranslation,
     });
     // Only tracked on save, not on un-save (05 §9 only defines
     // `learning_unit_saved` — there is no matching "unsaved" event name to
@@ -243,7 +250,7 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
     if (!wasSaved) {
       track('learning_unit_saved', { tokenId: savedAnnotation.id, unitType: 'word' }, { lessonId: lesson.id, language: appActiveLanguage });
     }
-  }, [savedAnnotation, lesson.id, toggleSave, isSaved, appActiveLanguage]);
+  }, [savedAnnotation, lesson.id, lesson.level, toggleSave, isSaved, appActiveLanguage]);
 
   useEffect(() => {
     if (!selection.isSheetOpen) return;
