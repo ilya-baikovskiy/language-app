@@ -5,7 +5,6 @@
 // через этот модуль, чтобы дефолты и источник правды были в одном месте.
 
 export type ContentSystemFeatureFlags = {
-  contentFeedEnabled: boolean;
   adaptiveRankingEnabled: boolean;
   learningStateUpdatesEnabled: boolean;
   levelTrialsEnabled: boolean;
@@ -14,7 +13,6 @@ export type ContentSystemFeatureFlags = {
 };
 
 export const CONTENT_SYSTEM_FEATURE_FLAGS: ContentSystemFeatureFlags = {
-  contentFeedEnabled: import.meta.env.DEV,
   adaptiveRankingEnabled: false,
   learningStateUpdatesEnabled: false,
   levelTrialsEnabled: false,
