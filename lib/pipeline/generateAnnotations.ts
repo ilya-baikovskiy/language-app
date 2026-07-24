@@ -189,6 +189,12 @@ The tapped word is always the exact target — never substitute a surrounding ph
 point out a related phrase around it ONLY when the word genuinely cannot be understood well in
 isolation (e.g. ${ex.worthShowing}). Do NOT do this for ordinary adjacent words that are each already
 clear on their own (e.g. ${ex.notWorthShowing}) — most words have no related phrase, that's expected.
+This also covers a GRAMMATICAL construction spanning two-plus words whose combined meaning does not
+decompose word-by-word into ${sourceLanguage} — e.g. a comparative marker + adjective that together
+translate as one comparative word ("πιο μεγάλη" → "больше", not "более"+"большая" read separately), or
+a correlative/quantifier construction ("οι δύο" → "оба", not literally "the two"). Show it exactly like
+any other related phrase — same mechanism, just triggered by "doesn't translate word-by-word" instead
+of "is a fixed collocation".
 If you do include one, relatedTokenIds must be a CONSECUTIVE run of word-token ids from the given
 token list that includes the target token id itself.
 
@@ -207,7 +213,12 @@ Rules:
   no separate ${sourceLanguage} word (a particle, an article that dissolves into the phrasing), copy
   the single word that carries its meaning, or repeat "translation" if truly nothing matches.
 - partOfSpeech: a plain ${sourceLanguage} word for the part of speech ("глагол", "предлог"...), or null
-  if not useful (e.g. a proper name).
+  if not useful (e.g. a proper name). Be careful with words that INTRODUCE a clause — relative pronoun
+  ("qui", "который"), subordinating conjunction ("que", "что"), and subjunctive/purpose particle (Greek
+  "να") are easy to mix up because they all sit in the same spot in the sentence. Classify by what the
+  word ITSELF is grammatically (a pronoun that also refers back to something = pronoun; a particle with
+  no referent = particle; a plain clause-linker with no referent = conjunction) — not by the fact that
+  something follows it.
 - relatedTranslation: natural ${sourceLanguage} translation of ONLY the related phrase, matching how it
   reads inside the sentence — null whenever relatedTokenIds is null.
 - otherMeaningSource / otherMeaningTranslation: ONLY for a word that carries a genuinely different
@@ -235,14 +246,32 @@ How much to return depends on the word:
   3. "table" — the person paradigm (я/ты/он-она/мы/вы/они) in the SAME tense/aspect the clicked word
      is actually in (not a different, more "default" one) — title it after that tense, e.g.
      "Формы аориста" or "Спряжение в имперфекте".
-  4. "bilingualPairs", ONLY if this verb has a genuinely fixed or non-obvious preposition/case it
-     combines with — 2-3 verb+preposition examples with translations. Skip this part entirely for a
-     verb with no notable combination; never invent one to fill the slot.
+  4. "table" (preferred) or "bilingualPairs" — the preposition(s)/case(s) this verb typically combines
+     with, e.g. "πηγαίνω σε" (destination), "πηγαίνω από" (origin/route), "πηγαίνω προς" (direction).
+     Show the verb's ordinary, frequent combinations, not only a single rigidly-idiomatic one — most
+     motion/transfer/communication verbs genuinely have 2-3 worth showing. Skip this part only for a
+     verb that truly has no notable preposition/case pattern (e.g. a plain transitive verb like "see");
+     never invent a combination that isn't real.
+  5. If this exact form is in a VOICE this language marks morphologically (e.g. Greek middle/passive
+     -μαι/-σαι/-ται endings, or a periphrastic passive), ADD a short "table" pairing this form with its
+     counterpart in the other voice (same lemma, same tense/person) — see the voice rules below. Skip
+     entirely for a language/verb with no such marked voice.
 - A NOUN or ADJECTIVE is worth a real walkthrough too — typically 2-3 sections: how the form works, a
-  table of the forms that matter here (declension/gender/number as applicable), 2-3 example phrases.
+  table of the forms that matter here (declension/gender/number/case as applicable — see the table rules
+  below for case), 2-3 example phrases.
 - A function word (article, preposition, particle, conjunction, pronoun) usually needs 2-3: what it
-  does here, what it combines with, a couple of contrasting examples.
+  does here, what it combines with, a couple of contrasting examples. A preposition (or any function
+  word) that carries GENUINELY DIFFERENT senses in different contexts (e.g. Greek "από" = source/"from",
+  distance/"away from", material/"made of", comparison/"than") is worth a dedicated "table" of those
+  senses — see the table rules below — instead of just 2-3 unstructured examples.
 - Only a proper name or something genuinely self-evident may return one section or none.
+- If this word has a common NEAR-SYNONYM (a different lemma, not an inflected form of the same word)
+  that a learner could plausibly confuse it with because both belong to the same everyday meaning
+  cluster (e.g. Greek "χτίζω" vs "κατασκευάζω" — both roughly "to build/make", but ordinary house-
+  building vs manufacturing objects or formal construction), add ONE short section (an "explanation" or
+  "grammarNote") naming that other verb/word and the difference in typical usage. Only do this for a
+  genuinely common, learner-relevant confusion — do not invent a contrast that isn't real, and never for
+  words that appear only related in this app's own examples above.
 
 Give every section a short, plain ${sourceLanguage} "title" (e.g. "Как это работает", "Формы
 прошедшего времени", "Полезно запомнить", "Два значения") — a null title is only acceptable for
@@ -251,7 +280,11 @@ Give every section a short, plain ${sourceLanguage} "title" (e.g. "Как это
 Section types available — use whichever fit, in a sensible reading order:
 - "explanation": one focused point in plain ${sourceLanguage}, no jargon dump. Use this for "how this
   form works" (e.g. why this tense/case is used here). Usually the FIRST section, titled
-  "Как это работает".
+  "Как это работает". The part of speech is ALREADY shown to the learner above this (as a small label)
+  — do not re-derive or restate it with a different term here (e.g. do not call something "союз" in
+  this text if it is a pronoun or particle). Describe what the word DOES in the sentence instead of
+  naming its category a second time; if naming the category is genuinely useful, it must match the
+  part-of-speech label exactly, never contradict it.
 - "table": there is NO header row, so use THREE cells per row, always in this order:
   [label, ${languageConfig.promptLanguageName} form, ${sourceLanguage} translation].
   The label names the slot, not the meaning ("я", "ты", "сейчас / обычно", "уже произошло",
@@ -262,7 +295,23 @@ Section types available — use whichever fit, in a sensible reading order:
   article when the language uses one (ο δρόμος, τον δρόμο, οι δρόμοι) — bare stems are harder to reuse.
 
   A table compares along exactly ONE axis — either different persons (all in the same tense/aspect),
-  or different tenses/aspects (all in the same person), never both at once.
+  or different tenses/aspects (all in the same person), never both at once. Four axes are the named
+  exceptions where a compound label is expected, because the language genuinely varies along two
+  dimensions the learner needs together:
+  - GENDER × NUMBER for an adjective (or a noun where gender-marking matters): label like
+    "мужской род, мн. число" — one cell naming both, six rows total (3 genders × 2 numbers) when the
+    language has three genders, fewer if it has fewer.
+  - CASE × NUMBER for a noun in a language that marks grammatical case (e.g. Greek, German, Russian):
+    label like "им. ед.", "род. мн." — cover the cases this language distinguishes for nouns, singular
+    and plural, WITH the article when the language uses one. Do not build this table for a language
+    with no case marking (French, English) — say so briefly in the explanation instead.
+  - MEANING/SENSE for a function word with genuinely different senses (Theme 3 above) — the label
+    names the sense ("источник / «из»", "сравнение / «чем»"), each row a short example phrase with its
+    ${sourceLanguage} translation, not a person or tense.
+  - VOICE for a verb form in a morphologically-marked voice — exactly two rows, active and its
+    passive/middle counterpart of the SAME lemma, label "действ. залог" / "страд. залог". Do not use
+    this to pair two DIFFERENT lemmas (that's the near-synonym note above, not a table).
+  Outside these four named exceptions, stay on a single axis.
 
   For a verb's tense/aspect table, hold the person fixed at FIRST PERSON "я" for EVERY row and put
   ONLY the tense/aspect name in the label ("настоящее", "имперфект", "аорист", "будущее совершенное")
