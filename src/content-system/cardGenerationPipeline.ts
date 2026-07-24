@@ -4,10 +4,10 @@
 // generateAnnotations.ts к LearningNode ids: topicIds/countryOrRegionIds
 // от AI не берутся на веру, а фильтруются по каталогу.
 
-import type { GeneratedCardCandidate } from '../../lib/pipeline/generateCards';
-import { COUNTRIES, TOPICS } from './catalog';
-import { contentCardSchema, type CEFRLevel, type ContentCard } from './types';
-import type { LanguageCode } from '../../lib/pipeline/languageConfig';
+import type { GeneratedCardCandidate } from '../../lib/pipeline/generateCards.js';
+import { COUNTRIES, TOPICS } from './catalog.js';
+import { contentCardSchema, type CEFRLevel, type ContentCard } from './types.js';
+import type { LanguageCode } from '../../lib/pipeline/languageConfig.js';
 
 const VALID_TOPIC_IDS = new Set(TOPICS.map((t) => t.id));
 const VALID_COUNTRY_IDS = new Set(COUNTRIES.map((c) => c.id));
