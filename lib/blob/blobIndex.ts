@@ -1,20 +1,31 @@
-// Общий кэш-бастинг для чтения lessons/index.json (см. api/lessons.ts,
-// api/lesson-status.ts, api/save-lesson.ts).
+// Чтение изменяемых JSON-блобов (индекс уроков, пул карточек, состояние
+// пользователя) и общая настройка их записи.
 //
-// Индекс — один JSON-файл по фиксированному пути (allowOverwrite: true,
-// addRandomSuffix: false), который каждый эндпоинт читает целиком, меняет и
-// перезаписывает целиком. При таком паттерне URL блоба не меняется между
-// перезаписями, а Vercel Blob может какое-то время отдавать закешированную
-// по этому URL версию — значит readIndex() в одном запросе способен увидеть
-// устаревший снимок индекса и, записав его обратно с одной своей правкой,
-// молча откатить прогресс, сделанный ДРУГИМ, не связанным запросом между
-// снимком кэша и этим моментом (реальный кейс: 'ready'-урок откатился в
-// 'creating', потому что чужой readIndex() в это время читал старую копию).
+// Все они лежат по фиксированному пути (addRandomSuffix: false,
+// allowOverwrite: true) и переписываются целиком: прочитал → поменял →
+// записал обратно. При этом @vercel/blob по умолчанию отдаёт блоб с
+// cacheControlMaxAge = ОДИН МЕСЯЦ, а URL при перезаписи не меняется — то
+// есть CDN может ещё долго отдавать предыдущую версию.
 //
-// blobs[0].uploadedAt меняется на каждую реальную перезапись — добавляем его
-// в query как cache-buster, чтобы получить byte-for-byte актуальный ответ,
-// а не полагаться на то, что кэш когда-нибудь сам протухнет.
-export async function fetchIndexBlobFresh(blob: { url: string; uploadedAt: Date }): Promise<Response> {
-  const bustUrl = `${blob.url}${blob.url.includes('?') ? '&' : '?'}t=${blob.uploadedAt.getTime()}`;
-  return fetch(bustUrl, { cache: 'no-store' });
+// Чем это реально било: урок уже сохранён как 'ready', а библиотека минутами
+// показывала «Готовится…» (проверено на проде: запись индекса в 22:52:44, а
+// /api/lessons отдавал версию до неё ещё около семи минут). Для
+// read-modify-write состояния вроде saved-words это опаснее: на устаревшей
+// копии правка затирает всё, что записали в промежутке.
+//
+// Первая попытка чинить это подставляла в URL blobs[0].uploadedAt, но
+// значение «залипало» вместе с самим ответом, и чтение оставалось старым.
+// Поэтому теперь: пишем с минимально разрешённым кэшем, а читаем всегда по
+// уникальному URL, чтобы CDN был обязан сходить в origin.
+
+// Минимум, который принимает @vercel/blob (меньше минуты нельзя).
+export const MUTABLE_BLOB_CACHE_SECONDS = 60;
+
+export async function fetchJsonBlobFresh(blob: { url: string }): Promise<Response> {
+  const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  const url = `${blob.url}${blob.url.includes('?') ? '&' : '?'}_=${nonce}`;
+  return fetch(url, { cache: 'no-store' });
 }
+
+// Прежнее имя — индекс уроков читают три эндпоинта.
+export const fetchIndexBlobFresh = fetchJsonBlobFresh;

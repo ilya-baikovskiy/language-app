@@ -11,6 +11,7 @@
 // не принадлежит одному пользователю (см. 07 §1, 06).
 
 import { put, list } from '@vercel/blob';
+import { fetchJsonBlobFresh, MUTABLE_BLOB_CACHE_SECONDS } from '../lib/blob/blobIndex.js';
 import { generateCardCandidates, type CardGenerationRequest } from '../lib/pipeline/generateCards.js';
 import { candidatesToContentCards } from '../src/content-system/cardGenerationPipeline.js';
 import { COUNTRIES, TOPICS } from '../src/content-system/catalog.js';
@@ -32,7 +33,7 @@ const SEED_SUBJECT_KEYS = (seedCards as Array<{ canonicalSubjectKey: string }>).
 async function readPool(): Promise<ContentCard[]> {
   const { blobs } = await list({ prefix: POOL_PATH, limit: 1 });
   if (blobs.length === 0) return [];
-  const res = await fetch(blobs[0].url);
+  const res = await fetchJsonBlobFresh(blobs[0]);
   if (!res.ok) return [];
   return res.json();
 }
@@ -43,6 +44,7 @@ async function writePool(cards: ContentCard[]): Promise<void> {
     contentType: 'application/json',
     addRandomSuffix: false,
     allowOverwrite: true,
+    cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
   });
 }
 

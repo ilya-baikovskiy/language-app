@@ -11,7 +11,7 @@
 
 import { put, list } from '@vercel/blob';
 import type { AudioProvider } from '../src/types/lesson.js';
-import { fetchIndexBlobFresh } from '../lib/blob/blobIndex.js';
+import { fetchIndexBlobFresh, MUTABLE_BLOB_CACHE_SECONDS } from '../lib/blob/blobIndex.js';
 
 export const maxDuration = 15;
 
@@ -67,6 +67,7 @@ async function writeIndex(index: LessonIndexEntry[]): Promise<void> {
     contentType: 'application/json',
     addRandomSuffix: false,
     allowOverwrite: true,
+    cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
   });
 }
 

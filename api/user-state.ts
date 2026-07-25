@@ -5,6 +5,7 @@
 // Pipeline A уже один раз упирался в этот лимит). Новый kind='saved-words'
 // добавлен сюда же, а не отдельным файлом, по той же причине.
 
+import { fetchJsonBlobFresh, MUTABLE_BLOB_CACHE_SECONDS } from '../lib/blob/blobIndex.js';
 import { put, list } from '@vercel/blob';
 
 export const maxDuration = 15;
@@ -32,7 +33,7 @@ export async function GET(request: Request): Promise<Response> {
     const { blobs } = await list({ prefix: pathFor(kind, userId), limit: 1 });
     const empty = kind === 'preferences' ? null : [];
     if (blobs.length === 0) return Response.json(empty);
-    const res = await fetch(blobs[0].url);
+    const res = await fetchJsonBlobFresh(blobs[0]);
     if (!res.ok) return Response.json(empty);
     return Response.json(await res.json());
   } catch (err) {
@@ -54,6 +55,7 @@ export async function PATCH(request: Request): Promise<Response> {
         contentType: 'application/json',
         addRandomSuffix: false,
         allowOverwrite: true,
+        cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
       });
       return Response.json(preferences);
     }
@@ -64,13 +66,14 @@ export async function PATCH(request: Request): Promise<Response> {
         return new Response('profile.userId and profile.language are required', { status: 400 });
       }
       const { blobs } = await list({ prefix: pathFor('profiles', profile.userId), limit: 1 });
-      const existing = blobs.length > 0 ? await (await fetch(blobs[0].url)).json() : [];
+      const existing = blobs.length > 0 ? await (await fetchJsonBlobFresh(blobs[0])).json() : [];
       const next = [profile, ...existing.filter((p: { language: string }) => p.language !== profile.language)];
       await put(pathFor('profiles', profile.userId), JSON.stringify(next), {
         access: 'public',
         contentType: 'application/json',
         addRandomSuffix: false,
         allowOverwrite: true,
+        cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
       });
       return Response.json(profile);
     }
@@ -82,13 +85,14 @@ export async function PATCH(request: Request): Promise<Response> {
       return new Response('word.userId and word.id are required', { status: 400 });
     }
     const { blobs } = await list({ prefix: pathFor('saved-words', word.userId), limit: 1 });
-    const existing: Array<{ id: string }> = blobs.length > 0 ? await (await fetch(blobs[0].url)).json() : [];
+    const existing: Array<{ id: string }> = blobs.length > 0 ? await (await fetchJsonBlobFresh(blobs[0])).json() : [];
     const next = [word, ...existing.filter((w) => w.id !== word.id)];
     await put(pathFor('saved-words', word.userId), JSON.stringify(next), {
       access: 'public',
       contentType: 'application/json',
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
     });
     return Response.json(word);
   } catch (err) {
@@ -108,7 +112,7 @@ export async function DELETE(request: Request): Promise<Response> {
     const path = pathFor('saved-words', userId);
     const { blobs } = await list({ prefix: path, limit: 1 });
     if (blobs.length === 0) return Response.json({ removed: false });
-    const existing: Array<{ id: string }> = await (await fetch(blobs[0].url)).json();
+    const existing: Array<{ id: string }> = await (await fetchJsonBlobFresh(blobs[0])).json();
     const next = existing.filter((w) => w.id !== id);
     // Пустой массив всё равно валиден как JSON-файл — просто перезаписываем,
     // не нужен отдельный del() для одного пользователя без параллельных записей.
@@ -117,6 +121,7 @@ export async function DELETE(request: Request): Promise<Response> {
       contentType: 'application/json',
       addRandomSuffix: false,
       allowOverwrite: true,
+      cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
     });
     return Response.json({ removed: existing.length !== next.length });
   } catch (err) {

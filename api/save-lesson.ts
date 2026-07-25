@@ -4,7 +4,7 @@
 
 import { put, list } from '@vercel/blob';
 import type { AudioProvider, Lesson } from '../src/types/lesson.js';
-import { fetchIndexBlobFresh } from '../lib/blob/blobIndex.js';
+import { fetchIndexBlobFresh, MUTABLE_BLOB_CACHE_SECONDS } from '../lib/blob/blobIndex.js';
 
 export const maxDuration = 30;
 
@@ -60,6 +60,9 @@ export async function POST(request: Request): Promise<Response> {
       contentType: 'application/json',
       addRandomSuffix: false,
       allowOverwrite: true,
+      // Перегенерация урока пишет тот же путь — с месячным кэшем по умолчанию
+      // читатель ещё долго получал бы прошлую версию текста.
+      cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
     });
 
     const index = await readIndex();
@@ -87,6 +90,9 @@ export async function POST(request: Request): Promise<Response> {
       contentType: 'application/json',
       addRandomSuffix: false,
       allowOverwrite: true,
+      // Перегенерация урока пишет тот же путь — с месячным кэшем по умолчанию
+      // читатель ещё долго получал бы прошлую версию текста.
+      cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
     });
 
     return Response.json({ slug, lessonUrl: lessonBlob.url });

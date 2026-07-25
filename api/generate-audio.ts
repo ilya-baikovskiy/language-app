@@ -6,6 +6,7 @@
 // оба тяжёлых шага подряд для урока в 200–250 слов.
 
 import { put } from '@vercel/blob';
+import { MUTABLE_BLOB_CACHE_SECONDS } from '../lib/blob/blobIndex.js';
 import { generateSpeech } from '../lib/pipeline/generateAudio.js';
 import { generateAndAlignElevenLabs, evaluateQualityGate } from '../lib/pipeline/audioProviders.js';
 import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
@@ -54,6 +55,9 @@ export async function POST(request: Request): Promise<Response> {
         contentType: 'audio/mpeg',
         addRandomSuffix: false,
         allowOverwrite: true,
+        // Перегенерация пишет тот же audio/{slug}.mp3: с месячным кэшем
+        // плеер получил бы старую дорожку к новым таймкодам.
+        cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
       });
 
       return Response.json({ audioUrl: blob.url, timestampsByToken, report });
@@ -68,6 +72,9 @@ export async function POST(request: Request): Promise<Response> {
       contentType: 'audio/mpeg',
       addRandomSuffix: false,
       allowOverwrite: true,
+      // Перегенерация пишет тот же audio/{slug}.mp3: с месячным кэшем
+      // плеер получил бы старую дорожку к новым таймкодам.
+      cacheControlMaxAge: MUTABLE_BLOB_CACHE_SECONDS,
     });
 
     return Response.json({ audioUrl: blob.url });
