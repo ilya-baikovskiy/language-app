@@ -20,6 +20,21 @@ function entryLanguageCode(entry: LessonIndexEntry): LanguageCode {
 // материал сам по себе французский, поэтому фиксируем код здесь же явно.
 const SAMPLE_LESSON_LANGUAGE: LanguageCode = 'fr';
 
+// Пайплайн генерации урока (текст → аудио → тайминги → сохранение) целиком
+// выполняется в браузере, без фонового серверного job'а (см.
+// cardGeneration.ts). Если вкладка закрылась/свернулась посреди генерации —
+// писать 'ready' или 'failed' в конце уже некому, запись так и остаётся
+// 'creating' навсегда, а ретрая для неё в UI не было. Эвристика: если
+// 'creating' висит дольше разумного времени на весь пайплайн — считаем её
+// зависшей и показываем как 'failed', чтобы у пользователя вообще была
+// возможность повторить, не трогая руками Blob.
+const STALE_CREATING_MS = 10 * 60 * 1000;
+
+function isStaleCreating(entry: LessonIndexEntry): boolean {
+  const startedAt = Date.parse(entry.createdAt);
+  return Number.isFinite(startedAt) && Date.now() - startedAt > STALE_CREATING_MS;
+}
+
 type Props = {
   // Фильтр по activeLanguage (16 §9 — «экран показывает только уроки
   // activeLanguage»). Минимальное изменение к существующему компоненту —
@@ -88,7 +103,7 @@ export function LibraryPage({ activeLanguage, onOpenSample, onOpenGenerated, onG
           // старые lessons, см. брифа §PR 3).
           const status = entry.status ?? 'ready';
 
-          if (status === 'creating') {
+          if (status === 'creating' && !isStaleCreating(entry)) {
             return (
               <div className="lesson-card lesson-card-pending" key={entry.slug} aria-busy="true">
                 <div className="lesson-card-title">{entry.title}</div>
@@ -99,12 +114,13 @@ export function LibraryPage({ activeLanguage, onOpenSample, onOpenGenerated, onG
             );
           }
 
-          if (status === 'failed') {
+          if (status === 'failed' || status === 'creating') {
             return (
               <div className="lesson-card lesson-card-failed" key={entry.slug}>
                 <div className="lesson-card-title">{entry.title}</div>
                 <div className="lesson-card-meta">
-                  {entryLanguageName(entry)} · {entry.level} · Не удалось сгенерировать
+                  {entryLanguageName(entry)} · {entry.level} ·{' '}
+                  {status === 'creating' ? 'Генерация прервалась' : 'Не удалось сгенерировать'}
                 </div>
                 {entry.cardId && (
                   <button
