@@ -48,9 +48,19 @@ type Props = {
   // 'failed'-запись с cardId → «Повторить» ведёт назад в card-generating flow
   // с исходными language/level записи (16 §13). См. App.tsx retryCard.
   onRetryCard: (cardId: string, language: LanguageCode, level: CEFRLevel) => void;
+  // Поиск карточки для «Повторить» ходит в сеть (AI-пул) — без этого нажатие
+  // выглядело как «кнопка не работает», пока запрос летит.
+  retryingCardId?: string | null;
 };
 
-export function LibraryPage({ activeLanguage, onOpenSample, onOpenGenerated, onGenerateNew, onRetryCard }: Props) {
+export function LibraryPage({
+  activeLanguage,
+  onOpenSample,
+  onOpenGenerated,
+  onGenerateNew,
+  onRetryCard,
+  retryingCardId,
+}: Props) {
   const [entries, setEntries] = useState<LessonIndexEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -126,9 +136,10 @@ export function LibraryPage({ activeLanguage, onOpenSample, onOpenGenerated, onG
                   <button
                     type="button"
                     className="translation-retry"
+                    disabled={retryingCardId === entry.cardId}
                     onClick={() => onRetryCard(entry.cardId!, entryLanguageCode(entry), entry.level as CEFRLevel)}
                   >
-                    Повторить
+                    {retryingCardId === entry.cardId ? 'Запускаем…' : 'Повторить'}
                   </button>
                 )}
               </div>

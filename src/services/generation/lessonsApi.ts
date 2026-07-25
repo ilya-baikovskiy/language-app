@@ -147,7 +147,9 @@ export function markLessonFailed(lessonId: string): Promise<{ ok: boolean }> {
 // и сохранённые уроки кажутся потерянными (реально ловилось на падении
 // `vercel dev`). Состояние ошибки разбирает LibraryPage.
 export async function fetchLessonsIndex(): Promise<LessonIndexEntry[]> {
-  const res = await fetch('/api/lessons');
+  // no-store и на клиенте: статус урока меняется на сервере, пока приложение
+  // открыто, а Safari охотно отдаёт повторному запросу сохранённый ответ.
+  const res = await fetch('/api/lessons', { cache: 'no-store' });
   if (!res.ok) throw new Error(`/api/lessons: ${res.status}`);
   return (await res.json()) as LessonIndexEntry[];
 }

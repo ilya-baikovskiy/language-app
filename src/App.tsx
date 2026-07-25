@@ -12,6 +12,8 @@ import { useAppPreferences } from './hooks/useAppPreferences';
 import { useLanguageProfiles } from './hooks/useLanguageProfiles';
 import { sampleLesson } from './data/sampleLesson';
 import { StaticSeedCardRepository } from './content-system/repositories/staticSeedCardRepository';
+import { BlobGeneratedCardRepository } from './content-system/repositories/blobGeneratedCardRepository';
+import { CompositeCardRepository } from './content-system/repositories/compositeCardRepository';
 import { track } from './content-system/analytics/eventClient';
 import type { CEFRLevel, ContentCard } from './content-system/types';
 import type { LessonEntryPoint } from './content-system/analyticsEvent';
@@ -19,7 +21,16 @@ import type { LanguageCode } from '../lib/pipeline/languageConfig';
 import type { Lesson } from './types/lesson';
 import type { LessonIndexEntry } from './services/generation/lessonsApi';
 
-const cardRepository = new StaticSeedCardRepository();
+// Тот же композит, что у ленты (useFeed.ts): seed-карточки из бандла ПЛЮС
+// AI-пул (Pipeline A). Раньше здесь был только StaticSeedCardRepository, и
+// «Повторить» у урока, сгенерированного из AI-карточки ('gen-...'), молча не
+// находил её (getById → null → ранний return) — кнопка не делала ровным
+// счётом ничего. Для seed-карточек всё работало, поэтому баг выглядел
+// случайным.
+const cardRepository = new CompositeCardRepository(
+  new StaticSeedCardRepository(),
+  new BlobGeneratedCardRepository(),
+);
 
 // View — см. брифа §PR 2/3: три постоянных таба (bottom nav) + полноэкранные
 // оверлеи (generate, card-generating, reader), не входящие в bottom nav (16
@@ -39,6 +50,7 @@ function App() {
   const [view, setView] = useState<View>({ tab: 'choose' });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [retryingCardId, setRetryingCardId] = useState<string | null>(null);
 
   const { activeLanguage, setActiveLanguage, preferences, setEnabledTopicIds, setEnabledCountryOrRegionIds } =
     useAppPreferences();
@@ -70,10 +82,25 @@ function App() {
   // LibraryPage "Повторить" на 'failed'-записи с cardId — тот же card-
   // generating flow, но с language/level из самой записи (16 §13), а не из
   // текущего activeLanguage/уровня, которые могли уже смениться.
+  // Молча ничего не делать нельзя: getById ходит в сеть за AI-пулом, и все
+  // три возможных исхода (медленно / карточки нет / запрос упал) выглядели для
+  // пользователя одинаково — «кнопка не работает вообще». Поэтому: сразу
+  // помечаем карточку как запускающуюся, а неуспех показываем текстом.
   async function retryCard(cardId: string, language: LanguageCode, level: CEFRLevel) {
-    const card = await cardRepository.getById(cardId);
-    if (!card) return; // seed JSON changed and the card no longer exists — nothing to retry
-    setView({ kind: 'card-generating', card, language, level, returnTo: currentTab });
+    setLoadError(null);
+    setRetryingCardId(cardId);
+    try {
+      const card = await cardRepository.getById(cardId);
+      if (!card) {
+        setLoadError('Карточка этого текста больше недоступна — создайте новый урок.');
+        return;
+      }
+      setView({ kind: 'card-generating', card, language, level, returnTo: currentTab });
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Не удалось запустить генерацию');
+    } finally {
+      setRetryingCardId(null);
+    }
   }
 
   if ('kind' in view && view.kind === 'generate') {
@@ -156,6 +183,7 @@ function App() {
             onOpenGenerated={openGenerated}
             onGenerateNew={() => setView({ kind: 'generate', returnTo: 'library' })}
             onRetryCard={retryCard}
+            retryingCardId={retryingCardId}
           />
           {loadError && (
             <p className="tts-error-note" role="status">
