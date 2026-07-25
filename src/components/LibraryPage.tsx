@@ -120,6 +120,21 @@ export function LibraryPage({
                 <div className="lesson-card-meta">
                   {entryLanguageName(entry)} · {entry.level} · Готовится…
                 </div>
+                {/* Генерация идёт во вкладке, а не на сервере: если ту вкладку
+                    закрыли, «Готовится…» уже никогда само не сдвинется. Отсюда
+                    и «не нажимается» — карточка молча висела до истечения
+                    таймаута. Поэтому продолжить можно всегда и сразу; повторный
+                    запуск идемпотентен (тот же lessonId, см. cardGeneration.ts). */}
+                {entry.cardId && (
+                  <button
+                    type="button"
+                    className="translation-retry"
+                    disabled={retryingCardId === entry.cardId}
+                    onClick={() => onRetryCard(entry.cardId!, entryLanguageCode(entry), entry.level as CEFRLevel)}
+                  >
+                    {retryingCardId === entry.cardId ? 'Запускаем…' : 'Продолжить'}
+                  </button>
+                )}
               </div>
             );
           }
