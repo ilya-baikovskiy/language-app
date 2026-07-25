@@ -4,6 +4,7 @@
 
 import { put, list } from '@vercel/blob';
 import type { AudioProvider, Lesson } from '../src/types/lesson.js';
+import { fetchIndexBlobFresh } from '../lib/blob/blobIndex.js';
 
 export const maxDuration = 30;
 
@@ -34,7 +35,7 @@ type LessonIndexEntry = {
 async function readIndex(): Promise<LessonIndexEntry[]> {
   const { blobs } = await list({ prefix: INDEX_PATHNAME, limit: 1 });
   if (blobs.length === 0) return [];
-  const res = await fetch(blobs[0].url);
+  const res = await fetchIndexBlobFresh(blobs[0]);
   if (!res.ok) return [];
   return (await res.json()) as LessonIndexEntry[];
 }
