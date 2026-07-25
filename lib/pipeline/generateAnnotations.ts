@@ -212,6 +212,27 @@ Rules:
   not a sentence). If the target language doesn't lexically encode something ${sourceLanguage} needs
   (e.g. grammatical gender), pick the form the SENTENCE's context implies and don't explain the
   mechanism here — that belongs in details, not the summary.
+  For a CONTENT word (noun, verb, adjective, adverb) the gloss must be DISTINCTIVE, not merely correct.
+  Local test on this one word — no other word's answer needed: name the plainest everyday
+  ${languageConfig.promptLanguageName} word for the same situation; if that plainer word would get the
+  SAME ${sourceLanguage} gloss you just wrote, yours is too flat, so add the one or two
+  ${sourceLanguage} words that carry what THIS word adds. E.g. Greek "εκμεταλλεύομαι" against plain
+  "χρησιμοποιώ" ("используют") → "используют с пользой" / "умело пользуются", or "эксплуатируют" when
+  the context is negative. Pick the shade THIS sentence supports — the same word can be positive,
+  neutral or negative elsewhere. Still only a few words: add the distinguishing feature, never a
+  definition, a usage note or a comparison ("в отличие от…") — that is the details tier's job. If the
+  word has NO such plainer twin, keep the plain gloss; never decorate an ordinary word to look
+  distinctive.
+  "AS IT APPEARS HERE" also means the right SENSE, not only the right form. When a word has two
+  genuinely different senses (not inflections of one) — most often a noun naming either an
+  ACTION/process or its RESULT/object (Greek "κατασκευή" = the building of something vs the structure
+  that stands there), or a verb whose sense shifts with what it governs — decide which one THIS
+  sentence asserts and gloss only that one. Local test: put your chosen ${sourceLanguage} sense back
+  into the rest of the sentence and ask whether a ${sourceLanguage} speaker could actually assert the
+  result. "Η κατασκευή τους βοηθά στην προστασία από τον άνεμο" — a process shields nobody from wind,
+  the built structure does, so the gloss is "конструкция"/"устройство", not "строительство". Never
+  hedge by putting both senses in translation ("строительство или конструкция"), and never fall back on
+  the dictionary-first sense when the sentence points at the other one.
   CLOSED LIST — words with NO lexical meaning of their own: a case/gender/number-marking article (e.g.
   German der/die/das/den/dem/des, Greek ο/η/το/τον/την/του), an agreement or comparative marker, a
   separable verb prefix, or a purely tense-marking auxiliary with no meaning beyond marking tense. For
@@ -231,6 +252,14 @@ Rules:
   — don't sacrifice the tapped word's visibility for a shorter phrasing when an equally natural longer
   one exists. This does not apply to the closed list above — those words never need to be "found" in
   contextTranslation.
+  Natural also means TRUE and CONSISTENT. Reread the finished ${sourceLanguage} sentence on its own: if
+  it reads odd, or asserts something no ${sourceLanguage} speaker would mean, then the wrong SENSE of
+  some word was chosen — fix the sense rather than just rewording. It must use the same sense of the
+  tapped word you chose in "translation". Where ${sourceLanguage} needs a fuller noun phrase or a
+  different number to stay natural, use it ("используют особенности архитектуры" rather than a bare
+  "используют архитектуру"; "сильные ветры" where a literal singular sounds wrong) — but only to keep
+  the sentence natural, NEVER adding a fact the original does not state. The distinguishing shade from
+  "translation" does not have to be repeated verbatim here — a natural sentence rendering is enough.
 - selectedInTranslation: copy the EXACT substring of contextTranslation that renders the tapped word,
   character for character, INCLUDING its inflected ending as it stands in that sentence. It is used to
   highlight the word inside the translated sentence, so it must occur verbatim in contextTranslation —
