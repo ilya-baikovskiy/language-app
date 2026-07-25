@@ -74,7 +74,15 @@ export async function generateLessonFromCard(
   try {
     const result = await generateLesson(
       input,
-      { level: targetLevel, words, language, lessonId },
+      // audioProvider явно 'elevenlabs' — тот же выбор, что уже по умолчанию
+      // в ручной генерации (GenerateLessonPage.tsx). Без этого поле остаётся
+      // undefined и молча проваливается в старый дефолт generateLessonPipeline
+      // ('openai') — двухшаговый TTS+Whisper путь, у которого serverless-
+      // таймаут (60с) не гарантированно хватает на оба тяжёлых вызова подряд
+      // для урока в 200-250 слов (см. комментарий в audioProviders.ts) —
+      // именно это и обрывало генерацию карточек с квалити-гейтом по
+      // выравниванию.
+      { level: targetLevel, words, language, lessonId, audioProvider: 'elevenlabs' },
       (progress) => {
         // Stage transitions come from generateLessonPipeline.ts's own
         // GenerationProgress callback — each call here is "completed the
