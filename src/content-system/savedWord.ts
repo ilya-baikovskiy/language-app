@@ -39,6 +39,22 @@ export const savedWordSchema = z.object({
   contextSource: z.string().optional(),
   contextTranslation: z.string().optional(),
 
+  // Связанная фраза (summary.context.relatedSource/-Translation). Для слов
+  // закрытого класса (падежный артикль, приставка) в translation лежит не
+  // перевод, а грамматическая пометка вида «артикль, дат. падеж, мн. число» —
+  // сам смысл живёт ТОЛЬКО здесь («den Alpen» → «Альп»). Восстановить это
+  // задним числом нельзя, поэтому забираем в момент сохранения, даже пока
+  // тренировка не написана (та же логика, что с ReviewState выше).
+  relatedSource: z.string().nullable().optional(),
+  relatedTranslation: z.string().nullable().optional(),
+
+  // Снимок глоссы замораживается в момент сохранения, а промпт аннотаций
+  // продолжает улучшаться (см. PROGRESS.md — «строительство» → «конструкция»).
+  // Отметка позволяет позже найти карточки, собранные старым промптом, и
+  // перегенерировать их по lessonId+tokenId, а не тренировать устаревшее.
+  annotationPromptVersion: z.number().int().optional(),
+
+
   lessonId: z.string(),
   tokenId: z.string(),
 

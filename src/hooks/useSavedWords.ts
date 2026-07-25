@@ -32,6 +32,13 @@ export function wordId(lessonId: string, tokenId: string): string {
 
 const DEFAULT_REPOSITORY = new BlobSavedWordRepository();
 
+// Поднимать при каждой значимой правке промпта аннотаций (см. PROGRESS.md).
+// 2 — правки от 2026-07-25: честная глосса для слов без своего лексического
+// значения, различительная глосса для знаменательных слов, выбор значения по
+// контексту («строительство» → «конструкция»). Слова, сохранённые раньше,
+// несут прежние формулировки — по этой отметке их можно найти и обновить.
+export const ANNOTATION_PROMPT_VERSION = 2;
+
 export type SaveWordInput = {
   lessonId: string;
   tokenId: string;
@@ -43,6 +50,8 @@ export type SaveWordInput = {
   audioText?: string;
   contextSource?: string;
   contextTranslation?: string;
+  relatedSource?: string | null;
+  relatedTranslation?: string | null;
 };
 
 // Легаси-записи не знают свой язык (SavedUnit его не хранил, см. старый
@@ -142,6 +151,9 @@ export function useSavedWords(repository: SavedWordRepository = DEFAULT_REPOSITO
         audioText: input.audioText,
         contextSource: input.contextSource,
         contextTranslation: input.contextTranslation,
+        relatedSource: input.relatedSource ?? null,
+        relatedTranslation: input.relatedTranslation ?? null,
+        annotationPromptVersion: ANNOTATION_PROMPT_VERSION,
         lessonId: input.lessonId,
         tokenId: input.tokenId,
         review: createInitialReviewState(),

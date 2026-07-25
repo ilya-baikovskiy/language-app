@@ -246,6 +246,12 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
       // "в том же контексте/фразе", не изолированным словом.
       contextSource: summary.context.source,
       contextTranslation: summary.context.translation,
+      // Для артикля/приставки translation — это грамматическая пометка, а не
+      // перевод; смысл несёт только связанная пара («den Alpen» → «Альп»).
+      // Без неё карточка тренировки будет пустой, а восстановить её потом
+      // неоткуда — забираем сразу.
+      relatedSource: summary.context.relatedSource,
+      relatedTranslation: summary.context.relatedTranslation,
     });
     // Only tracked on save, not on un-save (05 §9 only defines
     // `learning_unit_saved` — there is no matching "unsaved" event name to

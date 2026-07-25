@@ -7,7 +7,7 @@
 
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSavedWords } from '../useSavedWords';
+import { ANNOTATION_PROMPT_VERSION, useSavedWords } from '../useSavedWords';
 import type { SavedWordRepository } from '../../content-system/repositories';
 import type { SavedWord } from '../../content-system/savedWord';
 
@@ -63,6 +63,56 @@ describe('useSavedWords', () => {
     expect(saved.contextSource).toBe('Μένω στην Κύπρο.');
     expect(saved.review.repetitions).toBe(0); // стартовый ReviewState, тренировки ещё нет
     expect(result.current.isSaved('lesson-1', 't1')).toBe(true);
+  });
+
+  // Для артикля/приставки translation — грамматическая пометка, а не перевод;
+  // смысл несёт только связанная пара. Если её не забрать в момент
+  // сохранения, восстановить потом неоткуда и карточка тренировки будет
+  // пустой (см. PROGRESS.md, раздел про подготовку к тренировке).
+  it('сохраняет связанную пару и версию промпта — без них карточка артикля пустая', async () => {
+    const { repository, upsert } = makeMockRepo();
+    const { result } = renderHook(() => useSavedWords(repository));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.toggleSave({
+        lessonId: 'lesson-de',
+        tokenId: 't4',
+        language: 'de',
+        surfaceForm: 'den',
+        partOfSpeech: 'артикль',
+        translation: 'артикль, дательный падеж, множественное число',
+        contextSource: 'Sie kommt aus den Alpen in Österreich.',
+        contextTranslation: 'Она из Альп в Австрии.',
+        relatedSource: 'den Alpen',
+        relatedTranslation: 'Альп',
+      });
+    });
+
+    await waitFor(() => expect(upsert).toHaveBeenCalledTimes(1));
+    const saved = upsert.mock.calls[0][0];
+    expect(saved.relatedSource).toBe('den Alpen');
+    expect(saved.relatedTranslation).toBe('Альп');
+    expect(saved.annotationPromptVersion).toBe(ANNOTATION_PROMPT_VERSION);
+  });
+
+  it('обычное слово без связанной пары сохраняется с null, а не с undefined', async () => {
+    const { repository, upsert } = makeMockRepo();
+    const { result } = renderHook(() => useSavedWords(repository));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.toggleSave({
+        lessonId: 'lesson-1',
+        tokenId: 't9',
+        language: 'el',
+        surfaceForm: 'κατασκευή',
+        translation: 'конструкция',
+      });
+    });
+
+    await waitFor(() => expect(upsert).toHaveBeenCalledTimes(1));
+    expect(upsert.mock.calls[0][0].relatedSource).toBeNull();
   });
 
   it('повторный тап снимает сохранение (toggle) и реально вызывает remove', async () => {
