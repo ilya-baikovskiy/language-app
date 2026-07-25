@@ -198,20 +198,50 @@ of "is a fixed collocation".
 If you do include one, relatedTokenIds must be a CONSECUTIVE run of word-token ids from the given
 token list that includes the target token id itself.
 
+A related phrase and "translation"/"selectedInTranslation" are NOT interchangeable ways to say the same
+thing. translation and selectedInTranslation always describe the TAPPED token itself — never a
+different, unrelated word nearby that happens to have its own separate, legitimate translation.
+Concretely: in a sentence containing "kommt aus den Alpen", if the tapped word is "kommt" or "den",
+their translation/selectedInTranslation must never be "из" — that word belongs only to "aus". When a
+tapped word genuinely has no lexical meaning of its own (see the closed list below), say so honestly
+with a short functional gloss and lean on relatedTokenIds/relatedTranslation to show the connection to
+its host word — never borrow a neighboring word's translation to fill the gap.
+
 Rules:
 - translation: a short, natural ${sourceLanguage} gloss of the word AS IT APPEARS HERE (a few words,
   not a sentence). If the target language doesn't lexically encode something ${sourceLanguage} needs
   (e.g. grammatical gender), pick the form the SENTENCE's context implies and don't explain the
   mechanism here — that belongs in details, not the summary.
+  CLOSED LIST — words with NO lexical meaning of their own: a case/gender/number-marking article (e.g.
+  German der/die/das/den/dem/des, Greek ο/η/το/τον/την/του), an agreement or comparative marker, a
+  separable verb prefix, or a purely tense-marking auxiliary with no meaning beyond marking tense. For
+  these, translation is a short, honest functional gloss that STARTS with the part of speech, e.g.
+  "артикль, дательный падеж, множественное число" or "артикль, винительный падеж, единственное число" —
+  never invent a meaning by borrowing a neighboring word's translation. Do NOT append "— при <noun>" or
+  similar to name the host word in text — that connection is shown separately via relatedTokenIds /
+  relatedTranslation (see selectedInTranslation below), not spelled out here. Treat an ordinary
+  nominative/subject article exactly the same way as any other case — don't special-case only
+  "interesting" cases. This list is intentionally closed: do NOT extend it to ordinary content words, or
+  to particles that DO carry their own real translation (French partitive "de", Greek "θα"/"να" combined
+  with a verb, "ne" in "ne...pas") — those keep their normal, separate translation as before.
 - contextTranslation: a natural, idiomatic ${sourceLanguage} translation of the WHOLE sentence — not
-  a literal word-by-word rendering, and not a grammar explanation.
+  a literal word-by-word rendering, and not a grammar explanation. When there is a genuine, comparably
+  natural choice between phrasings, prefer the one where the tapped word's own meaning is actually
+  expressed in the ${sourceLanguage} text (e.g. include a rendering of the verb rather than dropping it)
+  — don't sacrifice the tapped word's visibility for a shorter phrasing when an equally natural longer
+  one exists. This does not apply to the closed list above — those words never need to be "found" in
+  contextTranslation.
 - selectedInTranslation: copy the EXACT substring of contextTranslation that renders the tapped word,
   character for character, INCLUDING its inflected ending as it stands in that sentence. It is used to
   highlight the word inside the translated sentence, so it must occur verbatim in contextTranslation —
   it is usually NOT identical to "translation" above. Example: if translation is "улицы" but
-  contextTranslation reads "гуляли по улицам", then selectedInTranslation is "улицам". If the word has
-  no separate ${sourceLanguage} word (a particle, an article that dissolves into the phrasing), copy
-  the single word that carries its meaning, or repeat "translation" if truly nothing matches.
+  contextTranslation reads "гуляли по улицам", then selectedInTranslation is "улицам". For a word from
+  the closed no-lexical-meaning list above, simply repeat "translation" here — do not copy a neighboring
+  word's rendering just because it is the nearest match. These words must ALSO always set
+  relatedTokenIds to a consecutive span covering themselves plus their host word (the noun for an
+  article, the verb for a separable prefix/auxiliary), with relatedTranslation set to how that host
+  reads in contextTranslation — this drives the UI's soft, honest "connected to" highlight instead of a
+  false direct-translation highlight.
 - partOfSpeech: a plain ${sourceLanguage} word for the part of speech ("глагол", "предлог"...), or null
   if not useful (e.g. a proper name). Be careful with words that INTRODUCE a clause — relative pronoun
   ("qui", "который"), subordinating conjunction ("que", "что"), and subjunctive/purpose particle (Greek

@@ -471,8 +471,10 @@ function highlightTarget(text: string, target: string): ReactNode {
 }
 
 // Двухтировая подсветка для «В контексте» (раздел 3 хэндоффа): если есть
-// related — сначала оборачиваем его в мягкий серый фон, а внутри него ещё раз
-// выделяем выбранное слово акцентом; без related — просто акцентный highlight
+// related — выбранное слово получает свой акцентный блок, а остаток фразы
+// (слово, с которым оно грамматически связано) — отдельный мягкий серый блок;
+// между ними сохраняется обычный пробел, чтобы они читались как два разных
+// слова, а не один слитный кусок. Без related — просто акцентный highlight
 // выбранного слова, как highlightTarget.
 function highlightContext(text: string, selected: string, related?: string | null): ReactNode {
   if (!related) return highlightTarget(text, selected);
@@ -484,10 +486,37 @@ function highlightContext(text: string, selected: string, related?: string | nul
   const relatedMatch = text.slice(idx, idx + related.length);
   const after = text.slice(idx + related.length);
 
+  const selIdx = findWordAlignedIndex(relatedMatch, selected);
+  if (selIdx === -1) {
+    return (
+      <>
+        {before}
+        <span className="sheet-related-inline">{relatedMatch}</span>
+        {after}
+      </>
+    );
+  }
+
+  const relBefore = relatedMatch.slice(0, selIdx);
+  const relSelected = relatedMatch.slice(selIdx, selIdx + selected.length);
+  const relAfter = relatedMatch.slice(selIdx + selected.length);
+
+  // Пробел между словами остаётся снаружи блоков — иначе серый фон и акцент
+  // сливаются в одну сплошную плашку без видимого зазора между словами.
+  const relBeforeTrimmed = relBefore.trimEnd();
+  const relBeforeGap = relBefore.slice(relBeforeTrimmed.length);
+  const relAfterGapMatch = relAfter.match(/^\s*/);
+  const relAfterGap = relAfterGapMatch ? relAfterGapMatch[0] : '';
+  const relAfterTrimmed = relAfter.slice(relAfterGap.length);
+
   return (
     <>
       {before}
-      <span className="sheet-related-inline">{highlightTarget(relatedMatch, selected)}</span>
+      {relBeforeTrimmed && <span className="sheet-related-inline">{relBeforeTrimmed}</span>}
+      {relBeforeGap}
+      <mark className="sheet-target">{relSelected}</mark>
+      {relAfterGap}
+      {relAfterTrimmed && <span className="sheet-related-inline">{relAfterTrimmed}</span>}
       {after}
     </>
   );

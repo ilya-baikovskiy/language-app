@@ -712,13 +712,15 @@ details.sheet-more .sheet-more-body p:last-child {
   color: var(--ink-soft);
   margin: 4px 0 0;
 }
-/* Внутри .sheet-context-card фон уже --surface-2, поэтому связанная фраза
-   тонируется полупрозрачным --border (он translucent-ink и работает в обеих
-   темах), иначе получилось бы серое на сером. */
+/* Внутри .sheet-context-card фон уже --surface-2, поэтому одного --border не
+   хватает — тон почти сливается с фоном карточки. Тонируем сильнее
+   полупрозрачным --ink (работает в обеих темах), чтобы слово-«хозяин»
+   формы было видно отдельно от акцентного блока выбранного слова, с
+   которым оно больше не делит общий фон. */
 .sheet-related-inline {
-  background: var(--border);
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
   border-radius: 4px;
-  padding: 2px 2px;
+  padding: 2px 4px;
 }
 /* grammarNote — закрывающая реплика обычным абзацем: в эталоне вокруг неё нет
    плашки, это просто более тихий текст в конце. */
