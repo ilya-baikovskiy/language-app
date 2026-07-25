@@ -277,7 +277,10 @@ Rules:
   "να") are easy to mix up because they all sit in the same spot in the sentence. Classify by what the
   word ITSELF is grammatically (a pronoun that also refers back to something = pronoun; a particle with
   no referent = particle; a plain clause-linker with no referent = conjunction) — not by the fact that
-  something follows it.
+  something follows it. Decide this on purely grammatical grounds, BEFORE and INDEPENDENTLY of which
+  translation rule you end up applying. Never relabel a word to dodge a gloss rule — e.g. the Greek
+  comparative marker "πιο" is an adverb (наречие) and stays one even though its gloss comes from the
+  comparative-marker rule, not from the distinctive-gloss rule for content words.
 - relatedTranslation: natural ${sourceLanguage} translation of ONLY the related phrase, matching how it
   reads inside the sentence — null whenever relatedTokenIds is null.
 - otherMeaningSource / otherMeaningTranslation: ONLY for a word that carries a genuinely different
