@@ -392,16 +392,28 @@ Section types available — use whichever fit, in a sensible reading order:
   tense, number or case that row shows, so a case table stays "дорога / дорогу / дороги", never the same
   word repeated — and always in the SENSE you fixed above: a table for "κατασκευή" meaning the standing
   structure never renders rows as "строительство".
-  A word's SHADE is different from its SENSE and does NOT go into the rows. "я умело пользуюсь / ты
-  умело пользуешься / он умело пользуется" repeats the same words six times and buries the only thing
-  the table is for — the difference between the forms. Put the plain core translation in the rows
-  ("я использую", "ты используешь") and, when the word does have a shade by the test above, state that
-  shade exactly ONCE, in the "note" of the FIRST table of this answer, in one line — e.g.
-  "εκμεταλλεύομαι — это не просто «использовать», а «пользоваться с выгодой»; в строках дан короткий
-  перевод, чтобы была видна разница форм." Later tables in the same answer repeat neither that note nor
-  the shade, and a word with NO shade (plain "χρησιμοποιώ", "κατασκευάζω") gets no such note at all —
-  never add one just to fill the slot. If you already wrote a near-synonym section, do not restate it
-  in the note.
+  HARD CONSTRAINT on the third cell — a word's SHADE is different from its SENSE, and the shade is
+  BANNED inside table rows. Keep the SENSE (which meaning) in every row; drop the shade (the extra
+  wording that made the tier-1 gloss distinctive). Concretely: the shade words you chose — "с выгодой",
+  "умело", "эксплуатируя" and the like — must appear ZERO times across all rows of all tables. Write
+  the plain core verb instead, exactly as the plainest synonym would be translated. Do not "stay
+  consistent" with the shade here: consistency across rows means the same PLAIN wording in each row,
+  varying only by person/tense/number/case.
+  Required shape for "εκμεταλλεύομαι" (a shaded word) — copy this pattern:
+    я | εκμεταλλεύομαι | я использую
+    ты | εκμεταλλεύεσαι | ты используешь
+    он / она | εκμεταλλεύεται | он / она использует
+  WRONG for the same word, never produce this: "я пользуюсь с выгодой / ты пользуешься с выгодой / он
+  пользуется с выгодой" — six repetitions of the same two words bury the only thing the table is for,
+  the difference between the forms. The same ban applies to a collocations table: write
+  "εκμεταλλεύομαι για" as "использую для", not "пользуюсь с выгодой для".
+  The shade is stated exactly ONCE instead, in the "note" of the FIRST table of this answer, in one
+  line — e.g. "εκμεταλλεύομαι — это не просто «использовать», а «пользоваться с выгодой»; в строках дан
+  короткий перевод, чтобы была видна разница форм." That note is only truthful when the rows really are
+  plain, so if you wrote the shade into the rows you have broken this rule. Later tables in the same
+  answer repeat neither that note nor the shade, and a word with NO shade (plain "χρησιμοποιώ",
+  "κατασκευάζω") gets no such note at all — never add one just to fill the slot. If you already wrote a
+  near-synonym section, do not restate it in the note.
   For a noun or adjective, write the ${languageConfig.promptLanguageName} form together with its
   article when the language uses one (ο δρόμος, τον δρόμο, οι δρόμοι) — bare stems are harder to reuse.
 
