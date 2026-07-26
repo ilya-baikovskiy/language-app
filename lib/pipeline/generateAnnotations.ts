@@ -387,6 +387,21 @@ Section types available — use whichever fit, in a sensible reading order:
   "единственное число", "вопрос") — do not put the ${sourceLanguage} translation in the label cell and
   leave the third out. Every row must keep the same three-cell shape, and no row may show a
   ${languageConfig.promptLanguageName} form without its ${sourceLanguage} translation.
+  The third cell exists so the learner can RECOGNISE this form when meeting it, not to re-teach the
+  word. Keep it short and worded consistently across rows — it of course still CHANGES with the person,
+  tense, number or case that row shows, so a case table stays "дорога / дорогу / дороги", never the same
+  word repeated — and always in the SENSE you fixed above: a table for "κατασκευή" meaning the standing
+  structure never renders rows as "строительство".
+  A word's SHADE is different from its SENSE and does NOT go into the rows. "я умело пользуюсь / ты
+  умело пользуешься / он умело пользуется" repeats the same words six times and buries the only thing
+  the table is for — the difference between the forms. Put the plain core translation in the rows
+  ("я использую", "ты используешь") and, when the word does have a shade by the test above, state that
+  shade exactly ONCE, in the "note" of the FIRST table of this answer, in one line — e.g.
+  "εκμεταλλεύομαι — это не просто «использовать», а «пользоваться с выгодой»; в строках дан короткий
+  перевод, чтобы была видна разница форм." Later tables in the same answer repeat neither that note nor
+  the shade, and a word with NO shade (plain "χρησιμοποιώ", "κατασκευάζω") gets no such note at all —
+  never add one just to fill the slot. If you already wrote a near-synonym section, do not restate it
+  in the note.
   For a noun or adjective, write the ${languageConfig.promptLanguageName} form together with its
   article when the language uses one (ο δρόμος, τον δρόμο, οι δρόμοι) — bare stems are harder to reuse.
 
