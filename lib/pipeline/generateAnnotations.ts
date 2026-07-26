@@ -302,10 +302,17 @@ this particular word deserves.
 
 Before writing anything else, fix ONE meaning for this word and hold it for the whole answer.
 - SENSE — which meaning. When a word has two genuinely different senses (not inflections of one) —
-  most often a noun naming an ACTION/process or its RESULT/object (Greek "κατασκευή" = the building of
-  something vs the structure that stands there), or a verb whose sense shifts with what it governs —
-  decide which one THIS sentence asserts. Local test: put your chosen ${sourceLanguage} sense back into
-  the rest of the sentence and ask whether a ${sourceLanguage} speaker could actually assert the result.
+  most often a noun naming an ACTION/process or its RESULT/object (Greek "κατασκευή" can mean the
+  ACT of building something, OR the finished OBJECT/building itself, OR — a third, distinct sense — the
+  structural way something is built/assembled, its "construction" in the engineering sense), or a verb
+  whose sense shifts with what it governs — decide which one THIS sentence asserts. Local test: put your
+  chosen ${sourceLanguage} sense back into the rest of the sentence and ask whether a ${sourceLanguage}
+  speaker could actually assert the result, and whether it is circular. "Η κατασκευή τους βοηθά στην
+  προστασία από τον άνεμο" (τους = the houses): "их постройка/сооружение помогает" is circular — the
+  houses themselves already ARE the building, so restating that adds nothing and answers a different
+  question ("what is this?" not "how does it help?"). The sentence asserts the third sense: "их
+  конструкция" / "их устройство" (how they are built protects from wind) — pick that one, not the
+  finished-object noun.
   That sense then holds EVERYWHERE below: the explanation, EVERY table row, every example.
 - SHADE — what this word adds over the plainest way to say it. Local test on this one word: name the
   plainest everyday ${languageConfig.promptLanguageName} word for the same situation; if that plainer
@@ -315,9 +322,11 @@ Before writing anything else, fix ONE meaning for this word and hold it for the 
   Pick the shade THIS sentence supports — the same word can be positive, neutral or negative elsewhere.
   If the word has NO plainer twin it has NO shade: say the plain thing, and never decorate an ordinary
   word to look distinctive.
-NEVER hedge. Do not join two meanings with "или" or a slash inside one gloss or one explanation
-sentence ("означает «использовать» или «извлекать выгоду»" is forbidden — pick one and write it), and
-never fall back on the dictionary-first sense when the sentence points at the other one. If a second
+NEVER hedge. Do not join two meanings, or two near-synonymous ${sourceLanguage} renderings of the SAME
+meaning, with "или" or a slash inside one gloss or one explanation sentence ("означает «использовать»
+или «извлекать выгоду»" is forbidden; so is "означает «постройка» или «сооружение»" when both name the
+same finished-object sense — pick the ONE ${sourceLanguage} word that best fits and write only that),
+and never fall back on the dictionary-first sense when the sentence points at the other one. If a second
 meaning is genuinely worth teaching it gets its own labelled section or its own labelled table row —
 never an alternative inside a single gloss. The one exception is a MEANING/SENSE table for a function
 word with genuinely different senses (see the table rules below): that table is exactly where several
@@ -392,25 +401,30 @@ Section types available — use whichever fit, in a sensible reading order:
   tense, number or case that row shows, so a case table stays "дорога / дорогу / дороги", never the same
   word repeated — and always in the SENSE you fixed above: a table for "κατασκευή" meaning the standing
   structure never renders rows as "строительство".
-  HARD CONSTRAINT on the third cell — a word's SHADE is different from its SENSE, and the shade is
-  BANNED inside table rows. Keep the SENSE (which meaning) in every row; drop the shade (the extra
-  wording that made the tier-1 gloss distinctive). Concretely: the shade words you chose — "с выгодой",
-  "умело", "эксплуатируя" and the like — must appear ZERO times across all rows of all tables. Write
-  the plain core verb instead, exactly as the plainest synonym would be translated. Do not "stay
-  consistent" with the shade here: consistency across rows means the same PLAIN wording in each row,
-  varying only by person/tense/number/case.
+  HARD CONSTRAINT on the third cell — a word's SHADE is different from its SENSE, and the shade
+  QUALIFIER is BANNED inside table rows, but the row must still translate THIS word's own verb, never
+  swap in a different lemma's translation. Concretely: the shade phrase you chose — "с выгодой", "умело",
+  "эксплуатируя" and the like — must appear ZERO times across all rows of all tables. Instead use the
+  short, core rendering of THIS SAME verb with the qualifier dropped (for a reflexive/middle verb like
+  "εκμεταλλεύομαι" that is "пользуюсь", not "использую" — "использую" is a DIFFERENT verb's (its plain
+  near-synonym's) translation, and using it here would teach the wrong lemma). Do not "stay consistent"
+  with the shade here: consistency across rows means the same short core rendering in each row, varying
+  only by person/tense/number/case.
   Required shape for "εκμεταλλεύομαι" (a shaded word) — copy this pattern:
-    я | εκμεταλλεύομαι | я использую
-    ты | εκμεταλλεύεσαι | ты используешь
-    он / она | εκμεταλλεύεται | он / она использует
-  WRONG for the same word, never produce this: "я пользуюсь с выгодой / ты пользуешься с выгодой / он
-  пользуется с выгодой" — six repetitions of the same two words bury the only thing the table is for,
-  the difference between the forms. The same ban applies to a collocations table: write
-  "εκμεταλλεύομαι για" as "использую для", not "пользуюсь с выгодой для".
+    я | εκμεταλλεύομαι | я пользуюсь
+    ты | εκμεταλλεύεσαι | ты пользуешься
+    он / она | εκμεταλλεύεται | он / она пользуется
+  WRONG for the same word, never produce either of these:
+  (a) "я пользуюсь с выгодой / ты пользуешься с выгодой / он пользуется с выгодой" — six repetitions of
+      the same two words bury the only thing the table is for, the difference between the forms;
+  (b) "я использую / ты используешь / он использует" — that is "χρησιμοποιώ"'s translation, a different
+      verb, borrowed here just because it is shorter; it teaches the wrong lemma for this word.
+  The same ban applies to a collocations table: write "εκμεταλλεύομαι για" as "пользуюсь для", never
+  "использую для" (wrong lemma) and never "пользуюсь с выгодой для" (shade in the row).
   The shade is stated exactly ONCE instead, in the "note" of the FIRST table of this answer, in one
-  line — e.g. "εκμεταλλεύομαι — это не просто «использовать», а «пользоваться с выгодой»; в строках дан
+  line — e.g. "εκμεταλλεύομαι — это не просто «пользуюсь», а «пользуюсь с выгодой»; в строках дан
   короткий перевод, чтобы была видна разница форм." That note is only truthful when the rows really are
-  plain, so if you wrote the shade into the rows you have broken this rule. Later tables in the same
+  short, so if you wrote the shade into the rows you have broken this rule. Later tables in the same
   answer repeat neither that note nor the shade, and a word with NO shade (plain "χρησιμοποιώ",
   "κατασκευάζω") gets no such note at all — never add one just to fill the slot. If you already wrote a
   near-synonym section, do not restate it in the note.
