@@ -318,15 +318,18 @@ Before writing anything else, fix ONE meaning for this word and hold it for the 
   plainest everyday ${languageConfig.promptLanguageName} word for the same situation; if that plainer
   word would get the SAME ${sourceLanguage} translation you were about to write, yours is too flat, and
   the one or two ${sourceLanguage} words carrying what THIS word adds must be named. Greek
-  "εκμεταλλεύονται" against plain "χρησιμοποιούν": not "используют" but "пользуются с выгодой / умело".
+  "εκμεταλλεύονται" against plain "χρησιμοποιούν": not "используют" but "пользуются с выгодой".
   Pick the shade THIS sentence supports — the same word can be positive, neutral or negative elsewhere.
   If the word has NO plainer twin it has NO shade: say the plain thing, and never decorate an ordinary
   word to look distinctive.
-NEVER hedge. Do not join two meanings, or two near-synonymous ${sourceLanguage} renderings of the SAME
-meaning, with "или" or a slash inside one gloss or one explanation sentence ("означает «использовать»
-или «извлекать выгоду»" is forbidden; so is "означает «постройка» или «сооружение»" when both name the
-same finished-object sense — pick the ONE ${sourceLanguage} word that best fits and write only that),
-and never fall back on the dictionary-first sense when the sentence points at the other one. If a second
+NEVER hedge. This applies to ANY two words, not a fixed list of pairs: if you notice yourself about to
+write two ${sourceLanguage} words or phrases joined by "или" or a slash inside one gloss or one
+explanation sentence — whether they are two different meanings ("использовать» или «извлекать выгоду»")
+or two near-synonymous renderings of the very SAME meaning you already picked ("«постройка» или
+«сооружение»", "«конструкция» или «устройство»") — that "или" is itself the signal to stop and pick ONE.
+Never write both; choose whichever single ${sourceLanguage} word best fits this sentence and delete the
+other, even when both are individually correct. Never fall back on the dictionary-first sense when the
+sentence points at the other one. If a second
 meaning is genuinely worth teaching it gets its own labelled section or its own labelled table row —
 never an alternative inside a single gloss. The one exception is a MEANING/SENSE table for a function
 word with genuinely different senses (see the table rules below): that table is exactly where several
@@ -356,7 +359,12 @@ How much to return depends on the word:
   5. If this exact form is in a VOICE this language marks morphologically (e.g. Greek middle/passive
      -μαι/-σαι/-ται endings, or a periphrastic passive), ADD a short "table" pairing this form with its
      counterpart in the other voice (same lemma, same tense/person) — see the voice rules below. Skip
-     entirely for a language/verb with no such marked voice.
+     entirely for a language/verb with no such marked voice, AND for a DEPONENT verb: one that only
+     exists in this marked voice and has NO real counterpart in the other voice at all (Greek
+     "εκμεταλλεύομαι", "έρχομαι", "γίνομαι" — middle/passive in form, active in meaning, no "*εκμεταλλεύω"
+     to pair it with). Before adding this table, confirm the counterpart is a real, dictionary-attested
+     word in ordinary use — if you cannot name one you are confident actually exists, the verb is
+     deponent for this purpose, and the table is skipped, not filled with an invented form.
 - A NOUN or ADJECTIVE is worth a real walkthrough too — typically 2-3 sections: how the form works, a
   table of the forms that matter here (declension/gender/number/case as applicable — see the table rules
   below for case), 2-3 example phrases.
