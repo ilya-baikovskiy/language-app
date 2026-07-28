@@ -10,8 +10,8 @@
 
 Перед реализацией Claude обязан изучить:
 
-1. `PRODUCT_OVERVIEW.md`;
-2. `01_product_learning_ux.md`;
+1. `../../PRODUCT_OVERVIEW.md` — актуальный живой обзор продукта;
+2. `_existing_project_context/01_product_learning_ux.md`;
 3. актуальные `PLAN.md`, `DESIGN.md`, `AI_PIPELINE.md`, `PROGRESS.md`;
 4. текущий `Lesson` contract;
 5. reader, библиотеку, Bottom Sheet и sentence translation mode;

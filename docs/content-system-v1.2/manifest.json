@@ -23,8 +23,8 @@
     "16_APPROVED_MOBILE_UX_AND_NAVIGATION.md"
   ],
   "source_context": [
-    "PRODUCT_OVERVIEW.md",
-    "01_product_learning_ux.md"
+    "../../PRODUCT_OVERVIEW.md",
+    "_existing_project_context/01_product_learning_ux.md"
   ],
   "prototype_reference": {
     "version": "v8",

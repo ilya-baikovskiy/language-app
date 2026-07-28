@@ -23,8 +23,8 @@
 
 ## Обязательное чтение до кода
 
-1. `PRODUCT_OVERVIEW.md`
-2. `01_product_learning_ux.md`
+1. `../../PRODUCT_OVERVIEW.md` — актуальный живой обзор продукта
+2. `_existing_project_context/01_product_learning_ux.md`
 3. `PLAN.md`, `DESIGN.md`, `AI_PIPELINE.md`, `PROGRESS.md`
 4. Lesson types/schema
 5. current API endpoints

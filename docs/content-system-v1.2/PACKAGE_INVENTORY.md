@@ -22,7 +22,7 @@
 
 ## Included references
 
-- `_existing_project_context/PRODUCT_OVERVIEW.md`
+- `../../PRODUCT_OVERVIEW.md` — живой обзор продукта вне исторического пакета
 - `_existing_project_context/01_product_learning_ux.md`
 - `_prototype_reference/context_reader_content_feed_prototype_v8.html`
 - `_prototype_reference/context-reader-site-v8.zip`
