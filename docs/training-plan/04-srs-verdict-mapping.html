@@ -1,0 +1,260 @@
+<title>Тренировка — как действия ложатся в «Знаю/не знаю»</title>
+<style>
+  :root {
+    --surface: #fffdf8; --surface-2: #ece8dc; --ink: #24211c; --ink-soft: #6f6a5f;
+    --ink-faint: #a49d8d; --border: rgba(36, 33, 28, 0.12); --accent: #4b3fd6;
+    --accent-soft: rgba(75, 63, 214, 0.11); --accent-underline: rgba(75, 63, 214, 0.55);
+    --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35);
+    --font-article: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --page-bg: #e7e2d5;
+    --good: #1f7a4d; --good-soft: #e3f3e9; --good-border: #bfe2cd;
+    --bad: #b23b3b; --bad-soft: #fbeaea; --bad-border: #eec6c6;
+    --warn: #9a6b12; --warn-soft: #fbf1de; --warn-border: #ecd8ab;
+    --neutral-soft: #eceae4; --neutral: #6f6a5f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #262320; --surface-2: #2f2b26; --ink: #f1ede3; --ink-soft: #b6ae9e;
+      --ink-faint: #766f60; --border: rgba(241, 237, 227, 0.13); --accent: #9186ff;
+      --accent-soft: rgba(145, 134, 255, 0.16); --accent-underline: rgba(145, 134, 255, 0.6);
+      --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6); --page-bg: #1c1a17;
+      --good: #6fce9c; --good-soft: rgba(111, 206, 156, 0.13); --good-border: rgba(111, 206, 156, 0.35);
+      --bad: #ec9797; --bad-soft: rgba(236, 151, 151, 0.13); --bad-border: rgba(236, 151, 151, 0.35);
+      --warn: #e0b45b; --warn-soft: rgba(224, 180, 91, 0.13); --warn-border: rgba(224, 180, 91, 0.35);
+      --neutral-soft: rgba(182, 174, 158, 0.13); --neutral: #b6ae9e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #262320; --surface-2: #2f2b26; --ink: #f1ede3; --ink-soft: #b6ae9e;
+    --ink-faint: #766f60; --border: rgba(241, 237, 227, 0.13); --accent: #9186ff;
+    --accent-soft: rgba(145, 134, 255, 0.16); --accent-underline: rgba(145, 134, 255, 0.6);
+    --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6); --page-bg: #1c1a17;
+    --good: #6fce9c; --good-soft: rgba(111, 206, 156, 0.13); --good-border: rgba(111, 206, 156, 0.35);
+    --bad: #ec9797; --bad-soft: rgba(236, 151, 151, 0.13); --bad-border: rgba(236, 151, 151, 0.35);
+    --warn: #e0b45b; --warn-soft: rgba(224, 180, 91, 0.13); --warn-border: rgba(224, 180, 91, 0.35);
+    --neutral-soft: rgba(182, 174, 158, 0.13); --neutral: #b6ae9e;
+  }
+  :root[data-theme="light"] {
+    --surface: #fffdf8; --surface-2: #ece8dc; --ink: #24211c; --ink-soft: #6f6a5f;
+    --ink-faint: #a49d8d; --border: rgba(36, 33, 28, 0.12); --accent: #4b3fd6;
+    --accent-soft: rgba(75, 63, 214, 0.11); --accent-underline: rgba(75, 63, 214, 0.55);
+    --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35); --page-bg: #e7e2d5;
+    --good: #1f7a4d; --good-soft: #e3f3e9; --good-border: #bfe2cd;
+    --bad: #b23b3b; --bad-soft: #fbeaea; --bad-border: #eec6c6;
+    --warn: #9a6b12; --warn-soft: #fbf1de; --warn-border: #ecd8ab;
+    --neutral-soft: #eceae4; --neutral: #6f6a5f;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page { background: var(--page-bg); color: var(--ink); font-family: var(--font-ui); min-height: 100vh; padding: 28px 16px 60px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  .intro { margin-bottom: 20px; max-width: 620px; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 8px; }
+  h1 { font-size: 22px; margin: 0 0 8px; text-wrap: balance; }
+  .lede { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+  .lede b { color: var(--ink); }
+
+  h2 { font-size: 17px; margin: 36px 0 4px; }
+  .section-sub { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 16px; max-width: 600px; line-height: 1.6; }
+
+  /* ---- decision flow ---- */
+  .flow {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 20px 22px 22px;
+  }
+  .flow-step { display: flex; gap: 14px; align-items: flex-start; }
+  .flow-step + .flow-step { margin-top: 4px; }
+  .flow-q {
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; background: var(--surface-2);
+    color: var(--ink-soft); display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; margin-top: 2px;
+  }
+  .flow-body { flex: 1 1 auto; }
+  .flow-label { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+  .flow-branches { display: flex; flex-direction: column; gap: 6px; margin-left: 2px; }
+  .branch { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .branch-arrow { color: var(--ink-faint); flex: 0 0 auto; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700;
+    padding: 4px 11px; border-radius: 999px; white-space: nowrap;
+  }
+  .chip-good { background: var(--good-soft); color: var(--good); }
+  .chip-warn { background: var(--warn-soft); color: var(--warn); }
+  .chip-bad { background: var(--bad-soft); color: var(--bad); }
+  .chip-neutral { background: var(--neutral-soft); color: var(--neutral); }
+  .flow-connector { width: 1px; height: 18px; background: var(--border); margin-left: 13px; }
+
+  /* ---- mapping table ---- */
+  .matrix-wrap { overflow-x: auto; margin-top: 16px; border-radius: 14px; border: 1px solid var(--border); }
+  table.matrix { border-collapse: collapse; width: 100%; min-width: 640px; background: var(--surface); font-size: 13px; }
+  table.matrix th, table.matrix td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.matrix th { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-faint); font-weight: 700; background: var(--surface-2); }
+  table.matrix tr:last-child td { border-bottom: none; }
+  table.matrix td:first-child { font-weight: 600; }
+  .mono { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: 12.5px; }
+
+  /* ---- special cases (skip/retry/tap) ---- */
+  .special-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  @media (max-width: 680px) { .special-grid { grid-template-columns: 1fr; } }
+  .special-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 15px; box-shadow: var(--shadow);
+  }
+  .special-title { font-size: 13.5px; font-weight: 700; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .special-body { font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); margin: 0; }
+
+  /* ---- formula note ---- */
+  .formula-box {
+    margin-top: 20px; padding: 16px 18px; border-radius: 14px; background: var(--surface-2);
+    font-size: 12.5px; line-height: 1.7; color: var(--ink-soft);
+  }
+  .formula-box b { color: var(--ink); }
+  .formula-box code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface); padding: 1px 6px; border-radius: 5px; font-size: 0.92em; color: var(--ink); }
+
+  .todo-note {
+    margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: var(--accent-soft);
+    border: 1px solid var(--accent-underline); font-size: 13px; line-height: 1.6; color: var(--ink);
+  }
+</style>
+
+<div class="page">
+<div class="wrap">
+  <header class="intro">
+    <div class="eyebrow">Тренировка · как каждое действие ложится в расписание повторов</div>
+    <h1>«Знаю / не знаю» — по кнопкам и кейсам</h1>
+    <p class="lede">
+      Все действия на экране упражнения (см. предыдущий артефакт с «κατασκευή») сведены сюда
+      в одну карту: что засчитывается как успех, что как провал, а что вообще не трогает
+      расписание. Это моё предложение — поправляй, где не согласен.
+    </p>
+  </header>
+
+  <h2>Порядок проверки</h2>
+  <p class="section-sub">Раскрытие подсказки решает исход раньше, чем сам ответ — проверяется первым.</p>
+  <div class="flow">
+    <div class="flow-step">
+      <span class="flow-q">1</span>
+      <div class="flow-body">
+        <p class="flow-label">Была ли раскрыта «Подсказка» в этой попытке?</p>
+        <div class="flow-branches">
+          <div class="branch"><span class="branch-arrow">→ да</span><span class="chip chip-bad">Не знаю</span><span style="color:var(--ink-faint)">— дальше не важно, что вписано в пропуск</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-connector"></div>
+    <div class="flow-step">
+      <span class="flow-q">2</span>
+      <div class="flow-body">
+        <p class="flow-label">Если нет — сверяем вписанное слово с ожидаемым</p>
+        <div class="flow-branches">
+          <div class="branch"><span class="branch-arrow">верно, форма и падеж/лицо совпали</span><span class="chip chip-good">Знаю</span></div>
+          <div class="branch"><span class="branch-arrow">слово то, но ошибка в форме (падеж/лицо/окончание)</span><span class="chip chip-warn">Почти</span></div>
+          <div class="branch"><span class="branch-arrow">другое слово или пусто</span><span class="chip chip-bad">Не знаю</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Как это меняет расписание</h2>
+  <p class="section-sub">
+    <code style="font-family:var(--font-ui)">repetitions</code> — счётчик успешных повторов подряд,
+    <code style="font-family:var(--font-ui)">intervalDays</code> — через сколько дней слово снова
+    станет «сегодня», <code style="font-family:var(--font-ui)">easeFactor</code> — множитель роста
+    интервала (стартует с 2.5).
+  </p>
+  <div class="matrix-wrap">
+    <table class="matrix">
+      <thead><tr><th>Кейс</th><th>Вердикт</th><th>repetitions</th><th>intervalDays</th><th>easeFactor</th><th>lapses</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Верно, без подсказки, с первой попытки</td>
+          <td><span class="chip chip-good">Знаю</span></td>
+          <td class="mono">+1</td>
+          <td class="mono">1 → 6 → пред.×EF</td>
+          <td class="mono">+0.1</td>
+          <td class="mono">—</td>
+        </tr>
+        <tr>
+          <td>«Почти» — слово то, ошибка в форме</td>
+          <td><span class="chip chip-warn">Почти</span></td>
+          <td class="mono">+1</td>
+          <td class="mono">1 → 6 → пред.×EF</td>
+          <td class="mono">−0.15</td>
+          <td class="mono">—</td>
+        </tr>
+        <tr>
+          <td>«Не совсем» — не то слово / пусто</td>
+          <td><span class="chip chip-bad">Не знаю</span></td>
+          <td class="mono">→ 0</td>
+          <td class="mono">→ 1</td>
+          <td class="mono">−0.2</td>
+          <td class="mono">+1</td>
+        </tr>
+        <tr>
+          <td>Раскрыта «Подсказка» (текст+звук ответа)</td>
+          <td><span class="chip chip-bad">Не знаю</span></td>
+          <td class="mono">→ 0</td>
+          <td class="mono">→ 1</td>
+          <td class="mono">−0.2</td>
+          <td class="mono">+1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="section-sub" style="margin-top:10px">
+    «Почти» растёт по той же лестнице интервалов, что и «Знаю» — разница не в этом шаге, а в
+    том, что более низкий <code style="font-family:var(--font-ui)">easeFactor</code> делает
+    <b>следующие</b> интервалы короче. Ошибка сейчас аукается позже, а не в этот же раз.
+  </p>
+
+  <h2>Действия, которые не дают нового вердикта</h2>
+  <p class="section-sub">Не входят в таблицу выше — они либо не про целевое слово, либо не про SRS вообще.</p>
+  <div class="special-grid">
+    <div class="special-card">
+      <p class="special-title"><span class="chip chip-neutral">Пропустить</span></p>
+      <p class="special-body">
+        Слово уходит в конец очереди <b>этой сессии</b>, попыткой не считается. Расписание не
+        трогается вообще: <code style="font-family:var(--font-ui)">dueAt</code> не меняется. Если
+        сессия закроется раньше, чем слово всплывёт снова — оно просто остаётся «на сегодня» и
+        не плюсуется к новым словам завтра.
+      </p>
+    </div>
+    <div class="special-card">
+      <p class="special-title"><span class="chip chip-neutral">Попробовать ещё раз</span></p>
+      <p class="special-body">
+        Появляется уже <b>после</b> вердикта «Почти»/«Не совсем» — это обучение, не переоценка.
+        В расписание идёт вердикт <b>первой</b> попытки; что бы ни было введено при повторной
+        попытке, SM-2 это уже не видит.
+      </p>
+    </div>
+    <div class="special-card">
+      <p class="special-title"><span class="chip chip-neutral">Тап по соседнему слову</span></p>
+      <p class="special-body">
+        Перевод и озвучка любого слова, кроме пропуска. Это про другое, не тренируемое сейчас
+        слово — на расписание целевого слова не влияет никогда, сколько раз ни тапни.
+      </p>
+    </div>
+  </div>
+
+  <div class="formula-box">
+    <b>Откуда шаги 1 / 6 / пред.×EF</b> — классический SM-2: первый успешный повтор слова назначает
+    следующий показ через <b>1 день</b>, второй подряд успешный — через <b>6 дней</b>, а начиная
+    с третьего — <code>intervalDays = intervalDays_прошлый × easeFactor</code>. Любой провал
+    («Не знаю» или подсказка) сбрасывает счётчик <code>repetitions</code> в 0 — слово снова
+    проходит эту лестницу с начала, но с уже подросшим/просевшим <code>easeFactor</code>, так что
+    во второй раз выучить его обычно быстрее. <code>easeFactor</code> никогда не опускается
+    ниже <b>1.3</b> — это стандартный пол SM-2, ниже которого интервалы совсем перестают расти.
+  </div>
+
+  <div class="todo-note">
+    Что я <b>не</b> решил сам и хочу твоей команды: сейчас «Почти» и «Не знаю» — это ответ
+    учащегося, а раскрытая подсказка и явное «не совсем» дают <b>один и тот же</b> штраф
+    (−0.2 / repetitions→0 / lapses+1). Это осознанно — оба означают «вспомнить не получилось» —
+    но если хочешь различать (например, раскрыл подсказку — чуть мягче, чем явная ошибка),
+    скажи, и я разведу их по-разному.
+  </div>
+</div>
+</div>

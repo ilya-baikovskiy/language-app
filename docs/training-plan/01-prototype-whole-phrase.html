@@ -1,0 +1,519 @@
+<title>Прототип тренировки слов</title>
+<style>
+  :root {
+    --surface: #fffdf8; --surface-2: #ece8dc; --ink: #24211c; --ink-soft: #6f6a5f;
+    --ink-faint: #a49d8d; --border: rgba(36, 33, 28, 0.12); --accent: #4b3fd6;
+    --accent-soft: rgba(75, 63, 214, 0.11); --accent-underline: rgba(75, 63, 214, 0.55);
+    --overlay: rgba(24, 22, 18, 0.4); --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35);
+    --font-article: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --page-bg: #e7e2d5;
+    --good: #1f7a4d; --good-soft: #e3f3e9; --good-border: #bfe2cd;
+    --bad: #b23b3b; --bad-soft: #fbeaea; --bad-border: #eec6c6;
+    --warn: #9a6b12; --warn-soft: #fbf1de; --warn-border: #ecd8ab;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #262320; --surface-2: #2f2b26; --ink: #f1ede3; --ink-soft: #b6ae9e;
+      --ink-faint: #766f60; --border: rgba(241, 237, 227, 0.13); --accent: #9186ff;
+      --accent-soft: rgba(145, 134, 255, 0.16); --accent-underline: rgba(145, 134, 255, 0.6);
+      --overlay: rgba(0, 0, 0, 0.6); --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6);
+      --page-bg: #1c1a17;
+      --good: #6fce9c; --good-soft: rgba(111, 206, 156, 0.13); --good-border: rgba(111, 206, 156, 0.35);
+      --bad: #ec9797; --bad-soft: rgba(236, 151, 151, 0.13); --bad-border: rgba(236, 151, 151, 0.35);
+      --warn: #e0b45b; --warn-soft: rgba(224, 180, 91, 0.13); --warn-border: rgba(224, 180, 91, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface: #262320; --surface-2: #2f2b26; --ink: #f1ede3; --ink-soft: #b6ae9e;
+    --ink-faint: #766f60; --border: rgba(241, 237, 227, 0.13); --accent: #9186ff;
+    --accent-soft: rgba(145, 134, 255, 0.16); --accent-underline: rgba(145, 134, 255, 0.6);
+    --overlay: rgba(0, 0, 0, 0.6); --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6);
+    --page-bg: #1c1a17;
+    --good: #6fce9c; --good-soft: rgba(111, 206, 156, 0.13); --good-border: rgba(111, 206, 156, 0.35);
+    --bad: #ec9797; --bad-soft: rgba(236, 151, 151, 0.13); --bad-border: rgba(236, 151, 151, 0.35);
+    --warn: #e0b45b; --warn-soft: rgba(224, 180, 91, 0.13); --warn-border: rgba(224, 180, 91, 0.35);
+  }
+  :root[data-theme="light"] {
+    --surface: #fffdf8; --surface-2: #ece8dc; --ink: #24211c; --ink-soft: #6f6a5f;
+    --ink-faint: #a49d8d; --border: rgba(36, 33, 28, 0.12); --accent: #4b3fd6;
+    --accent-soft: rgba(75, 63, 214, 0.11); --accent-underline: rgba(75, 63, 214, 0.55);
+    --overlay: rgba(24, 22, 18, 0.4); --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35);
+    --page-bg: #e7e2d5;
+    --good: #1f7a4d; --good-soft: #e3f3e9; --good-border: #bfe2cd;
+    --bad: #b23b3b; --bad-soft: #fbeaea; --bad-border: #eec6c6;
+    --warn: #9a6b12; --warn-soft: #fbf1de; --warn-border: #ecd8ab;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page { background: var(--page-bg); color: var(--ink); font-family: var(--font-ui); min-height: 100vh; padding: 28px 16px 60px; }
+  .wrap { max-width: 480px; margin: 0 auto; }
+
+  .intro { margin-bottom: 22px; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; margin-bottom: 8px; }
+  h1 { font-size: 22px; margin: 0 0 8px; text-wrap: balance; }
+  .lede { font-size: 14.5px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+  .lede b { color: var(--ink); }
+
+  .switcher { display: flex; gap: 8px; margin: 18px 0 4px; }
+  .switch-btn {
+    flex: 1; padding: 9px 4px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-soft); font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: var(--font-ui);
+  }
+  .switch-btn.active { background: var(--accent); color: #fff; border-color: transparent; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    box-shadow: var(--shadow); overflow: hidden; margin-top: 18px;
+  }
+  .card-inner { padding: 18px 20px 20px; }
+
+  /* ---- queue screen ---- */
+  .queue-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .queue-title { font-size: 17px; font-weight: 600; margin: 0; }
+  .queue-count { font-size: 13px; color: var(--ink-faint); }
+  .queue-list { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .queue-row {
+    display: flex; align-items: center; gap: 12px; padding: 11px 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .queue-row:last-child { border-bottom: none; }
+  .queue-word { font-family: var(--font-article); font-size: 17px; flex: 0 0 auto; min-width: 110px; }
+  .queue-tr { font-size: 13.5px; color: var(--ink-soft); flex: 1 1 auto; }
+  .queue-due {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 2px 7px; border-radius: 5px; flex: 0 0 auto;
+  }
+  .queue-due.today { color: var(--warn); background: var(--warn-soft); }
+  .queue-due.new { color: var(--accent); background: var(--accent-soft); }
+  .queue-del {
+    border: none; background: transparent; color: var(--ink-faint); cursor: pointer;
+    width: 30px; height: 30px; border-radius: 999px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .queue-del:hover { color: var(--bad); background: var(--bad-soft); }
+  .queue-row.removing { opacity: 0.35; text-decoration: line-through; }
+  .start-btn {
+    width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 12px;
+    background: var(--accent); color: #fff; font-size: 15.5px; font-weight: 600;
+    font-family: var(--font-ui); cursor: pointer;
+  }
+  .start-btn:disabled { opacity: 0.5; cursor: default; }
+
+  /* ---- practice screen ---- */
+  .practice-top { display: flex; align-items: center; gap: 12px; padding: 14px 18px 0; }
+  .back-btn {
+    border: none; background: transparent; color: var(--ink); cursor: pointer;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  }
+  .progress-track { flex: 1 1 auto; height: 5px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.3s ease; }
+  .progress-label { font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+
+  .task-eyebrow { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin: 18px 20px 6px; }
+  .task-prompt { font-family: var(--font-article); font-size: 24px; font-weight: 600; margin: 0 20px 14px; text-wrap: balance; }
+
+  .hint-toggle {
+    display: inline-flex; align-items: center; gap: 6px; margin: 0 20px 12px;
+    padding: 7px 13px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--ink-soft); font-size: 13.5px; font-weight: 500;
+    cursor: pointer; font-family: var(--font-ui);
+  }
+  .hint-toggle.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .hint-box {
+    margin: 0 20px 14px; padding: 10px 13px; border-radius: 10px;
+    background: var(--accent-soft); color: var(--ink); font-size: 13.5px; line-height: 1.55;
+    display: none;
+  }
+  .hint-box.show { display: block; }
+
+  textarea.answer-input {
+    display: block; width: calc(100% - 40px); margin: 0 20px 14px; min-height: 92px;
+    padding: 14px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--ink); font-family: var(--font-article); font-size: 17px; line-height: 1.5;
+    resize: none;
+  }
+  textarea.answer-input:focus { outline: none; border-color: var(--accent); }
+  textarea.answer-input:disabled { color: var(--ink-soft); background: var(--surface-2); }
+
+  .action-row { display: flex; gap: 10px; margin: 0 20px; }
+  .btn-check {
+    flex: 1; padding: 13px; border: none; border-radius: 12px; background: var(--accent);
+    color: #fff; font-size: 15px; font-weight: 600; font-family: var(--font-ui); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-check:disabled { opacity: 0.45; cursor: default; }
+  .btn-voice {
+    flex: 0 0 auto; padding: 13px 16px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink); font-size: 15px; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; gap: 7px; font-family: var(--font-ui);
+  }
+  .skip-btn {
+    display: block; width: calc(100% - 40px); margin: 10px 20px 4px; padding: 11px; border: none;
+    border-radius: 12px; background: transparent; color: var(--ink-faint); font-size: 14px;
+    cursor: pointer; font-family: var(--font-ui);
+  }
+  .skip-btn:hover { color: var(--ink-soft); }
+
+  .verdict {
+    margin: 4px 20px 14px; padding: 13px 14px; border-radius: 12px; border: 1px solid;
+  }
+  .verdict.good { background: var(--good-soft); border-color: var(--good-border); }
+  .verdict.bad { background: var(--bad-soft); border-color: var(--bad-border); }
+  .verdict.partial { background: var(--warn-soft); border-color: var(--warn-border); }
+  .verdict-head { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 14.5px; margin-bottom: 5px; }
+  .verdict.good .verdict-head { color: var(--good); }
+  .verdict.bad .verdict-head { color: var(--bad); }
+  .verdict.partial .verdict-head { color: var(--warn); }
+  .verdict-body { font-size: 13.5px; line-height: 1.55; color: var(--ink); }
+
+  .answer-compare { margin: 0 20px 14px; }
+  .compare-block { margin-bottom: 10px; }
+  .compare-label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 3px; }
+  .compare-text { font-family: var(--font-article); font-size: 16px; }
+  .compare-text.user-wrong { color: var(--ink-soft); }
+  .compare-correct-row { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+  .compare-correct-row .compare-text { flex: 1; color: var(--accent); }
+  .mini-speaker {
+    border: none; background: transparent; color: var(--ink-soft); cursor: pointer;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  }
+  mark.diff-missing { background: var(--bad-soft); color: var(--bad); border-radius: 4px; padding: 0 3px; text-decoration: underline wavy; }
+
+  .next-row { display: flex; gap: 10px; margin: 0 20px 20px; }
+  .btn-retry {
+    flex: 1; padding: 13px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--ink); font-size: 14.5px; font-weight: 500; cursor: pointer; font-family: var(--font-ui);
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .btn-next {
+    flex: 1; padding: 13px; border: none; border-radius: 12px; background: var(--ink);
+    color: var(--surface); font-size: 15px; font-weight: 600; cursor: pointer; font-family: var(--font-ui);
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  @media (prefers-color-scheme: dark) { .btn-next { background: var(--accent); color: #fff; } }
+  :root[data-theme="dark"] .btn-next { background: var(--accent); color: #fff; }
+
+  .demo-note {
+    margin: 22px auto 0; max-width: 480px; font-size: 12.5px; color: var(--ink-faint);
+    line-height: 1.6; text-align: center; padding: 0 8px;
+  }
+  .demo-note code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+  svg { display: block; }
+</style>
+
+<div class="page">
+<div class="wrap">
+  <header class="intro">
+    <div class="eyebrow">Прототип · пока без AI, кликабельно</div>
+    <h1>Тренировка сохранённых слов — черновой прогон</h1>
+    <p class="lede">
+      Экран очереди (с <b>удалением слова</b>) → упражнение «переведи фразу» с реальным
+      <b>разбором ответа</b> (не просто верно/неверно) → сравнение с правильным ответом.
+      Реальную проверку ответа в этом прототипе делает встроенный JS по трём заготовленным
+      сценариям — введи что-нибудь и нажми «Проверить», чтобы увидеть все три.
+    </p>
+  </header>
+
+  <div class="switcher">
+    <button class="switch-btn active" id="tab-queue">1. Очередь на сегодня</button>
+    <button class="switch-btn" id="tab-practice">2. Упражнение</button>
+  </div>
+
+  <!-- ============ QUEUE ============ -->
+  <div class="card" id="screen-queue">
+    <div class="card-inner">
+      <div class="queue-head">
+        <p class="queue-title">Сегодня к повторению</p>
+        <span class="queue-count" id="queue-count">6 слов</span>
+      </div>
+      <div class="queue-list" id="queue-list"></div>
+      <button class="start-btn" id="start-btn">Начать (6)</button>
+    </div>
+  </div>
+
+  <!-- ============ PRACTICE ============ -->
+  <div class="card" id="screen-practice" style="display:none">
+    <div class="practice-top">
+      <button class="back-btn" aria-label="Назад">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <span class="progress-label" id="progress-label">1/5</span>
+    </div>
+
+    <p class="task-eyebrow">Переведи на греческий</p>
+    <p class="task-prompt" id="task-prompt">Живу на Кипре</p>
+
+    <button class="hint-toggle" id="hint-toggle">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.4.3.5.7.5 1.1v.5h6v-.5c0-.4.1-.8.5-1.1A6 6 0 0012 3z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="hint-toggle-text">Подсказка</span>
+    </button>
+    <div class="hint-box" id="hint-box">«Я» — базовое окончание -ω. На Кипре — στην Κύπρο.</div>
+
+    <textarea class="answer-input" id="answer-input" placeholder="Напиши перевод по-гречески… (Enter — проверить)"></textarea>
+
+    <div class="action-row" id="action-row">
+      <button class="btn-check" id="check-btn" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 12l7 7L20 5" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Проверить
+      </button>
+      <button class="btn-voice" id="voice-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0012 0M12 19v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        Голос
+      </button>
+    </div>
+    <button class="skip-btn" id="skip-btn">Пропустить это слово</button>
+
+    <div id="result-area"></div>
+  </div>
+
+  <p class="demo-note">
+    Реальная версия: результат проверки и текст разбора генерирует один AI-вызов
+    (короткий, ниже уровня стоимости <code>generate-annotation</code>) — сравнивает твой ответ
+    с ожидаемым переводом и называет конкретно, что не так: пропущенное слово, неверный
+    падеж/окончание, другое время. «Голос» — распознавание речи (отдельная задача, не в
+    этом прототипе).
+  </p>
+</div>
+</div>
+
+<script>
+(function () {
+  const QUEUE = [
+    { word: 'μένω', tr: 'жить, проживать', due: 'today' },
+    { word: 'Κύπρος', tr: 'Кипр', due: 'today' },
+    { word: 'Ρωσία', tr: 'Россия', due: 'today' },
+    { word: 'Γερμανία', tr: 'Германия', due: 'new' },
+    { word: 'δρόμος', tr: 'улица', due: 'new' },
+    { word: 'μεγάλος', tr: 'большой', due: 'today' },
+  ];
+
+  const TASKS = [
+    {
+      prompt: 'Живу на Кипре',
+      hint: '«Я» — базовое окончание -ω. На Кипре — στην Κύπρο.',
+      correct: 'μένω στην Κύπρο',
+      // demo grading: exact-ish match -> good; contains "μένω" & "Κύπρο" partially -> partial; else -> bad
+      grade(input) {
+        const norm = input.trim().toLowerCase();
+        if (norm.includes('μένω') && norm.includes('κύπρο')) {
+          return { kind: 'good', title: 'Верно!', body: 'Отлично! Форма глагола и место — всё на месте.' };
+        }
+        if (norm.includes('μένω') || norm.includes('κύπρο')) {
+          return { kind: 'partial', title: 'Почти', body: 'Часть фразы верна, но не хватает ещё одного элемента — сравни с правильным ответом ниже.' };
+        }
+        return { kind: 'bad', title: 'Не совсем', body: 'Ответ не похож на перевод этой фразы — сверься с правильным вариантом.' };
+      },
+    },
+    {
+      prompt: 'Они живут в России',
+      hint: '«У них» → они (-ουν). В России — στη Ρωσία.',
+      correct: 'μένουν στη Ρωσία',
+      grade(input) {
+        const norm = input.trim().toLowerCase();
+        if (norm.includes('μένουν') && norm.includes('ρωσ')) {
+          return { kind: 'good', title: 'Верно!', body: 'Точно! Форма для «они» и место указаны верно.' };
+        }
+        if (norm.includes('μένω') && !norm.includes('μένουν')) {
+          return {
+            kind: 'partial', title: 'Почти — не то лицо',
+            body: 'Место названо верно, но глагол должен быть в форме «они» (окончание -ουν), а не «я».',
+          };
+        }
+        if (norm.includes('μέν') && norm.includes('ρωσ') && !norm.includes('στη')) {
+          return {
+            kind: 'partial', title: 'Пропущен предлог',
+            body: 'Глагол и страна на месте, но перед «Ρωσία» не хватает предлога «στη».',
+          };
+        }
+        return { kind: 'bad', title: 'Не совсем', body: 'Ответ не соответствует заданной фразе — сравни с правильным переводом ниже.' };
+      },
+    },
+    {
+      prompt: 'Он живёт в Германии',
+      hint: 'Он — окончание -ει. Перед именем — без артикля, если это просто «он».',
+      correct: 'μένει στη Γερμανία',
+      grade(input) {
+        const norm = input.trim().toLowerCase();
+        if (norm.includes('μένει') && norm.includes('γερμαν')) {
+          return { kind: 'good', title: 'Верно!', body: 'Все слова на месте, окончание верное.' };
+        }
+        return { kind: 'bad', title: 'Не совсем', body: 'Сверься с правильным ответом — обрати внимание на окончание глагола для «он/она».' };
+      },
+    },
+  ];
+
+  let queue = QUEUE.slice();
+  let taskIdx = 0;
+  let hintOn = false;
+  let answered = false;
+
+  const queueList = document.getElementById('queue-list');
+  const queueCount = document.getElementById('queue-count');
+  const startBtn = document.getElementById('start-btn');
+
+  function renderQueue() {
+    queueList.innerHTML = '';
+    queue.forEach((w, i) => {
+      const row = document.createElement('div');
+      row.className = 'queue-row';
+      row.innerHTML = `
+        <span class="queue-word">${w.word}</span>
+        <span class="queue-tr">${w.tr}</span>
+        <span class="queue-due ${w.due}">${w.due === 'today' ? 'сегодня' : 'новое'}</span>
+        <button class="queue-del" aria-label="Убрать из тренировки" data-i="${i}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 13a1 1 0 001 1h6a1 1 0 001-1l1-13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>`;
+      queueList.appendChild(row);
+    });
+    queueCount.textContent = `${queue.length} слов`;
+    startBtn.textContent = `Начать (${queue.length})`;
+    startBtn.disabled = queue.length === 0;
+  }
+
+  queueList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.queue-del');
+    if (!btn) return;
+    const i = Number(btn.dataset.i);
+    const row = btn.closest('.queue-row');
+    row.classList.add('removing');
+    setTimeout(() => {
+      queue.splice(i, 1);
+      renderQueue();
+    }, 220);
+  });
+
+  renderQueue();
+
+  // ---- tab switching ----
+  const tabQueue = document.getElementById('tab-queue');
+  const tabPractice = document.getElementById('tab-practice');
+  const screenQueue = document.getElementById('screen-queue');
+  const screenPractice = document.getElementById('screen-practice');
+
+  function showQueue() {
+    tabQueue.classList.add('active'); tabPractice.classList.remove('active');
+    screenQueue.style.display = ''; screenPractice.style.display = 'none';
+  }
+  function showPractice() {
+    tabQueue.classList.remove('active'); tabPractice.classList.add('active');
+    screenQueue.style.display = 'none'; screenPractice.style.display = '';
+  }
+  tabQueue.addEventListener('click', showQueue);
+  tabPractice.addEventListener('click', showPractice);
+  startBtn.addEventListener('click', showPractice);
+
+  // ---- practice logic ----
+  const taskPrompt = document.getElementById('task-prompt');
+  const hintToggle = document.getElementById('hint-toggle');
+  const hintToggleText = document.getElementById('hint-toggle-text');
+  const hintBox = document.getElementById('hint-box');
+  const answerInput = document.getElementById('answer-input');
+  const checkBtn = document.getElementById('check-btn');
+  const skipBtn = document.getElementById('skip-btn');
+  const resultArea = document.getElementById('result-area');
+  const progressFill = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+
+  function loadTask() {
+    answered = false;
+    hintOn = false;
+    hintBox.classList.remove('show');
+    hintToggle.classList.remove('on');
+    hintToggleText.textContent = 'Подсказка';
+    answerInput.value = '';
+    answerInput.disabled = false;
+    checkBtn.disabled = true;
+    resultArea.innerHTML = '';
+    document.getElementById('action-row').style.display = 'flex';
+    skipBtn.style.display = '';
+    const t = TASKS[taskIdx % TASKS.length];
+    taskPrompt.textContent = t.prompt;
+    hintBox.textContent = t.hint;
+    progressFill.style.width = `${((taskIdx) / TASKS.length) * 100}%`;
+    progressLabel.textContent = `${taskIdx + 1}/${TASKS.length}`;
+    answerInput.focus();
+  }
+
+  hintToggle.addEventListener('click', () => {
+    hintOn = !hintOn;
+    hintBox.classList.toggle('show', hintOn);
+    hintToggle.classList.toggle('on', hintOn);
+    hintToggleText.textContent = hintOn ? 'Скрыть подсказку' : 'Подсказка';
+  });
+
+  answerInput.addEventListener('input', () => {
+    checkBtn.disabled = answered || answerInput.value.trim().length === 0;
+  });
+  answerInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!checkBtn.disabled) doCheck(); }
+  });
+  checkBtn.addEventListener('click', doCheck);
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function doCheck() {
+    if (answered) return;
+    answered = true;
+    const t = TASKS[taskIdx % TASKS.length];
+    const userAnswer = answerInput.value.trim();
+    const verdict = t.grade(userAnswer);
+    answerInput.disabled = true;
+    checkBtn.disabled = true;
+
+    const kindLabel = { good: '✓ Верно', partial: '~ Почти', bad: '✕ Не совсем' }[verdict.kind];
+    resultArea.innerHTML = `
+      <div class="verdict ${verdict.kind}">
+        <div class="verdict-head">${kindLabel}${verdict.kind !== 'good' ? '' : '!'}</div>
+        <div class="verdict-body">${verdict.body}</div>
+      </div>
+      ${verdict.kind !== 'good' ? `
+      <div class="answer-compare">
+        <div class="compare-block">
+          <div class="compare-label">Твой ответ</div>
+          <div class="compare-text user-wrong">${escapeHtml(userAnswer) || '(пусто)'}</div>
+        </div>
+        <div class="compare-block">
+          <div class="compare-label">Правильно</div>
+          <div class="compare-correct-row">
+            <span class="compare-text">${t.correct}</span>
+            <button class="mini-speaker" aria-label="Прослушать">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>` : ''}
+      <div class="next-row">
+        ${verdict.kind !== 'good' ? `<button class="btn-retry" id="retry-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13a7 7 0 0012.5 3.5M19 11A7 7 0 006.5 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Попробовать ещё раз
+        </button>` : ''}
+        <button class="btn-next" id="next-btn">Дальше →</button>
+      </div>
+    `;
+    document.getElementById('action-row').style.display = 'none';
+    skipBtn.style.display = 'none';
+
+    const retryBtn = document.getElementById('retry-btn');
+    if (retryBtn) retryBtn.addEventListener('click', () => { loadTask(); });
+    document.getElementById('next-btn').addEventListener('click', () => {
+      taskIdx += 1;
+      if (taskIdx >= TASKS.length) taskIdx = 0;
+      loadTask();
+    });
+  }
+
+  skipBtn.addEventListener('click', () => {
+    taskIdx += 1;
+    if (taskIdx >= TASKS.length) taskIdx = 0;
+    loadTask();
+  });
+
+  loadTask();
+})();
+</script>
