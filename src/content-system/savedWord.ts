@@ -7,6 +7,8 @@
 
 import { z } from 'zod';
 
+export const PRACTICE_PHRASE_PROMPT_VERSION = 1;
+
 export const reviewStateSchema = z.object({
   easeFactor: z.number().min(1.3),
   intervalDays: z.number().nonnegative(),
@@ -21,6 +23,14 @@ export function createInitialReviewState(now: Date = new Date()): ReviewState {
   return { easeFactor: 2.5, intervalDays: 0, repetitions: 0, dueAt: now.toISOString(), lapses: 0 };
 }
 
+export const practicePhraseSchema = z.object({
+  source: z.string(),
+  translation: z.string(),
+  promptVersion: z.number().int().positive(),
+  generatedAt: z.string(),
+});
+export type PracticePhrase = z.infer<typeof practicePhraseSchema>;
+
 export const savedWordSchema = z.object({
   id: z.string(), // `${lessonId}:${tokenId}` — стабильный, см. wordId() в useSavedWords.ts
   userId: z.string(),
@@ -31,6 +41,7 @@ export const savedWordSchema = z.object({
   partOfSpeech: z.string().nullable().optional(),
   translation: z.string(),
   audioText: z.string().optional(), // summary.audioText — готовый текст для /api/speak-unit
+  audioProvider: z.enum(['openai', 'elevenlabs']).optional(),
 
   // Целое предложение-источник (summary.context.source/.translation), НЕ
   // summary.context.selectedSource/.selectedTranslation — то было бы просто
@@ -54,6 +65,9 @@ export const savedWordSchema = z.object({
   // перегенерировать их по lessonId+tokenId, а не тренировать устаревшее.
   annotationPromptVersion: z.number().int().optional(),
 
+  // Один раз сгенерированная короткая фраза для стабильного cloze. Старые
+  // записи без неё доготавливаются лениво при первом входе в тренировку.
+  practicePhrase: practicePhraseSchema.optional(),
 
   lessonId: z.string(),
   tokenId: z.string(),

@@ -5,6 +5,7 @@
 
 import type { InputSource, GeneratedText } from '../../../lib/pipeline/generateText';
 import type { AnnotationTarget } from '../../../lib/pipeline/generateAnnotations';
+import type { GeneratedPracticePhrase, PracticePhraseRequest } from '../../../lib/pipeline/generatePracticePhrase';
 import type { LanguageCode } from '../../../lib/pipeline/languageConfig';
 import type { AlignmentReport } from '../../../lib/pipeline/alignmentReport';
 import type { AudioProvider, AnnotationSummary, DetailSection, Lesson, Token } from '../../types/lesson';
@@ -46,6 +47,18 @@ export function fetchAnnotationBasic(target: AnnotationTarget, level: string, la
 // Тир 2 — по клику «Подробнее» (типизированные секции).
 export function fetchAnnotationDetails(target: AnnotationTarget, level: string, language: LanguageCode): Promise<{ sections: DetailSection[] }> {
   return postJson('/api/generate-annotation', { target, level, tier: 'details', language });
+}
+
+export function fetchPracticePhrase(
+  practice: PracticePhraseRequest,
+  language: LanguageCode,
+): Promise<GeneratedPracticePhrase> {
+  return postJson('/api/generate-annotation', {
+    mode: 'practice-phrase',
+    practice,
+    level: practice.level,
+    language,
+  });
 }
 
 // Перевод одного предложения — по запросу в режиме перевода (тумблер «Перевод»).

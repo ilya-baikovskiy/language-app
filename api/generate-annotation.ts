@@ -7,6 +7,7 @@ import {
   generateAnnotationDetails,
   type AnnotationTarget,
 } from '../lib/pipeline/generateAnnotations.js';
+import { generatePracticePhrase, type PracticePhraseRequest } from '../lib/pipeline/generatePracticePhrase.js';
 import { getLanguageConfig, type LanguageCode } from '../lib/pipeline/languageConfig.js';
 
 export const maxDuration = 30;
@@ -19,15 +20,24 @@ export async function POST(request: Request): Promise<Response> {
   if (!apiKey) return new Response('Server misconfigured: OPENAI_API_KEY missing', { status: 500 });
 
   try {
-    const { target, level, sourceLanguage, tier, language } = (await request.json()) as {
-      target: AnnotationTarget; // { tokenId, sentence } — см. lib/pipeline/generateAnnotations.ts
+    const { target, level, sourceLanguage, tier, language, mode, practice } = (await request.json()) as {
+      target?: AnnotationTarget; // { tokenId, sentence } — см. lib/pipeline/generateAnnotations.ts
       level: string;
       sourceLanguage?: string;
       tier?: 'basic' | 'details';
       language?: LanguageCode;
+      mode?: 'practice-phrase';
+      practice?: PracticePhraseRequest;
     };
     const languageConfig = getLanguageConfig(language ?? 'fr');
     const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o';
+
+    if (mode === 'practice-phrase') {
+      if (!practice) return new Response('practice payload is required', { status: 400 });
+      return Response.json(await generatePracticePhrase(practice, languageConfig, apiKey, model));
+    }
+
+    if (!target) return new Response('target payload is required', { status: 400 });
     const generate = tier === 'details' ? generateAnnotationDetails : generateAnnotationBasic;
     const content = await generate(target, languageConfig, level, sourceLanguage ?? 'Russian', apiKey, model);
     return Response.json(content);

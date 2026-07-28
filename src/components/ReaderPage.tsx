@@ -241,6 +241,7 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
       partOfSpeech: summary.partOfSpeech,
       translation: summary.translation,
       audioText: summary.audioText,
+      audioProvider: lesson.audioProvider ?? 'openai',
       // Целое предложение, не только выделенное слово (context.selectedSource
       // было бы просто повтором surfaceForm) — нужно для будущей тренировки
       // "в том же контексте/фразе", не изолированным словом.
@@ -259,7 +260,7 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
     if (!wasSaved) {
       track('learning_unit_saved', { tokenId: savedAnnotation.id, unitType: 'word' }, { lessonId: lesson.id, language: appActiveLanguage });
     }
-  }, [savedAnnotation, lesson.id, lesson.level, toggleSave, isSaved, appActiveLanguage]);
+  }, [savedAnnotation, lesson.id, lesson.level, lesson.audioProvider, toggleSave, isSaved, appActiveLanguage]);
 
   useEffect(() => {
     if (!selection.isSheetOpen) return;

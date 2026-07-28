@@ -48,6 +48,7 @@ export type SaveWordInput = {
   partOfSpeech?: string | null;
   translation: string;
   audioText?: string;
+  audioProvider?: SavedWord['audioProvider'];
   contextSource?: string;
   contextTranslation?: string;
   relatedSource?: string | null;
@@ -149,6 +150,7 @@ export function useSavedWords(repository: SavedWordRepository = DEFAULT_REPOSITO
         partOfSpeech: input.partOfSpeech ?? null,
         translation: input.translation,
         audioText: input.audioText,
+        audioProvider: input.audioProvider,
         contextSource: input.contextSource,
         contextTranslation: input.contextTranslation,
         relatedSource: input.relatedSource ?? null,
@@ -168,5 +170,23 @@ export function useSavedWords(repository: SavedWordRepository = DEFAULT_REPOSITO
     [savedWords, repository],
   );
 
-  return { savedWords, loading, isSaved, toggleSave };
+  const updateWord = useCallback(
+    async (nextWord: SavedWord): Promise<SavedWord> => {
+      const previous = savedWords.find((word) => word.id === nextWord.id);
+      setSavedWords((current) => current.map((word) => (word.id === nextWord.id ? nextWord : word)));
+      try {
+        const stored = await repository.upsert(nextWord);
+        setSavedWords((current) => current.map((word) => (word.id === stored.id ? stored : word)));
+        return stored;
+      } catch (err) {
+        if (previous) {
+          setSavedWords((current) => current.map((word) => (word.id === previous.id ? previous : word)));
+        }
+        throw err;
+      }
+    },
+    [repository, savedWords],
+  );
+
+  return { savedWords, loading, isSaved, toggleSave, updateWord };
 }

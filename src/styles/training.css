@@ -1,6 +1,4 @@
-/* Экран тренировки — каркас (см. PROGRESS.md, 2026-07-28). Верстка по
-   docs/training-plan/03-cloze-practice-screen.html; --surface/--ink/--accent
-   и т.д. из tokens.css — тот же дизайн-язык, что у читалки. */
+/* Экран тренировки по docs/training-plan/03-cloze-practice-screen.html. */
 
 .learn-today {
   display: flex;
@@ -83,6 +81,17 @@
   font-weight: 700;
   margin: 0 0 10px;
 }
+.training-eyebrow-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.training-phrase-status {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-size: 11.5px;
+}
 
 .training-cloze {
   font-family: var(--font-article);
@@ -91,6 +100,11 @@
   margin: 0 0 14px;
 }
 .training-cloze .cw {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
   border-radius: 4px;
   padding: 0 2px;
@@ -119,6 +133,9 @@
   color: var(--ink-soft);
   border-color: var(--border);
 }
+.training-fallback-label {
+  color: var(--ink-soft);
+}
 
 .training-gloss-pop {
   display: flex;
@@ -132,6 +149,20 @@
   font-size: 13px;
   color: var(--ink);
   line-height: 1.5;
+}
+.training-mini-speaker {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  padding: 4px;
+  flex: 0 0 auto;
+}
+.training-mini-speaker:disabled {
+  cursor: wait;
+  opacity: 0.55;
 }
 .training-gloss-close {
   border: none;
@@ -174,6 +205,10 @@
   font-weight: 600;
 }
 .training-hint-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0 0 14px;
   padding: 11px 13px;
   border-radius: 10px;
@@ -193,11 +228,19 @@
   margin: 4px 0 0;
 }
 .training-check-btn {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   justify-content: center;
+  min-width: 0;
 }
 .training-voice-btn {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
+.training-voice-btn.is-listening {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .training-skip-btn {
   display: block;
@@ -226,7 +269,11 @@
   background: rgba(31, 122, 77, 0.1);
   border-color: rgba(31, 122, 77, 0.3);
 }
-.training-verdict-bad {
+.training-verdict-almost {
+  background: var(--marker);
+  border-color: rgba(165, 105, 28, 0.3);
+}
+.training-verdict-again {
   background: rgba(178, 59, 59, 0.08);
   border-color: rgba(178, 59, 59, 0.28);
 }
@@ -238,7 +285,10 @@
 .training-verdict-good .training-verdict-head {
   color: #1f7a4d;
 }
-.training-verdict-bad .training-verdict-head {
+.training-verdict-almost .training-verdict-head {
+  color: var(--marker-strong);
+}
+.training-verdict-again .training-verdict-head {
   color: #c0392b;
 }
 .training-verdict-body {
@@ -249,6 +299,10 @@
 }
 
 .training-say-aloud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0 0 14px;
   padding: 12px 13px;
   border-radius: 10px;
@@ -272,4 +326,46 @@
 .training-next-btn {
   width: 100%;
   justify-content: center;
+}
+.training-retry-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.training-save-status,
+.training-inline-error {
+  margin: -6px 0 12px;
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+.training-inline-error {
+  color: #c0392b;
+}
+.training-save-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: -6px 0 12px;
+  color: #c0392b;
+  font-size: 12px;
+}
+.training-save-error button {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .training-card {
+    padding-inline: 16px;
+  }
+  .training-eyebrow-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
 }
