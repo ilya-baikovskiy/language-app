@@ -1,0 +1,275 @@
+/* Экран тренировки — каркас (см. PROGRESS.md, 2026-07-28). Верстка по
+   docs/training-plan/03-cloze-practice-screen.html; --surface/--ink/--accent
+   и т.д. из tokens.css — тот же дизайн-язык, что у читалки. */
+
+.learn-today {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.learn-today-count {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.learn-today-hint {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.training-shell {
+  max-width: 480px;
+}
+.training-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.training-progress-track {
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.training-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.training-progress-label {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+.training-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px 20px;
+}
+
+.training-ru-sentence {
+  font-family: var(--font-article);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.training-ru-sentence b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.training-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.training-cloze {
+  font-family: var(--font-article);
+  font-size: 21px;
+  line-height: 1.7;
+  margin: 0 0 14px;
+}
+.training-cloze .cw {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 2px;
+  margin: 0 -2px;
+  transition: background 0.12s ease;
+}
+.training-cloze .cw:hover {
+  background: var(--surface-2);
+}
+.training-blank {
+  display: inline-block;
+  width: 128px;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  background: transparent;
+  font-family: var(--font-article);
+  font-size: 21px;
+  color: var(--ink);
+  text-align: center;
+  padding: 0 2px 1px;
+}
+.training-blank:focus {
+  outline: none;
+}
+.training-blank:disabled {
+  color: var(--ink-soft);
+  border-color: var(--border);
+}
+
+.training-gloss-pop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.training-gloss-close {
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  flex: 0 0 auto;
+}
+
+.training-hint-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--marker-strong);
+  background: var(--surface);
+  color: var(--marker-strong);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+.training-hint-toggle.is-open {
+  background: var(--marker);
+}
+.training-hint-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.training-hint-cost {
+  display: block;
+  margin: 4px 0 14px;
+  font-size: 11.5px;
+  color: var(--marker-strong);
+  font-weight: 600;
+}
+.training-hint-box {
+  margin: 0 0 14px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--marker);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.training-hint-box b {
+  font-family: var(--font-article);
+  font-size: 16px;
+}
+
+.training-action-row {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 0;
+}
+.training-check-btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+.training-voice-btn {
+  flex: 0 0 auto;
+}
+.training-skip-btn {
+  display: block;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 11px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+.training-skip-btn:hover {
+  color: var(--ink-soft);
+}
+
+.training-verdict {
+  margin: 4px 0 14px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.training-verdict-good {
+  background: rgba(31, 122, 77, 0.1);
+  border-color: rgba(31, 122, 77, 0.3);
+}
+.training-verdict-bad {
+  background: rgba(178, 59, 59, 0.08);
+  border-color: rgba(178, 59, 59, 0.28);
+}
+.training-verdict-head {
+  font-weight: 700;
+  font-size: 14.5px;
+  margin: 0 0 5px;
+}
+.training-verdict-good .training-verdict-head {
+  color: #1f7a4d;
+}
+.training-verdict-bad .training-verdict-head {
+  color: #c0392b;
+}
+.training-verdict-body {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+}
+
+.training-say-aloud {
+  margin: 0 0 14px;
+  padding: 12px 13px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.training-say-aloud-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.training-say-aloud-text {
+  font-family: var(--font-article);
+  font-size: 17px;
+  color: var(--ink);
+  margin: 0;
+}
+
+.training-next-btn {
+  width: 100%;
+  justify-content: center;
+}

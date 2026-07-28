@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import type { SheetSelection } from '../hooks/useSelectedAnnotation';
 import type { Annotation, DetailSection } from '../types/lesson';
+import { findWordAlignedIndex } from '../lib/wordAlign';
 
 type SpeakFn = (text: string, onError?: (error: Error) => void, contextText?: string) => void;
 type IsLoadingFn = (text: string) => boolean;
@@ -436,23 +437,6 @@ function CloseButton({ onClose }: { onClose: () => void }) {
 // Наивный indexOf здесь давал реальный баг: перевод «в» у предлога στην
 // подсвечивался внутри «ресторано[в]». \b не годится — он ASCII-only, а тут
 // греческий и кириллица; поэтому границы проверяем через \p{L}/\p{N} вручную.
-const WORD_CHAR = /[\p{L}\p{N}]/u;
-
-function findWordAlignedIndex(haystack: string, needle: string): number {
-  if (!needle) return -1;
-  const lowerHaystack = haystack.toLowerCase();
-  const lowerNeedle = needle.toLowerCase();
-  let from = 0;
-  for (;;) {
-    const idx = lowerHaystack.indexOf(lowerNeedle, from);
-    if (idx === -1) return -1;
-    const before = idx > 0 ? lowerHaystack[idx - 1] : '';
-    const after = lowerHaystack[idx + lowerNeedle.length] ?? '';
-    if (!WORD_CHAR.test(before) && !WORD_CHAR.test(after)) return idx;
-    from = idx + 1;
-  }
-}
-
 // Подсветка первого вхождения target внутри text (без учёта регистра, по
 // границам слова). Если не нашли — текст показывается как есть.
 function highlightTarget(text: string, target: string): ReactNode {
