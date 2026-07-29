@@ -31,6 +31,10 @@ type Props = {
   phraseMode?: TrainingPhraseMode;
   onExit: () => void;
   onUpdateWord?: (word: SavedWord) => Promise<SavedWord>;
+  // Повторение вне расписания (очередь на сегодня пуста, но хочется ещё
+  // потренироваться) — SRS-интервалы не пересчитываются и не сохраняются,
+  // только кэш practicePhrase по-прежнему пишется через onUpdateWord.
+  freePractice?: boolean;
 };
 
 type Cloze = { before: string; blank: string; after: string };
@@ -153,6 +157,7 @@ export function TrainingPracticeView({
   phraseMode = 'source',
   onExit,
   onUpdateWord,
+  freePractice = false,
 }: Props) {
   const [sessionWords, setSessionWords] = useState(words);
   const [index, setIndex] = useState(0);
@@ -238,10 +243,19 @@ export function TrainingPracticeView({
     [onUpdateWord],
   );
 
+  const preparedWordIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!word) return;
     let cancelled = false;
-    feedbackRequestIdRef.current += 1;
+    // Only invalidate an in-flight feedback request when the card actually
+    // changed. `word` gets a new object reference whenever persistVerdict's
+    // replaceSessionWord refreshes review/updatedAt on the SAME card, which
+    // must not cancel a feedback request already in flight for it.
+    if (preparedWordIdRef.current !== word.id) {
+      feedbackRequestIdRef.current += 1;
+      preparedWordIdRef.current = word.id;
+    }
 
     if (phraseMode === 'source') {
       const context = selectSourcePracticeContext(word, languageConfig.bcp47);
@@ -358,6 +372,7 @@ export function TrainingPracticeView({
   }
 
   async function persistVerdict(nextVerdict: ReviewVerdict) {
+    if (freePractice) return;
     const now = new Date();
     const nextReview = scheduleNext(word.review, nextVerdict, now);
     setReviewIntervalDays(nextReview.intervalDays);
@@ -628,7 +643,7 @@ export function TrainingPracticeView({
 
                 <Button
                   variant="ghost"
-                  className={`training-hint-toggle ${hintOpen ? 'is-open' : ''}`}
+                  className="training-hint-toggle"
                   onClick={handleHintToggle}
                 >
                   {hintOpen ? 'Скрыть подсказку' : 'Подсказка'}
@@ -700,9 +715,11 @@ export function TrainingPracticeView({
                     <p>{deterministicResultText}</p>
                   ) : verdict === 'good' ? (
                     <p>
-                      {retryAttempt
-                        ? 'Ответ исправлен. Расписание уже учло только первую попытку.'
-                        : `Следующее повторение через ${reviewIntervalDays ?? 1} дн.`}
+                      {freePractice
+                        ? 'Тренировка вне расписания — SRS не обновлялся.'
+                        : retryAttempt
+                          ? 'Ответ исправлен. Расписание уже учло только первую попытку.'
+                          : `Следующее повторение через ${reviewIntervalDays ?? 1} дн.`}
                     </p>
                   ) : feedback?.status === 'loading' ? (
                     <div className="training-feedback-loading" aria-label="Разбираем ответ">

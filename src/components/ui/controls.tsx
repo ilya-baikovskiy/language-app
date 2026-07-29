@@ -86,6 +86,13 @@ type TextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   shellClassName?: string;
 };
 
+// \u0428\u0438\u0440\u0438\u043D\u0430 \u0432 \u0441\u0438\u043C\u0432\u043E\u043B\u0430\u0445 (ch), \u0430 \u043D\u0435 CSS-grid mirror-\u0442\u0440\u044E\u043A (span \u043F\u043E\u0432\u0435\u0440\u0445 span \u043E\u0434\u043D\u043E\u0439
+// grid-area) \u2014 \u043D\u0430 \u0434\u0435\u043B\u0435 \u0432 \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u043C \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435 \u043E\u043D \u043D\u0435 \u0441\u0436\u0438\u043C\u0430\u043B\u0441\u044F \u0434\u043E \u043A\u043E\u043D\u0442\u0435\u043D\u0442\u0430 \u0434\u043B\u044F
+// \u043A\u043E\u0440\u043E\u0442\u043A\u0438\u0445 \u0441\u043B\u043E\u0432, \u0438\u043D\u043F\u0443\u0442 \u0440\u0430\u0441\u043F\u043E\u043B\u0437\u0430\u043B\u0441\u044F \u043F\u043E\u0447\u0442\u0438 \u043D\u0430 \u0432\u0441\u044E \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0443. Ch-\u0448\u0438\u0440\u0438\u043D\u0430, \u043E\u0442\u043C\u0435\u0440\u0435\u043D\u043D\u0430\u044F
+// \u043E\u0442 \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u043E\u0433\u043E, \u0432\u0435\u0434\u0451\u0442 \u0441\u0435\u0431\u044F \u043F\u0440\u0435\u0434\u0441\u043A\u0430\u0437\u0443\u0435\u043C\u043E \u0432 \u043B\u044E\u0431\u043E\u043C \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435.
+const AUTO_SIZE_MIN_CH = 3;
+const AUTO_SIZE_PADDING_CH = 1.5;
+
 export function TextInput({
   autoSize = false,
   measureValue,
@@ -94,13 +101,15 @@ export function TextInput({
   value,
   ...props
 }: TextInputProps) {
+  const measured = measureValue || String(value ?? '');
+  const widthCh = autoSize
+    ? Math.max(AUTO_SIZE_MIN_CH, Array.from(measured).length + AUTO_SIZE_PADDING_CH)
+    : undefined;
   return (
-    <span className={classes('ui-text-input-shell', autoSize && 'is-auto-size', shellClassName)}>
-      {autoSize && (
-        <span className={classes('ui-text-input', 'ui-text-input-mirror', className)} aria-hidden="true">
-          {measureValue || String(value ?? '') || '\u00A0'}
-        </span>
-      )}
+    <span
+      className={classes('ui-text-input-shell', shellClassName)}
+      style={widthCh ? { width: `${widthCh}ch` } : undefined}
+    >
       <input
         {...props}
         value={value}
