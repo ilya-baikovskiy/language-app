@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { classifyReviewAnswer, scheduleNext, selectPracticeQueue } from '../srs';
+import {
+  classifyReviewAnswer,
+  isDue,
+  isLeech,
+  isNewWord,
+  scheduleNext,
+  selectPracticeQueue,
+  wordStatus,
+} from '../srs';
 import type { ReviewState, SavedWord } from '../savedWord';
 
 const NOW = new Date('2026-07-28T12:00:00.000Z');
@@ -88,5 +96,63 @@ describe('selectPracticeQueue', () => {
     expect(queue[0].id).toBe('reviewed');
     expect(queue.filter((item) => item.id.startsWith('new-'))).toHaveLength(10);
     expect(queue.map((item) => item.id)).not.toContain('future');
+  });
+});
+
+describe('wordStatus', () => {
+  it('«Новое» — только пока слово ни разу не тренировалось', () => {
+    expect(wordStatus(word('a', review()))).toBe('new');
+    // Ошибка на первой же попытке уже не «Новое»: lastReviewedAt проставлен,
+    // а lapses вырос — слово перешло в работу.
+    expect(
+      wordStatus(word('a', review({ lastReviewedAt: NOW.toISOString(), intervalDays: 1, lapses: 1 }))),
+    ).toBe('learning');
+  });
+
+  it('«Знаю» начинается с интервала 21 день, ниже — «Учу»', () => {
+    const reviewed = { lastReviewedAt: NOW.toISOString(), repetitions: 4 };
+    expect(wordStatus(word('a', review({ ...reviewed, intervalDays: 20 })))).toBe('learning');
+    expect(wordStatus(word('a', review({ ...reviewed, intervalDays: 21 })))).toBe('known');
+    expect(wordStatus(word('a', review({ ...reviewed, intervalDays: 90 })))).toBe('known');
+  });
+
+  it('не терминален: ошибка в повторе возвращает выученное слово в «Учу»', () => {
+    const known = word('a', review({ lastReviewedAt: NOW.toISOString(), repetitions: 5, intervalDays: 40 }));
+    expect(wordStatus(known)).toBe('known');
+    const afterMistake = { ...known, review: scheduleNext(known.review, 'again', NOW) };
+    expect(wordStatus(afterMistake)).toBe('learning');
+  });
+});
+
+describe('isLeech', () => {
+  it('помечает слово сложным с четвёртой ошибки, не раньше', () => {
+    expect(isLeech(word('a', review({ lapses: 3 })))).toBe(false);
+    expect(isLeech(word('a', review({ lapses: 4 })))).toBe(true);
+  });
+});
+
+describe('isDue', () => {
+  it('слово к повтору, когда dueAt уже наступил', () => {
+    expect(isDue(word('a', review({ dueAt: NOW.toISOString() })), NOW)).toBe(true);
+    expect(isDue(word('a', review({ dueAt: '2026-07-27T12:00:00.000Z' })), NOW)).toBe(true);
+    expect(isDue(word('a', review({ dueAt: '2026-07-29T12:00:00.000Z' })), NOW)).toBe(false);
+  });
+
+  it('согласован с составом очереди — в неё попадает ровно то, что к повтору', () => {
+    const words = [
+      word('due', review({ dueAt: '2026-07-27T12:00:00.000Z', lastReviewedAt: NOW.toISOString(), repetitions: 2, intervalDays: 3 })),
+      word('later', review({ dueAt: '2026-08-05T12:00:00.000Z', lastReviewedAt: NOW.toISOString(), repetitions: 2, intervalDays: 8 })),
+    ];
+    const queue = selectPracticeQueue(words, NOW);
+    expect(queue.map((w) => w.id)).toEqual(['due']);
+    expect(words.filter((w) => isDue(w, NOW)).map((w) => w.id)).toEqual(['due']);
+  });
+});
+
+describe('isNewWord', () => {
+  it('новое слово попадает в очередь сразу после сохранения', () => {
+    const fresh = word('fresh', review());
+    expect(isNewWord(fresh)).toBe(true);
+    expect(selectPracticeQueue([fresh], NOW).map((w) => w.id)).toEqual(['fresh']);
   });
 });

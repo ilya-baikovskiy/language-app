@@ -23,6 +23,19 @@ export function createInitialReviewState(now: Date = new Date()): ReviewState {
   return { easeFactor: 2.5, intervalDays: 0, repetitions: 0, dueAt: now.toISOString(), lapses: 0 };
 }
 
+// Слот-подсказка из AnnotationSummary.hint (см. src/types/lesson.ts). Забираем
+// её в момент сохранения по той же причине, что relatedSource/-Translation:
+// карточка слова в «Учить» переиспользует Bottom Sheet ридера целиком, а он
+// рисует эту строку из hint — восстановить её задним числом неоткуда, кроме
+// повторной генерации аннотации. Поле необязательное: у слов, сохранённых до
+// этого изменения, hint отсутствует, и шит просто не рисует строку (он уже
+// сейчас выводит hint условно).
+export const annotationHintSchema = z.object({
+  label: z.string(),
+  source: z.string(),
+  translation: z.string(),
+});
+
 export const practicePhraseSchema = z.object({
   source: z.string(),
   translation: z.string(),
@@ -58,6 +71,9 @@ export const savedWordSchema = z.object({
   // тренировка не написана (та же логика, что с ReviewState выше).
   relatedSource: z.string().nullable().optional(),
   relatedTranslation: z.string().nullable().optional(),
+
+  // Слот-подсказка (см. annotationHintSchema выше).
+  hint: annotationHintSchema.nullable().optional(),
 
   // Снимок глоссы замораживается в момент сохранения, а промпт аннотаций
   // продолжает улучшаться (см. PROGRESS.md — «строительство» → «конструкция»).

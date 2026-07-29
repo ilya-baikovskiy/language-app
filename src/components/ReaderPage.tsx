@@ -253,6 +253,9 @@ export function ReaderPage({ lesson, audioSrc, onBack, entryPoint, appActiveLang
       // неоткуда — забираем сразу.
       relatedSource: summary.context.relatedSource,
       relatedTranslation: summary.context.relatedTranslation,
+      // Та же логика: карточка слова в «Учить» рисует эту строку тем же шитом,
+      // а перегенерировать её потом неоткуда.
+      hint: summary.hint,
     });
     // Only tracked on save, not on un-save (05 §9 only defines
     // `learning_unit_saved` — there is no matching "unsaved" event name to

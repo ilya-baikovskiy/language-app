@@ -290,4 +290,54 @@ describe('TrainingPracticeView', () => {
     // уже гарантированного минимума (см. controls.tsx: AUTO_SIZE_MIN_CH=3).
     expect(shortShell?.style.width).toBe('3.5ch');
   });
+
+  // Пословное правило SRS (см. LEARN_SECTION_PLAN.md, этап A): расписание
+  // обновляется только у слов, которые были к повтору на старте сессии. Это
+  // заменило прежний сессионный флаг freePractice.
+  it('не обновляет расписание у слова, которое не к повтору', async () => {
+    const onUpdateWord = vi.fn(async (nextWord: SavedWord) => nextWord);
+    const future = new Date(Date.now() + 5 * 86_400_000).toISOString();
+    const notDue = makeWord({
+      contextSource: undefined,
+      contextTranslation: undefined,
+      review: { easeFactor: 2.5, intervalDays: 5, repetitions: 2, dueAt: future, lapses: 0 },
+    });
+    render(<TrainingPracticeView words={[notDue]} onExit={vi.fn()} onUpdateWord={onUpdateWord} />);
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(screen.getByText('✓ Верно')).toBeTruthy();
+    expect(await screen.findByText('Вне расписания — расписание не изменилось.')).toBeTruthy();
+    expect(onUpdateWord).not.toHaveBeenCalled();
+  });
+
+  it('в одной сессии обновляет расписание только у тех слов, что к повтору', async () => {
+    const onUpdateWord = vi.fn(async (nextWord: SavedWord) => nextWord);
+    const future = new Date(Date.now() + 5 * 86_400_000).toISOString();
+    const dueWord = makeWord({ id: 'lesson-1:due', tokenId: 'due', contextSource: undefined, contextTranslation: undefined });
+    const notDueWord = makeWord({
+      id: 'lesson-1:later',
+      tokenId: 'later',
+      contextSource: undefined,
+      contextTranslation: undefined,
+      review: { easeFactor: 2.5, intervalDays: 5, repetitions: 2, dueAt: future, lapses: 0 },
+    });
+    render(
+      <TrainingPracticeView words={[dueWord, notDueWord]} onExit={vi.fn()} onUpdateWord={onUpdateWord} />,
+    );
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+    await waitFor(() => expect(onUpdateWord).toHaveBeenCalledTimes(1));
+    expect(onUpdateWord.mock.calls[0][0].id).toBe('lesson-1:due');
+
+    fireEvent.click(screen.getByRole('button', { name: /Дальше/ }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(await screen.findByText('Вне расписания — расписание не изменилось.')).toBeTruthy();
+    // Второе слово расписание не тронуло — вызов остался единственным.
+    expect(onUpdateWord).toHaveBeenCalledTimes(1);
+  });
 });

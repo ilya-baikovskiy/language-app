@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { classifyReviewAnswer, scheduleNext, type ReviewVerdict } from '../content-system/srs';
+import { classifyReviewAnswer, isDue, scheduleNext, type ReviewVerdict } from '../content-system/srs';
 import {
   PRACTICE_PHRASE_PROMPT_VERSION,
   type SavedWord,
@@ -32,10 +32,6 @@ type Props = {
   phraseMode?: TrainingPhraseMode;
   onExit: () => void;
   onUpdateWord?: (word: SavedWord) => Promise<SavedWord>;
-  // Повторение вне расписания (очередь на сегодня пуста, но хочется ещё
-  // потренироваться) — SRS-интервалы не пересчитываются и не сохраняются,
-  // только кэш practicePhrase по-прежнему пишется через onUpdateWord.
-  freePractice?: boolean;
 };
 
 type Cloze = { before: string; blank: string; after: string };
@@ -158,9 +154,20 @@ export function TrainingPracticeView({
   phraseMode = 'source',
   onExit,
   onUpdateWord,
-  freePractice = false,
 }: Props) {
   const [sessionWords, setSessionWords] = useState(words);
+  // Какие слова были «к повтору» на момент старта сессии — единственный
+  // критерий, обновлять ли расписание. Замораживается вместе с очередью:
+  // dueAt меняется только нашей же записью, поэтому пересчитывать его на
+  // каждый ответ незачем, а зафиксированный набор не «уплывает» посреди сессии.
+  //
+  // Это заменяет прежний сессионный флаг freePractice: тренировка вне
+  // расписания — не отдельный режим, а просто случай, когда к повтору не было
+  // ничего. Тот же механизм автоматически делает учебной и мини-сессию
+  // «Повторить ошибки» (там dueAt уже уехал в будущее первой попыткой).
+  const [dueWordIds] = useState(
+    () => new Set(words.filter((word) => isDue(word)).map((word) => word.id)),
+  );
   const [index, setIndex] = useState(0);
   const [frozenPhrase, setFrozenPhrase] = useState<FrozenPhrase | null>(
     () => availableFrozenPhrase(words[0], phraseMode),
@@ -374,7 +381,7 @@ export function TrainingPracticeView({
   }
 
   async function persistVerdict(nextVerdict: ReviewVerdict) {
-    if (freePractice) return;
+    if (!dueWordIds.has(word.id)) return;
     const now = new Date();
     const nextReview = scheduleNext(word.review, nextVerdict, now);
     setReviewIntervalDays(nextReview.intervalDays);
@@ -738,8 +745,8 @@ export function TrainingPracticeView({
                     <p>{deterministicResultText}</p>
                   ) : verdict === 'good' ? (
                     <p>
-                      {freePractice
-                        ? 'Тренировка вне расписания — SRS не обновлялся.'
+                      {!dueWordIds.has(word.id)
+                        ? 'Вне расписания — расписание не изменилось.'
                         : retryAttempt
                           ? 'Ответ исправлен. Расписание уже учло только первую попытку.'
                           : `Следующее повторение через ${reviewIntervalDays ?? 1} дн.`}
