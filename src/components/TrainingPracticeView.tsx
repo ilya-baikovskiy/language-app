@@ -9,6 +9,7 @@ import { useSpeechInput } from '../hooks/useSpeechInput';
 import { useUnitPronunciation } from '../hooks/useUnitPronunciation';
 import { selectSourcePracticeContext } from '../lib/trainingPhrase';
 import { findWordAlignedIndex } from '../lib/wordAlign';
+import { getSentenceAudioSegment, playAudioSegment } from '../lib/lessonSentenceAudio';
 import {
   fetchAnnotationBasic,
   fetchPracticeFeedback,
@@ -181,6 +182,7 @@ export function TrainingPracticeView({
   const [gloss, setGloss] = useState<GlossState | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [fullPhraseLoading, setFullPhraseLoading] = useState(false);
   const preparationPromisesRef = useRef(new Map<string, Promise<SavedWord>>());
   const glossCacheRef = useRef(new Map<string, AnnotationSummary>());
   const feedbackRequestIdRef = useRef(0);
@@ -488,6 +490,27 @@ export function TrainingPracticeView({
     });
   }
 
+  // «Проговори фразу целиком» в source-режиме — это предложение из урока
+  // целиком, часто длиннее 80 символов (лимит /api/speak-unit — эндпоинт для
+  // слова/фразы, не абзаца). Вместо нового TTS-вызова нарезаем уже готовую
+  // дорожку урока по timestamps; на AI-фразу (которой в записи урока не было)
+  // или на любую ошибку поиска сегмента — обычный speakText целиком.
+  function speakFullPhrase() {
+    if (!source) return;
+    if (phraseMode !== 'source') {
+      speakText(source);
+      return;
+    }
+    setAudioError(null);
+    setFullPhraseLoading(true);
+    getSentenceAudioSegment(word)
+      .then((segment) => (segment ? playAudioSegment(segment) : Promise.reject(new Error('no segment'))))
+      .catch(() => {
+        speakText(source);
+      })
+      .finally(() => setFullPhraseLoading(false));
+  }
+
   async function handleTapWord(tapped: string) {
     if (!source || answered) return;
     setHintOpen(false);
@@ -757,8 +780,8 @@ export function TrainingPracticeView({
                       </div>
                       <SpeakerButton
                         label="Прослушать фразу целиком"
-                        loading={isSpeaking(source)}
-                        onClick={() => speakText(source)}
+                        loading={fullPhraseLoading || isSpeaking(source)}
+                        onClick={speakFullPhrase}
                       />
                     </div>
                   )}

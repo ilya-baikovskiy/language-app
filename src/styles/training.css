@@ -99,18 +99,12 @@
   background: transparent;
   font: inherit;
   cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  transition:
-    background var(--motion-fast),
-    text-decoration-color var(--motion-fast);
+  text-decoration: none;
+  transition: background var(--motion-fast);
 }
 .training-context-word:hover,
 .training-context-word:focus-visible {
   background: var(--accent-soft);
-  text-decoration-color: var(--accent-underline);
   outline: none;
 }
 .training-answer-shell {
@@ -149,8 +143,8 @@
   background: var(--accent-soft);
 }
 .training-hint-card {
-  background: var(--warning-soft);
-  border: 1px solid var(--warning-border);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
 }
 .training-assistance-content {
   flex: 1;
