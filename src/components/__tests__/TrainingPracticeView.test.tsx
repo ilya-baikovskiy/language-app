@@ -340,4 +340,77 @@ describe('TrainingPracticeView', () => {
     // Второе слово расписание не тронуло — вызов остался единственным.
     expect(onUpdateWord).toHaveBeenCalledTimes(1);
   });
+
+  // Этап B плана: экран итогов вместо молчаливого выхода.
+  it('после последней карточки показывает итоги со счётом и записью расписания', async () => {
+    const onUpdateWord = vi.fn(async (nextWord: SavedWord) => nextWord);
+    const onExit = vi.fn();
+    const first = makeWord({ id: 'lesson-1:a', tokenId: 'a', contextSource: undefined, contextTranslation: undefined });
+    const second = makeWord({
+      id: 'lesson-1:b',
+      tokenId: 'b',
+      surfaceForm: 'άνετα',
+      translation: 'комфортно',
+      contextSource: undefined,
+      contextTranslation: undefined,
+    });
+    render(<TrainingPracticeView words={[first, second]} onExit={onExit} onUpdateWord={onUpdateWord} />);
+
+    // Первое — верно, второе — мимо.
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+    await waitFor(() => expect(onUpdateWord).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: /Дальше/ }));
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'мимо' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+    await waitFor(() => expect(onUpdateWord).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole('button', { name: /Дальше/ }));
+
+    expect(screen.getByText('Сессия завершена')).toBeTruthy();
+    expect(screen.getByText('из 2 верно')).toBeTruthy();
+    expect(screen.getByText('1', { selector: '.training-summary-score b' })).toBeTruthy();
+    expect(screen.getByText('Расписание обновлено для всех слов сессии')).toBeTruthy();
+    // Выход из итогов — только по «Готово», не автоматически.
+    expect(onExit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Готово' }));
+    expect(onExit).toHaveBeenCalledTimes(1);
+  });
+
+  it('«Повторить ошибки» берёт только неверные и не меняет расписание второй раз', async () => {
+    const onUpdateWord = vi.fn(async (nextWord: SavedWord) => nextWord);
+    const first = makeWord({ id: 'lesson-1:a', tokenId: 'a', contextSource: undefined, contextTranslation: undefined });
+    const second = makeWord({
+      id: 'lesson-1:b',
+      tokenId: 'b',
+      surfaceForm: 'άνετα',
+      translation: 'комфортно',
+      contextSource: undefined,
+      contextTranslation: undefined,
+    });
+    render(<TrainingPracticeView words={[first, second]} onExit={vi.fn()} onUpdateWord={onUpdateWord} />);
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+    await waitFor(() => expect(onUpdateWord).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: /Дальше/ }));
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'мимо' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+    await waitFor(() => expect(onUpdateWord).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole('button', { name: /Дальше/ }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Повторить ошибки (1)' }));
+
+    // Мини-сессия ровно из одного слова — того, что не далось.
+    expect(screen.getByText('1/1', { selector: '.training-progress-label' })).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: /Переведи: комфортно/ })).toBeTruthy();
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'άνετα' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    // dueAt уже уехал в будущее первой попыткой — расписание не трогаем.
+    expect(await screen.findByText('Вне расписания — расписание не изменилось.')).toBeTruthy();
+    expect(onUpdateWord).toHaveBeenCalledTimes(2);
+  });
 });
