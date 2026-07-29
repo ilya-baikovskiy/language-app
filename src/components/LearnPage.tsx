@@ -21,6 +21,7 @@ type Props = {
 type PracticeSession = {
   words: SavedWord[];
   phraseMode: TrainingPhraseMode;
+  freePractice: boolean;
 };
 
 export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
@@ -35,6 +36,7 @@ export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
       <TrainingPracticeView
         words={practiceSession.words}
         phraseMode={practiceSession.phraseMode}
+        freePractice={practiceSession.freePractice}
         onExit={() => setPracticeSession(null)}
         onUpdateWord={updateWord}
       />
@@ -58,7 +60,7 @@ export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
           type="button"
           className="btn primary"
           disabled={loading || dueWords.length === 0}
-          onClick={() => setPracticeSession({ words: [...dueWords], phraseMode: trainingPhraseMode })}
+          onClick={() => setPracticeSession({ words: [...dueWords], phraseMode: trainingPhraseMode, freePractice: false })}
         >
           Начать
         </button>
@@ -69,7 +71,16 @@ export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
           Пока нет сохранённых слов и фраз для этого языка — сохраняй их прямо из чтения, нажимая на слово.
         </p>
       ) : !loading && dueWords.length === 0 ? (
-        <p className="empty-state">На сегодня всё. Следующие слова появятся здесь по расписанию.</p>
+        <div className="empty-state">
+          <p>На сегодня всё. Следующие слова появятся здесь по расписанию.</p>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => setPracticeSession({ words: [...filteredWords], phraseMode: trainingPhraseMode, freePractice: true })}
+          >
+            Повторить ещё раз (вне расписания)
+          </button>
+        </div>
       ) : (
         <ul className="learn-saved-list">
           {filteredWords.map((word) => (
