@@ -43,8 +43,9 @@ describe('TrainingPracticeView', () => {
     const input = screen.getByRole('textbox', { name: /Пропущенное слово/ }) as HTMLInputElement;
     expect(input.value).toBe('');
     expect(input.getAttribute('placeholder')).toBeNull();
-    // Mirror знает ожидаемую ширину, но скрыт от assistive technology.
-    expect(container.querySelector('.ui-text-input-mirror')?.textContent).toBe('κατασκευή');
+    // Ширина обёртки отмерена в ch от ожидаемого слова (пока поле пустое).
+    const shell = container.querySelector<HTMLElement>('.training-answer-shell');
+    expect(shell?.style.width).toBe(`${'κατασκευή'.length + 1.5}ch`);
     expect(container.querySelector('.training-cloze')?.textContent).toContain('βοηθά επίσης στην προστασία');
   });
 
@@ -201,7 +202,9 @@ describe('TrainingPracticeView', () => {
     );
 
     expect(container.querySelector('.training-ru-sentence')?.textContent).toBe('Конструкция белая.');
-    expect(container.querySelector('.training-cloze')?.textContent).toContain('Η κατασκευή είναι λευκή.');
+    // Целевое слово блокируется в пустое поле ввода, а не показывается текстом.
+    expect(container.querySelector('.training-cloze')?.textContent).toContain('είναι λευκή.');
+    expect(container.querySelector('.training-cloze')?.textContent).not.toContain('κατασκευή');
     expect(container.querySelector('.training-cloze')?.textContent).not.toContain('Πρώτη πρόταση');
     const generatedPhraseRequest = fetchSpy.mock.calls.find(([, init]) => {
       const body = typeof init?.body === 'string' ? JSON.parse(init.body) : {};
@@ -264,19 +267,27 @@ describe('TrainingPracticeView', () => {
     ));
 
     expect(await screen.findByRole('textbox', { name: /Пропущенное слово/ })).toBeTruthy();
-    expect(container.querySelector('.training-cloze')?.textContent).toContain('Αυτή είναι μια κατασκευή.');
+    expect(container.querySelector('.training-cloze')?.textContent).toContain('Αυτή είναι μια ');
+    expect(container.querySelector('.training-cloze')?.textContent).not.toContain('κατασκευή');
     expect(onUpdateWord).toHaveBeenCalledTimes(1);
   });
 
-  it('длинная форма задаёт mirror-ширину input и остаётся внутри autosize shell', () => {
-    const word = makeWord({
+  it('длинная форма задаёт широкую ch-ширину input, короткая — минимальную', () => {
+    const longWord = makeWord({
       surfaceForm: 'κατασκευάζονται',
       translation: 'строятся',
       contextSource: 'Τα σπίτια κατασκευάζονται εδώ.',
       contextTranslation: 'Дома строятся здесь.',
     });
-    const { container } = render(<TrainingPracticeView words={[word]} onExit={vi.fn()} />);
-    expect(container.querySelector('.ui-text-input-mirror')?.textContent).toBe('κατασκευάζονται');
-    expect(container.querySelector('.training-answer-shell.is-auto-size')).toBeTruthy();
+    const { container: longContainer } = render(<TrainingPracticeView words={[longWord]} onExit={vi.fn()} />);
+    const longShell = longContainer.querySelector<HTMLElement>('.training-answer-shell');
+    expect(longShell?.style.width).toBe(`${'κατασκευάζονται'.length + 1.5}ch`);
+
+    const shortWord = makeWord({ surfaceForm: 'το', translation: 'это' });
+    const { container: shortContainer } = render(<TrainingPracticeView words={[shortWord]} onExit={vi.fn()} />);
+    const shortShell = shortContainer.querySelector<HTMLElement>('.training-answer-shell');
+    // 2-буквенное слово + паддинг всё равно даёт заметно узкое поле, но не
+    // уже гарантированного минимума (см. controls.tsx: AUTO_SIZE_MIN_CH=3).
+    expect(shortShell?.style.width).toBe('3.5ch');
   });
 });
