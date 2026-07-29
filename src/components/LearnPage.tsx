@@ -19,6 +19,7 @@ import type { SavedWord } from '../content-system/savedWord';
 import type { TrainingPhraseMode } from '../content-system/userTypes';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import { Button } from './ui/controls';
+import { LearnWordCard } from './LearnWordCard';
 
 type Props = {
   activeLanguage: LanguageCode;
@@ -85,9 +86,10 @@ function pluralWords(count: number): string {
 }
 
 export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
-  const { savedWords, loading, updateWord } = useSavedWords();
+  const { savedWords, loading, updateWord, removeWord } = useSavedWords();
   const [practiceSession, setPracticeSession] = useState<PracticeSession | null>(null);
   const [filter, setFilter] = useState<StatusFilter>('all');
+  const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
 
   // Одна временная точка на все производные значения: иначе счётчики, даты и
   // очередь могут разъехаться на границе суток. Обновляется при перезагрузке
@@ -123,8 +125,16 @@ export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
 
   function startSession(words: SavedWord[]) {
     if (words.length === 0) return;
+    setSelectedWordId(null);
     setPracticeSession({ words, phraseMode: trainingPhraseMode });
   }
+
+  // Читаем выбранное слово из актуального списка, а не храним снимок: после
+  // сброса прогресса карточка должна показывать новое состояние, а не то, с
+  // которым её открыли.
+  const selectedWord = selectedWordId
+    ? savedWords.find((word) => word.id === selectedWordId) ?? null
+    : null;
 
   if (practiceSession) {
     return (
@@ -226,21 +236,23 @@ export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
                 const status = wordStatus(word);
                 const due = isDue(word, now);
                 return (
-                  <li key={word.id} className="learn-saved-item">
-                    <span className="learn-saved-main">
-                      <span className="learn-saved-target">{word.surfaceForm}</span>
-                      <span className="learn-saved-translation">{word.translation}</span>
-                    </span>
-                    <span className="learn-saved-meta">
-                      {isLeech(word) && <span className="learn-badge-hard">сложное</span>}
-                      <span className={due ? 'learn-due-now' : undefined}>{formatDue(word, now)}</span>
-                      <span
-                        className={`learn-dot is-${status}`}
-                        title={FILTER_LABELS[status]}
-                        aria-label={FILTER_LABELS[status]}
-                        role="img"
-                      />
-                    </span>
+                  <li key={word.id}>
+                    <button
+                      type="button"
+                      className="learn-saved-item"
+                      onClick={() => setSelectedWordId(word.id)}
+                      aria-label={`${word.surfaceForm} — ${word.translation}, ${FILTER_LABELS[status]}`}
+                    >
+                      <span className="learn-saved-main">
+                        <span className="learn-saved-target">{word.surfaceForm}</span>
+                        <span className="learn-saved-translation">{word.translation}</span>
+                      </span>
+                      <span className="learn-saved-meta">
+                        {isLeech(word) && <span className="learn-badge-hard">сложное</span>}
+                        <span className={due ? 'learn-due-now' : undefined}>{formatDue(word, now)}</span>
+                        <span className={`learn-dot is-${status}`} aria-hidden="true" />
+                      </span>
+                    </button>
                   </li>
                 );
               })}
@@ -251,6 +263,21 @@ export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
             )}
           </>
         )
+      )}
+
+      {selectedWord && (
+        <LearnWordCard
+          word={selectedWord}
+          onClose={() => setSelectedWordId(null)}
+          onTrain={(word) => startSession([word])}
+          onUpdateWord={updateWord}
+          onDelete={(word) => {
+            setSelectedWordId(null);
+            removeWord(word.id).catch((err) => {
+              console.error('Не удалось удалить слово:', err);
+            });
+          }}
+        />
       )}
     </div>
   );
