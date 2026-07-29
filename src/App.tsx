@@ -59,6 +59,7 @@ function App() {
     setEnabledTopicIds,
     setEnabledCountryOrRegionIds,
     setTrainingPhraseMode,
+    setNewWordsPerSession,
   } = useAppPreferences();
   const { getLevel, setLevel } = useLanguageProfiles();
 
@@ -202,6 +203,7 @@ function App() {
         <LearnPage
           activeLanguage={activeLanguage}
           trainingPhraseMode={preferences.trainingPhraseMode}
+          newWordsPerSession={preferences.newWordsPerSession}
         />
       )}
 
@@ -222,6 +224,8 @@ function App() {
         enabledCountryOrRegionIds={preferences.enabledCountryOrRegionIds}
         trainingPhraseMode={preferences.trainingPhraseMode}
         onChangeTrainingPhraseMode={setTrainingPhraseMode}
+        newWordsPerSession={preferences.newWordsPerSession}
+        onChangeNewWordsPerSession={setNewWordsPerSession}
         onToggleTopic={(topicId) => {
           const isRemoving = preferences.enabledTopicIds.includes(topicId);
           const next = isRemoving

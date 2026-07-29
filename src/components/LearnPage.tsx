@@ -16,7 +16,7 @@ import {
   type WordStatus,
 } from '../content-system/srs';
 import type { SavedWord } from '../content-system/savedWord';
-import type { TrainingPhraseMode } from '../content-system/userTypes';
+import type { NewWordsPerSession, TrainingPhraseMode } from '../content-system/userTypes';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 import { Button } from './ui/controls';
 import { LearnWordCard } from './LearnWordCard';
@@ -24,6 +24,7 @@ import { LearnWordCard } from './LearnWordCard';
 type Props = {
   activeLanguage: LanguageCode;
   trainingPhraseMode: TrainingPhraseMode;
+  newWordsPerSession: NewWordsPerSession;
 };
 
 type PracticeSession = {
@@ -85,7 +86,7 @@ function pluralWords(count: number): string {
   return 'слов';
 }
 
-export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
+export function LearnPage({ activeLanguage, trainingPhraseMode, newWordsPerSession }: Props) {
   const { savedWords, loading, updateWord, removeWord } = useSavedWords();
   const [practiceSession, setPracticeSession] = useState<PracticeSession | null>(null);
   const [filter, setFilter] = useState<StatusFilter>('all');
@@ -104,7 +105,10 @@ export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
     () => savedWords.filter((word) => word.language === activeLanguage),
     [savedWords, activeLanguage],
   );
-  const dueWords = useMemo(() => selectPracticeQueue(languageWords, now), [languageWords, now]);
+  const dueWords = useMemo(
+    () => selectPracticeQueue(languageWords, now, newWordsPerSession),
+    [languageWords, now, newWordsPerSession],
+  );
 
   const counts = useMemo(() => {
     const byStatus: Record<StatusFilter, number> = { all: languageWords.length, new: 0, learning: 0, known: 0 };

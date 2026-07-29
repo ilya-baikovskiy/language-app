@@ -15,6 +15,7 @@ import {
   createDefaultAppPreferences,
   type AppPreferences,
   type TrainingPhraseMode,
+  type NewWordsPerSession,
 } from '../content-system/userTypes';
 import { BlobAppPreferencesRepository } from '../content-system/repositories/blobAppPreferencesRepository';
 import type { AppPreferencesRepository } from '../content-system/repositories';
@@ -123,6 +124,21 @@ export function useAppPreferences(repository: AppPreferencesRepository = new Blo
     [persist],
   );
 
+  const setNewWordsPerSession = useCallback(
+    (newWordsPerSession: NewWordsPerSession) => {
+      setPreferences((prev) => {
+        const next: AppPreferences = {
+          ...prev,
+          newWordsPerSession,
+          updatedAt: new Date().toISOString(),
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
+
   return {
     preferences,
     loading,
@@ -131,5 +147,6 @@ export function useAppPreferences(repository: AppPreferencesRepository = new Blo
     setEnabledTopicIds,
     setEnabledCountryOrRegionIds,
     setTrainingPhraseMode,
+    setNewWordsPerSession,
   };
 }

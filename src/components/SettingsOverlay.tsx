@@ -6,7 +6,11 @@ import { useEffect, useRef, useState } from 'react';
 import { listLanguageConfigs, type LanguageCode } from '../../lib/pipeline/languageConfig';
 import { CEFR_LEVELS, type CEFRLevel } from '../content-system/types';
 import { TOPICS, COUNTRIES } from '../content-system/catalog';
-import type { TrainingPhraseMode } from '../content-system/userTypes';
+import {
+  NEW_WORDS_PER_SESSION_OPTIONS,
+  type NewWordsPerSession,
+  type TrainingPhraseMode,
+} from '../content-system/userTypes';
 import { DebugEventsOverlay } from './DebugEventsOverlay';
 
 const LANGUAGES = listLanguageConfigs();
@@ -21,6 +25,8 @@ type Props = {
   onToggleTopic: (topicId: string) => void;
   onToggleCountry: (countryId: string) => void;
   trainingPhraseMode: TrainingPhraseMode;
+  newWordsPerSession: NewWordsPerSession;
+  onChangeNewWordsPerSession: (value: NewWordsPerSession) => void;
   onChangeTrainingPhraseMode: (mode: TrainingPhraseMode) => void;
 };
 
@@ -34,6 +40,8 @@ export function SettingsOverlay({
   onToggleTopic,
   onToggleCountry,
   trainingPhraseMode,
+  newWordsPerSession,
+  onChangeNewWordsPerSession,
   onChangeTrainingPhraseMode,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -133,6 +141,35 @@ export function SettingsOverlay({
                   </button>
                 );
               })}
+            </div>
+          </section>
+
+          <section className="settings-section">
+            <h3 className="settings-section-title">Тренировка</h3>
+            <div className="form-field">
+              <span className="form-label" id="new-words-per-session-label">
+                Новых слов за сессию
+              </span>
+              <div
+                className="input-kind-toggle"
+                role="group"
+                aria-labelledby="new-words-per-session-label"
+              >
+                {NEW_WORDS_PER_SESSION_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={newWordsPerSession === option}
+                    onClick={() => onChangeNewWordsPerSession(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <span className="form-hint">
+                Сколько незнакомых слов добавлять в одну тренировку. Повторы уже изученных слов
+                этим лимитом не ограничены.
+              </span>
             </div>
           </section>
 
