@@ -173,11 +173,6 @@
   border-color: var(--border);
   background: var(--surface-2);
 }
-.training-hint-toggle.is-open {
-  color: var(--warning-strong);
-  background: var(--warning-soft);
-  border-color: var(--warning-border);
-}
 
 .training-action-row {
   display: flex;

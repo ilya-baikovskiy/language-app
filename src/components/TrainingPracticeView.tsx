@@ -643,7 +643,7 @@ export function TrainingPracticeView({
 
                 <Button
                   variant="ghost"
-                  className={`training-hint-toggle ${hintOpen ? 'is-open' : ''}`}
+                  className="training-hint-toggle"
                   onClick={handleHintToggle}
                 >
                   {hintOpen ? 'Скрыть подсказку' : 'Подсказка'}
