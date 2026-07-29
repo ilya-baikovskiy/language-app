@@ -68,12 +68,17 @@ export interface LessonArtifactRepository {
   saveLesson(lesson: Lesson, audioUrl: string): Promise<LessonArtifactRef>;
   getLesson(lessonId: string): Promise<Lesson | null>;
   listLessons(userId: string): Promise<LessonSummary[]>;
-  // PR 3 — идемпотентность card → Lesson (16 §13). `startLesson` создаёт/
-  // заменяет placeholder-запись индекса со status:'creating' до начала
-  // фактической генерации; `markLessonFailed` переводит её в 'failed', если
-  // генерация упала. Финальный переход creating -> ready делает не этот
-  // repository напрямую, а api/save-lesson.ts (уже вызывается изнутри
-  // существующего generateLesson pipeline) — см. cardGeneration.ts.
+  // PR 3 — идемпотентность card → Lesson (16 §13). `startLesson` создаёт
+  // placeholder-запись индекса со status:'creating' до начала фактической
+  // генерации; `markLessonFailed` переводит её в 'failed', если генерация
+  // упала. Финальный переход creating -> ready делает не этот repository
+  // напрямую, а api/save-lesson.ts (уже вызывается изнутри существующего
+  // generateLesson pipeline) — см. cardGeneration.ts.
+  //
+  // Возвращает alreadyComplete: true, если урок с этим id уже сохранён
+  // целиком — тогда placeholder НЕ пишется, запись индекса восстанавливается
+  // в 'ready', и вызывающий обязан переиспользовать готовый урок вместо
+  // генерации поверх него.
   startLesson(placeholder: {
     id: string;
     cardId: string;
@@ -82,6 +87,6 @@ export interface LessonArtifactRepository {
     level: string;
     title: string;
     estimatedMinutes: number;
-  }): Promise<void>;
+  }): Promise<{ alreadyComplete: boolean }>;
   markLessonFailed(lessonId: string): Promise<void>;
 }

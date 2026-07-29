@@ -78,12 +78,17 @@ export async function POST(request: Request): Promise<Response> {
       audioUrl,
       audioProvider: lesson.audioProvider,
       languageCode: lesson.languageCode,
-      createdAt: new Date().toISOString(),
+      // Дата первого создания, а не последней записи: перегенерация того же
+      // урока не должна выглядеть в библиотеке как новый текст (сортировка и
+      // отображение идут по createdAt).
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
       status: 'ready',
       cardId: cardId ?? existing?.cardId,
       blueprintId: blueprintId ?? existing?.blueprintId,
     };
-    const nextIndex = [entry, ...index.filter((e) => e.slug !== slug)];
+    // Отсекаем и по slug, и по id: existing ищется по обоим, поэтому фильтр
+    // только по slug мог оставить в индексе вторую запись того же урока.
+    const nextIndex = [entry, ...index.filter((e) => e.slug !== slug && e.id !== lesson.id)];
 
     await put(INDEX_PATHNAME, JSON.stringify(nextIndex), {
       access: 'public',

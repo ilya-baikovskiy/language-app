@@ -64,8 +64,8 @@ export class BlobLessonArtifactRepository implements LessonArtifactRepository {
     level: string;
     title: string;
     estimatedMinutes: number;
-  }): Promise<void> {
-    await startLessonOnBlob({
+  }): Promise<{ alreadyComplete: boolean }> {
+    const { alreadyComplete } = await startLessonOnBlob({
       id: placeholder.id,
       slug: placeholder.id,
       title: placeholder.title,
@@ -75,6 +75,7 @@ export class BlobLessonArtifactRepository implements LessonArtifactRepository {
       cardId: placeholder.cardId,
       blueprintId: placeholder.blueprintId,
     });
+    return { alreadyComplete: alreadyComplete === true };
   }
 
   async markLessonFailed(lessonId: string): Promise<void> {

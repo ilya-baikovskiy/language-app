@@ -1,0 +1,172 @@
+<title>Учить — хаб: очередь, статусы, список слов</title>
+<style>
+  :root {
+    --surface: #fffdf8; --surface-2: #ece8dc; --ink: #24211c; --ink-soft: #6f6a5f;
+    --ink-faint: #a49d8d; --border: rgba(36, 33, 28, 0.12); --accent: #4b3fd6;
+    --accent-soft: rgba(75, 63, 214, 0.11); --accent-underline: rgba(75, 63, 214, 0.55);
+    --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35);
+    --font-article: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --page-bg: #e7e2d5;
+    --good: #1f7a4d; --good-soft: #e3f3e9; --good-border: #bfe2cd;
+    --bad: #b23b3b; --bad-soft: #fbeaea; --bad-border: #eec6c6;
+    --warn: #9a6b12; --warn-soft: #fbf1de; --warn-border: #ecd8ab;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #262320; --surface-2: #2f2b26; --ink: #f1ede3; --ink-soft: #b6ae9e;
+      --ink-faint: #766f60; --border: rgba(241, 237, 227, 0.13); --accent: #9186ff;
+      --accent-soft: rgba(145, 134, 255, 0.16); --accent-underline: rgba(145, 134, 255, 0.6);
+      --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6); --page-bg: #1c1a17;
+      --good: #6fce9c; --good-soft: rgba(111, 206, 156, 0.13); --good-border: rgba(111, 206, 156, 0.35);
+      --bad: #ec9797; --bad-soft: rgba(236, 151, 151, 0.13); --bad-border: rgba(236, 151, 151, 0.35);
+      --warn: #e0b45b; --warn-soft: rgba(224, 180, 91, 0.13); --warn-border: rgba(224, 180, 91, 0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page { background: var(--page-bg); color: var(--ink); font-family: var(--font-ui); min-height: 100vh; padding: 28px 16px 60px; }
+  .wrap { max-width: 460px; margin: 0 auto; }
+
+  .intro { margin-bottom: 18px; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 8px; }
+  h1 { font-size: 21px; margin: 0 0 8px; text-wrap: balance; }
+  .lede { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+  .lede b { color: var(--ink); }
+
+  .state-label { font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin: 30px 0 10px; }
+
+  .screen { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 20px 18px 22px; }
+  .screen-title { font-family: var(--font-article); font-size: 26px; margin: 0 0 14px; }
+
+  /* Карточка дня */
+  .today { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
+  .today-count { margin: 0; font-size: 15px; font-weight: 600; }
+  .today-hint { margin: 3px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+  .btn { border: 1px solid var(--border); border-radius: 12px; min-height: 44px; padding: 0 18px; font: 500 14px var(--font-ui); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.full { width: 100%; }
+  .btn + .btn { margin-top: 8px; }
+
+  /* Пустая очередь */
+  .done-check { color: var(--good); font-weight: 700; }
+  .today-empty { border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .today-empty .today-hint { margin-bottom: 12px; }
+
+  /* Чипы-фильтры */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 7px 13px; font-size: 13px; color: var(--ink-soft); cursor: pointer; }
+  .chip.active { background: var(--accent-soft); border-color: var(--accent-underline); color: var(--ink); font-weight: 600; }
+  .chip .n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; }
+  .dot.new { background: var(--accent); }
+  .dot.learning { background: var(--warn); }
+  .dot.known { background: var(--good); }
+
+  /* Список слов */
+  .word-list { list-style: none; margin: 0; padding: 0; }
+  .word-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .word-row:last-child { border-bottom: none; }
+  .word-main { min-width: 0; }
+  .word-target { font-family: var(--font-article); font-size: 18px; }
+  .word-ru { font-size: 13px; color: var(--ink-soft); margin-top: 1px; }
+  .word-meta { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .word-meta .due-today { color: var(--warn); font-weight: 600; }
+  .badge-hard { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bad); background: var(--bad-soft); border: 1px solid var(--bad-border); border-radius: 6px; padding: 2px 6px; }
+
+  .note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); border-top: 1px dashed var(--border); padding-top: 12px; }
+  .note b { color: var(--ink); }
+</style>
+
+<div class="page"><div class="wrap">
+  <div class="intro">
+    <div class="eyebrow">Мокап 05 · Учить — хаб</div>
+    <h1>Карточка дня, статусы-фильтры, живой список</h1>
+    <p class="lede">Два состояния одного экрана. Статусы: <b>Новое</b> — ещё не тренировалось,
+    <b>Учу</b> — интервал меньше 21 дня, <b>Знаю</b> — интервал от 21 дня.
+    Тап по любой строке открывает карточку слова (мокап 06).</p>
+  </div>
+
+  <div class="state-label">Состояние 1 — есть очередь на сегодня</div>
+  <div class="screen">
+    <h2 class="screen-title">Учить</h2>
+
+    <div class="today">
+      <div>
+        <p class="today-count">4 на сегодня</p>
+        <p class="today-hint">из них новых: 2 · всего сохранено 9</p>
+      </div>
+      <button class="btn primary">Начать</button>
+    </div>
+
+    <div class="chips">
+      <span class="chip active">Все <span class="n">9</span></span>
+      <span class="chip"><span class="dot new"></span>Новые <span class="n">2</span></span>
+      <span class="chip"><span class="dot learning"></span>Учу <span class="n">5</span></span>
+      <span class="chip"><span class="dot known"></span>Знаю <span class="n">2</span></span>
+    </div>
+
+    <ul class="word-list">
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">κάτοικοι</div><div class="word-ru">жители</div></div>
+        <div class="word-meta"><span class="due-today">сегодня</span><span class="dot learning"></span></div>
+      </li>
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">άνετα</div><div class="word-ru">комфортно</div></div>
+        <div class="word-meta"><span class="due-today">сегодня</span><span class="dot new"></span></div>
+      </li>
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">κατασκευή</div><div class="word-ru">конструкция</div></div>
+        <div class="word-meta"><span class="badge-hard">сложное</span><span>завтра</span><span class="dot learning"></span></div>
+      </li>
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">όπου</div><div class="word-ru">где</div></div>
+        <div class="word-meta"><span>через 5 дн.</span><span class="dot learning"></span></div>
+      </li>
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">άνεμο</div><div class="word-ru">ветер</div></div>
+        <div class="word-meta"><span>25.08</span><span class="dot known"></span></div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="state-label">Состояние 2 — очередь пуста</div>
+  <div class="screen">
+    <h2 class="screen-title">Учить</h2>
+
+    <div class="today-empty">
+      <p class="today-count"><span class="done-check">✓</span> На сегодня всё</p>
+      <p class="today-hint">Ближайший повтор — завтра, 5 слов.</p>
+      <button class="btn full">+5 новых слов</button>
+      <button class="btn full">Повторить без расписания</button>
+    </div>
+
+    <div class="chips">
+      <span class="chip active">Все <span class="n">9</span></span>
+      <span class="chip"><span class="dot new"></span>Новые <span class="n">2</span></span>
+      <span class="chip"><span class="dot learning"></span>Учу <span class="n">5</span></span>
+      <span class="chip"><span class="dot known"></span>Знаю <span class="n">2</span></span>
+    </div>
+
+    <ul class="word-list">
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">κατασκευάζονται</div><div class="word-ru">строятся</div></div>
+        <div class="word-meta"><span>завтра</span><span class="dot learning"></span></div>
+      </li>
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">ανθεκτική</div><div class="word-ru">прочная</div></div>
+        <div class="word-meta"><span>завтра</span><span class="dot learning"></span></div>
+      </li>
+      <li class="word-row">
+        <div class="word-main"><div class="word-target">διατηρώντας</div><div class="word-ru">сохраняя</div></div>
+        <div class="word-meta"><span>25.08</span><span class="dot known"></span></div>
+      </li>
+    </ul>
+
+    <p class="note"><b>«+5 новых слов»</b> — настоящие первые знакомства, расписание пишется
+    (видна только пока есть нетронутые новые). <b>«Повторить без расписания»</b> — учебная
+    сессия по всем словам, SRS не трогает. Досрочных повторов с пересчётом интервалов нет —
+    осознанно (см. LEARN_SECTION_PLAN.md).</p>
+  </div>
+</div></div>

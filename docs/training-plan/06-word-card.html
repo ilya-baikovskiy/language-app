@@ -1,0 +1,138 @@
+<title>Учить — карточка слова (bottom sheet)</title>
+<style>
+  :root {
+    --surface: #fffdf8; --surface-2: #ece8dc; --ink: #24211c; --ink-soft: #6f6a5f;
+    --ink-faint: #a49d8d; --border: rgba(36, 33, 28, 0.12); --accent: #4b3fd6;
+    --accent-soft: rgba(75, 63, 214, 0.11); --accent-underline: rgba(75, 63, 214, 0.55);
+    --shadow: 0 18px 40px -20px rgba(36, 33, 28, 0.35);
+    --font-article: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --page-bg: #e7e2d5;
+    --good: #1f7a4d; --good-soft: #e3f3e9; --good-border: #bfe2cd;
+    --bad: #b23b3b; --bad-soft: #fbeaea; --bad-border: #eec6c6;
+    --warn: #9a6b12; --warn-soft: #fbf1de; --warn-border: #ecd8ab;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #262320; --surface-2: #2f2b26; --ink: #f1ede3; --ink-soft: #b6ae9e;
+      --ink-faint: #766f60; --border: rgba(241, 237, 227, 0.13); --accent: #9186ff;
+      --accent-soft: rgba(145, 134, 255, 0.16); --accent-underline: rgba(145, 134, 255, 0.6);
+      --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.6); --page-bg: #1c1a17;
+      --good: #6fce9c; --good-soft: rgba(111, 206, 156, 0.13); --good-border: rgba(111, 206, 156, 0.35);
+      --bad: #ec9797; --bad-soft: rgba(236, 151, 151, 0.13); --bad-border: rgba(236, 151, 151, 0.35);
+      --warn: #e0b45b; --warn-soft: rgba(224, 180, 91, 0.13); --warn-border: rgba(224, 180, 91, 0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page { background: var(--page-bg); color: var(--ink); font-family: var(--font-ui); min-height: 100vh; padding: 28px 16px 60px; }
+  .wrap { max-width: 460px; margin: 0 auto; }
+
+  .intro { margin-bottom: 18px; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 8px; }
+  h1 { font-size: 21px; margin: 0 0 8px; text-wrap: balance; }
+  .lede { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+  .lede b { color: var(--ink); }
+  .state-label { font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin: 30px 0 10px; }
+
+  /* Sheet */
+  .sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 20px 20px 16px 16px; box-shadow: var(--shadow); padding: 10px 20px 20px; }
+  .grabber { width: 40px; height: 4px; border-radius: 999px; background: var(--border); margin: 0 auto 16px; }
+
+  .word-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .word-target { font-family: var(--font-article); font-size: 30px; }
+  .speaker { width: 44px; height: 44px; border-radius: 999px; border: none; background: var(--surface-2); color: var(--ink-soft); font-size: 17px; cursor: pointer; flex: 0 0 auto; }
+  .word-ru { font-size: 16px; color: var(--ink-soft); margin: 2px 0 14px; }
+
+  .status-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 4px 11px; border: 1px solid; }
+  .badge.learning { color: var(--warn); background: var(--warn-soft); border-color: var(--warn-border); }
+  .badge.hard { color: var(--bad); background: var(--bad-soft); border-color: var(--bad-border); }
+  .dot { width: 8px; height: 8px; border-radius: 999px; background: currentColor; }
+  .next-review { font-size: 13px; color: var(--ink-soft); }
+  .progress-line { font-size: 13px; color: var(--ink-faint); margin: 0 0 16px; }
+
+  .context { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+  .context-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  .context-src { font-family: var(--font-article); font-size: 16px; line-height: 1.5; margin: 0 0 4px; }
+  .context-src b { color: var(--accent); }
+  .context-ru { font-size: 13px; color: var(--ink-soft); margin: 0; }
+
+  .btn { border: 1px solid var(--border); border-radius: 12px; min-height: 44px; padding: 0 18px; font: 500 14px var(--font-ui); background: var(--surface); color: var(--ink); cursor: pointer; width: 100%; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.danger { color: var(--bad); border-color: var(--bad-border); }
+  .btn + .btn, .btn-note + .btn { margin-top: 8px; }
+  .btn-note { margin: 6px 0 0; font-size: 12px; color: var(--ink-faint); text-align: center; }
+
+  .note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); border-top: 1px dashed var(--border); padding-top: 12px; }
+  .note b { color: var(--ink); }
+</style>
+
+<div class="page"><div class="wrap">
+  <div class="intro">
+    <div class="eyebrow">Мокап 06 · Карточка слова</div>
+    <h1>Bottom sheet по тапу на слово в списке</h1>
+    <p class="lede">Тот же паттерн, что у объяснений в Reader. Прогресс — словами,
+    без SRS-терминов. Все данные уже есть в <b>SavedWord.review</b>, ничего нового не храним.</p>
+  </div>
+
+  <div class="state-label">Обычное слово (не due)</div>
+  <div class="sheet">
+    <div class="grabber"></div>
+    <div class="word-head">
+      <span class="word-target">κατασκευή</span>
+      <button class="speaker">🔊</button>
+    </div>
+    <p class="word-ru">конструкция</p>
+
+    <div class="status-row">
+      <span class="badge learning"><span class="dot"></span>Учу</span>
+      <span class="next-review">следующий повтор — завтра</span>
+    </div>
+    <p class="progress-line">2 верных повтора подряд · 1 ошибка</p>
+
+    <div class="context">
+      <div class="context-label">Из урока</div>
+      <p class="context-src">Η <b>κατασκευή</b> τους βοηθά επίσης στην προστασία από τον δυνατό άνεμο.</p>
+      <p class="context-ru">Их конструкция также помогает защититься от сильного ветра.</p>
+    </div>
+
+    <button class="btn primary">Тренировать сейчас</button>
+    <p class="btn-note">вне расписания — прогресс не изменится</p>
+    <button class="btn">Сбросить прогресс</button>
+    <button class="btn danger">Удалить слово</button>
+  </div>
+
+  <div class="state-label">Сложное слово (4+ ошибок)</div>
+  <div class="sheet">
+    <div class="grabber"></div>
+    <div class="word-head">
+      <span class="word-target">διατηρώντας</span>
+      <button class="speaker">🔊</button>
+    </div>
+    <p class="word-ru">сохраняя</p>
+
+    <div class="status-row">
+      <span class="badge learning"><span class="dot"></span>Учу</span>
+      <span class="badge hard">сложное</span>
+      <span class="next-review">повтор сегодня</span>
+    </div>
+    <p class="progress-line">1 верный повтор · 5 ошибок — не даётся, попробуй сбросить или удалить</p>
+
+    <div class="context">
+      <div class="context-label">Из урока</div>
+      <p class="context-src">…<b>διατηρώντας</b> την παραδοσιακή αρχιτεκτονική του νησιού.</p>
+      <p class="context-ru">…сохраняя традиционную архитектуру острова.</p>
+    </div>
+
+    <button class="btn primary">Тренировать сейчас</button>
+    <p class="btn-note">слово в сегодняшней очереди — тренировка засчитается</p>
+    <button class="btn">Сбросить прогресс</button>
+    <button class="btn danger">Удалить слово</button>
+  </div>
+
+  <p class="note"><b>«Тренировать сейчас»</b> запускает мини-сессию из одного слова: если слово due —
+  обычная тренировка с записью SRS, иначе — учебная (free practice), и подпись под кнопкой честно
+  говорит, какая именно. <b>«Сбросить прогресс»</b> и <b>«Удалить»</b> — с подтверждением.</p>
+</div></div>
