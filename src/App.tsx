@@ -52,8 +52,14 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [retryingCardId, setRetryingCardId] = useState<string | null>(null);
 
-  const { activeLanguage, setActiveLanguage, preferences, setEnabledTopicIds, setEnabledCountryOrRegionIds } =
-    useAppPreferences();
+  const {
+    activeLanguage,
+    setActiveLanguage,
+    preferences,
+    setEnabledTopicIds,
+    setEnabledCountryOrRegionIds,
+    setTrainingPhraseMode,
+  } = useAppPreferences();
   const { getLevel, setLevel } = useLanguageProfiles();
 
   const currentTab: BottomNavTab = 'tab' in view ? view.tab : view.returnTo;
@@ -192,7 +198,12 @@ function App() {
           )}
         </>
       )}
-      {view.tab === 'learn' && <LearnPage activeLanguage={activeLanguage} />}
+      {view.tab === 'learn' && (
+        <LearnPage
+          activeLanguage={activeLanguage}
+          trainingPhraseMode={preferences.trainingPhraseMode}
+        />
+      )}
 
       <BottomNav
         active={view.tab}
@@ -209,6 +220,8 @@ function App() {
         onChangeLevel={setLevel}
         enabledTopicIds={preferences.enabledTopicIds}
         enabledCountryOrRegionIds={preferences.enabledCountryOrRegionIds}
+        trainingPhraseMode={preferences.trainingPhraseMode}
+        onChangeTrainingPhraseMode={setTrainingPhraseMode}
         onToggleTopic={(topicId) => {
           const isRemoving = preferences.enabledTopicIds.includes(topicId);
           const next = isRemoving

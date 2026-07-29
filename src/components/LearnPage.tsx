@@ -10,24 +10,32 @@ import { useSavedWords } from '../hooks/useSavedWords';
 import { TrainingPracticeView } from './TrainingPracticeView';
 import { selectPracticeQueue } from '../content-system/srs';
 import type { SavedWord } from '../content-system/savedWord';
+import type { TrainingPhraseMode } from '../content-system/userTypes';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
 
 type Props = {
   activeLanguage: LanguageCode;
+  trainingPhraseMode: TrainingPhraseMode;
 };
 
-export function LearnPage({ activeLanguage }: Props) {
+type PracticeSession = {
+  words: SavedWord[];
+  phraseMode: TrainingPhraseMode;
+};
+
+export function LearnPage({ activeLanguage, trainingPhraseMode }: Props) {
   const { savedWords, loading, updateWord } = useSavedWords();
-  const [practiceWords, setPracticeWords] = useState<SavedWord[] | null>(null);
+  const [practiceSession, setPracticeSession] = useState<PracticeSession | null>(null);
 
   const filteredWords = savedWords.filter((word) => word.language === activeLanguage);
   const dueWords = useMemo(() => selectPracticeQueue(filteredWords), [filteredWords]);
 
-  if (practiceWords) {
+  if (practiceSession) {
     return (
       <TrainingPracticeView
-        words={practiceWords}
-        onExit={() => setPracticeWords(null)}
+        words={practiceSession.words}
+        phraseMode={practiceSession.phraseMode}
+        onExit={() => setPracticeSession(null)}
         onUpdateWord={updateWord}
       />
     );
@@ -50,7 +58,7 @@ export function LearnPage({ activeLanguage }: Props) {
           type="button"
           className="btn primary"
           disabled={loading || dueWords.length === 0}
-          onClick={() => setPracticeWords([...dueWords])}
+          onClick={() => setPracticeSession({ words: [...dueWords], phraseMode: trainingPhraseMode })}
         >
           Начать
         </button>

@@ -1,28 +1,70 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { classifyReviewAnswer, scheduleNext, type ReviewVerdict } from '../content-system/srs';
 import {
   PRACTICE_PHRASE_PROMPT_VERSION,
   type SavedWord,
 } from '../content-system/savedWord';
+import type { TrainingPhraseMode } from '../content-system/userTypes';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { useUnitPronunciation } from '../hooks/useUnitPronunciation';
+import { selectSourcePracticeContext } from '../lib/trainingPhrase';
 import { findWordAlignedIndex } from '../lib/wordAlign';
-import { fetchAnnotationBasic, fetchPracticePhrase } from '../services/generation/lessonsApi';
+import {
+  fetchAnnotationBasic,
+  fetchPracticeFeedback,
+  fetchPracticePhrase,
+} from '../services/generation/lessonsApi';
 import { getLanguageConfig, type LanguageCode } from '../../lib/pipeline/languageConfig';
 import { tokenizeParagraphs } from '../../lib/pipeline/tokenize';
 import type { AnnotationSummary } from '../types/lesson';
+import {
+  Button,
+  FeedbackPanel,
+  IconButton,
+  SpeakerButton,
+  TextInput,
+} from './ui/controls';
+import { CloseIcon, MicrophoneIcon, StopIcon } from './ui/icons';
 
 type Props = {
   words: SavedWord[];
+  phraseMode?: TrainingPhraseMode;
   onExit: () => void;
   onUpdateWord?: (word: SavedWord) => Promise<SavedWord>;
 };
 
 type Cloze = { before: string; blank: string; after: string };
+type FrozenPhrase = { wordId: string; source?: string; translation?: string };
 type GlossState =
   | { status: 'loading'; text: string }
   | { status: 'ready'; text: string; summary: AnnotationSummary }
   | { status: 'error'; text: string };
+type FeedbackState =
+  | { status: 'loading' }
+  | { status: 'ready'; explanation: string }
+  | { status: 'error'; explanation: string };
+
+function availableFrozenPhrase(
+  word: SavedWord | undefined,
+  phraseMode: TrainingPhraseMode,
+): FrozenPhrase | null {
+  if (!word) return null;
+  if (phraseMode === 'source') {
+    return {
+      wordId: word.id,
+      ...selectSourcePracticeContext(
+        word,
+        getLanguageConfig(word.language as LanguageCode).bcp47,
+      ),
+    };
+  }
+  if (!word.practicePhrase) return null;
+  return {
+    wordId: word.id,
+    source: word.practicePhrase.source,
+    translation: word.practicePhrase.translation,
+  };
+}
 
 function tokenize(text: string): string[] {
   return text.match(/[\p{L}\p{M}'’-]+|\s+|[^\s]/gu) ?? [];
@@ -42,7 +84,7 @@ function buildCloze(source: string | undefined, surfaceForm: string): Cloze | nu
 
 function boldRussian(
   contextTranslation: string,
-  candidates: (string | null | undefined)[],
+  candidates: Array<string | null | undefined>,
 ): { before: string; bold: string; after: string } | null {
   for (const candidate of candidates) {
     if (!candidate) continue;
@@ -64,7 +106,13 @@ function ClozeWords({ text, onTapWord }: { text: string; onTapWord: (word: strin
     <>
       {tokens.map((token, index) =>
         WORD_TOKEN.test(token) ? (
-          <button key={index} className="cw" type="button" onClick={() => onTapWord(token)}>
+          <button
+            key={index}
+            className="training-context-word"
+            type="button"
+            onClick={() => onTapWord(token)}
+            title={`Объяснить «${token}»`}
+          >
             {token}
           </button>
         ) : (
@@ -75,16 +123,47 @@ function ClozeWords({ text, onTapWord }: { text: string; onTapWord: (word: strin
   );
 }
 
-function verdictTitle(verdict: ReviewVerdict, retry: boolean): string {
-  if (verdict === 'good') return retry ? '✓ Теперь верно!' : '✓ Верно!';
-  if (verdict === 'almost') return '~ Почти';
-  return '✕ Не совсем';
+function verdictPresentation(
+  verdict: ReviewVerdict,
+  retry: boolean,
+  hintUsed: boolean,
+  answer: string,
+): {
+  tone: 'success' | 'warning' | 'error' | 'neutral';
+  title: string;
+} {
+  if (verdict === 'good') {
+    return { tone: 'success', title: retry ? '✓ Теперь верно' : '✓ Верно' };
+  }
+  if (!answer.trim() || hintUsed) {
+    return { tone: 'neutral', title: 'Ответ показан' };
+  }
+  if (verdict === 'almost') return { tone: 'warning', title: '≈ Почти' };
+  return { tone: 'error', title: '✕ Не совсем' };
 }
 
-export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
+function fallbackFeedback(verdict: ReviewVerdict, expected: string): string {
+  return verdict === 'almost'
+    ? `Ответ близок, но точная форма в этом предложении — «${expected}».`
+    : `В этом контексте нужна форма «${expected}».`;
+}
+
+export function TrainingPracticeView({
+  words,
+  phraseMode = 'source',
+  onExit,
+  onUpdateWord,
+}: Props) {
   const [sessionWords, setSessionWords] = useState(words);
   const [index, setIndex] = useState(0);
+  const [frozenPhrase, setFrozenPhrase] = useState<FrozenPhrase | null>(
+    () => availableFrozenPhrase(words[0], phraseMode),
+  );
+  const [phraseStatus, setPhraseStatus] = useState<'idle' | 'loading'>(
+    () => (phraseMode === 'ai' && words[0] && !words[0].practicePhrase ? 'loading' : 'idle'),
+  );
   const [input, setInput] = useState('');
+  const [answerForResult, setAnswerForResult] = useState('');
   const [answered, setAnswered] = useState(false);
   const [verdict, setVerdict] = useState<ReviewVerdict | null>(null);
   const [hintOpen, setHintOpen] = useState(false);
@@ -94,20 +173,29 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
   const [reviewSaving, setReviewSaving] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewIntervalDays, setReviewIntervalDays] = useState<number | null>(null);
-  const [phraseStatus, setPhraseStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [gloss, setGloss] = useState<GlossState | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
-  const preparedWordIdsRef = useRef(new Set<string>());
+  const preparationPromisesRef = useRef(new Map<string, Promise<SavedWord>>());
   const glossCacheRef = useRef(new Map<string, AnnotationSummary>());
+  const feedbackRequestIdRef = useRef(0);
 
   const word = sessionWords[index];
   const language = (word?.language as LanguageCode | undefined) ?? 'fr';
   const languageConfig = getLanguageConfig(language);
-  const source = word?.practicePhrase?.source ?? word?.contextSource;
-  const translation = word?.practicePhrase?.translation ?? word?.contextTranslation;
-  const cloze = useMemo(() => (word ? buildCloze(source, word.surfaceForm) : null), [source, word]);
+  const hasFrozenPhrase = Boolean(word && frozenPhrase?.wordId === word.id);
+  const source = hasFrozenPhrase ? frozenPhrase?.source : undefined;
+  const translation = hasFrozenPhrase ? frozenPhrase?.translation : undefined;
+  const cloze = useMemo(
+    () => (word ? buildCloze(source, word.surfaceForm) : null),
+    [source, word],
+  );
   const ruBold = useMemo(
-    () => (word && translation ? boldRussian(translation, [word.translation, word.relatedTranslation]) : null),
+    () => (
+      word && translation
+        ? boldRussian(translation, [word.translation, word.relatedTranslation])
+        : null
+    ),
     [translation, word],
   );
   const primaryProvider = word?.audioProvider ?? 'openai';
@@ -115,30 +203,26 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
   const openAiPronunciation = useUnitPronunciation(language, 'openai');
   const speechInput = useSpeechInput();
 
-  useEffect(() => {
-    if (!word || word.practicePhrase || !word.contextSource || !onUpdateWord) {
-      setPhraseStatus('idle');
-      return;
-    }
-    if (preparedWordIdsRef.current.has(word.id)) return;
-    preparedWordIdsRef.current.add(word.id);
-    let cancelled = false;
-    setPhraseStatus('loading');
+  const prepareAiPhrase = useCallback(
+    async (candidate: SavedWord): Promise<SavedWord> => {
+      if (candidate.practicePhrase || !candidate.contextSource || !onUpdateWord) return candidate;
+      const existing = preparationPromisesRef.current.get(candidate.id);
+      if (existing) return existing;
 
-    fetchPracticePhrase(
-      {
-        surfaceForm: word.surfaceForm,
-        translation: word.translation,
-        contextSource: word.contextSource,
-        contextTranslation: word.contextTranslation,
-        level: word.level ?? 'A2',
-      },
-      language,
-    )
-      .then((phrase) => {
+      const candidateLanguage = candidate.language as LanguageCode;
+      const promise = fetchPracticePhrase(
+        {
+          surfaceForm: candidate.surfaceForm,
+          translation: candidate.translation,
+          contextSource: candidate.contextSource,
+          contextTranslation: candidate.contextTranslation,
+          level: candidate.level ?? 'A2',
+        },
+        candidateLanguage,
+      ).then((phrase) => {
         const now = new Date().toISOString();
         return onUpdateWord({
-          ...word,
+          ...candidate,
           practicePhrase: {
             ...phrase,
             promptVersion: PRACTICE_PHRASE_PROMPT_VERSION,
@@ -146,22 +230,84 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
           },
           updatedAt: now,
         });
-      })
+      });
+      preparationPromisesRef.current.set(candidate.id, promise);
+      promise.catch(() => preparationPromisesRef.current.delete(candidate.id));
+      return promise;
+    },
+    [onUpdateWord],
+  );
+
+  useEffect(() => {
+    if (!word) return;
+    let cancelled = false;
+    feedbackRequestIdRef.current += 1;
+
+    if (phraseMode === 'source') {
+      const context = selectSourcePracticeContext(word, languageConfig.bcp47);
+      setFrozenPhrase({ wordId: word.id, ...context });
+      setPhraseStatus('idle');
+      return;
+    }
+
+    if (word.practicePhrase) {
+      setFrozenPhrase({
+        wordId: word.id,
+        source: word.practicePhrase.source,
+        translation: word.practicePhrase.translation,
+      });
+      setPhraseStatus('idle');
+      return;
+    }
+
+    setFrozenPhrase(null);
+    setPhraseStatus('loading');
+    prepareAiPhrase(word)
       .then((stored) => {
         if (cancelled) return;
         setSessionWords((current) => current.map((item) => (item.id === stored.id ? stored : item)));
+        const context = stored.practicePhrase
+          ? {
+              source: stored.practicePhrase.source,
+              translation: stored.practicePhrase.translation,
+            }
+          : selectSourcePracticeContext(stored, getLanguageConfig(stored.language as LanguageCode).bcp47);
+        setFrozenPhrase({ wordId: stored.id, ...context });
         setPhraseStatus('idle');
       })
-      .catch((err) => {
+      .catch((error) => {
         if (cancelled) return;
-        console.error('Не удалось подготовить короткую фразу:', err);
-        setPhraseStatus('error');
+        console.error('Не удалось подготовить AI-фразу:', error);
+        const context = selectSourcePracticeContext(word, languageConfig.bcp47);
+        setFrozenPhrase({ wordId: word.id, ...context });
+        setPhraseStatus('idle');
       });
 
     return () => {
       cancelled = true;
     };
-  }, [language, onUpdateWord, word]);
+  }, [languageConfig.bcp47, phraseMode, prepareAiPhrase, word]);
+
+  // AI-режим готовит следующую карточку в фоне, но текущая frozenPhrase от
+  // этого никогда не меняется.
+  useEffect(() => {
+    if (phraseMode !== 'ai' || phraseStatus !== 'idle' || !frozenPhrase) return;
+    const nextWord = sessionWords[index + 1];
+    if (!nextWord || nextWord.practicePhrase) return;
+    let cancelled = false;
+    prepareAiPhrase(nextWord)
+      .then((stored) => {
+        if (cancelled) return;
+        setSessionWords((current) => current.map((item) => (item.id === stored.id ? stored : item)));
+      })
+      .catch(() => {
+        // Current session remains usable through the source fallback when the
+        // prefetched word becomes active.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [frozenPhrase, index, phraseMode, phraseStatus, prepareAiPhrase, sessionWords]);
 
   useEffect(() => {
     if (!word) return;
@@ -172,9 +318,7 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
     return (
       <div className="shell">
         <p className="empty-state">Слов для тренировки нет.</p>
-        <button className="btn primary" type="button" onClick={onExit}>
-          Назад
-        </button>
+        <Button variant="primary" onClick={onExit}>Назад</Button>
       </div>
     );
   }
@@ -183,8 +327,15 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
     setSessionWords((current) => current.map((item) => (item.id === nextWord.id ? nextWord : item)));
   }
 
-  function resetForNextCard() {
+  function resetForNextCard(nextWord: SavedWord) {
+    feedbackRequestIdRef.current += 1;
+    speechInput.stop();
+    setFrozenPhrase(availableFrozenPhrase(nextWord, phraseMode));
+    setPhraseStatus(
+      phraseMode === 'ai' && !nextWord.practicePhrase ? 'loading' : 'idle',
+    );
     setInput('');
+    setAnswerForResult('');
     setAnswered(false);
     setVerdict(null);
     setHintOpen(false);
@@ -195,11 +346,13 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
     setReviewError(null);
     setReviewIntervalDays(null);
     setGloss(null);
+    setFeedback(null);
     setAudioError(null);
   }
 
   function handleHintToggle() {
     if (answered) return;
+    setGloss(null);
     setHintOpen((open) => !open);
     setHintUsed(true);
   }
@@ -219,21 +372,66 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
     try {
       const stored = await onUpdateWord(nextWord);
       replaceSessionWord(stored);
-    } catch (err) {
-      console.error('Не удалось сохранить результат тренировки:', err);
+    } catch (error) {
+      console.error('Не удалось сохранить результат тренировки:', error);
       setReviewError('Не удалось сохранить результат. Проверь соединение и повтори.');
-      throw err;
+      throw error;
     } finally {
       setReviewSaving(false);
     }
   }
 
+  function requestFeedback(nextVerdict: ReviewVerdict, answer: string) {
+    const trimmedAnswer = answer.trim();
+    if (
+      nextVerdict === 'good'
+      || hintUsed
+      || retryAttempt
+      || !trimmedAnswer
+      || !source
+    ) {
+      setFeedback(null);
+      return;
+    }
+
+    const requestId = ++feedbackRequestIdRef.current;
+    setFeedback({ status: 'loading' });
+    fetchPracticeFeedback(
+      {
+        surfaceForm: word.surfaceForm,
+        translation: word.translation,
+        learnerAnswer: trimmedAnswer,
+        source,
+        sourceTranslation: translation,
+        verdict: nextVerdict,
+        level: word.level ?? 'A2',
+      },
+      language,
+    )
+      .then(({ explanation }) => {
+        if (feedbackRequestIdRef.current !== requestId) return;
+        setFeedback({ status: 'ready', explanation });
+      })
+      .catch((error) => {
+        if (feedbackRequestIdRef.current !== requestId) return;
+        console.error('Не удалось получить разбор ответа:', error);
+        setFeedback({
+          status: 'error',
+          explanation: fallbackFeedback(nextVerdict, word.surfaceForm),
+        });
+      });
+  }
+
   async function handleCheck() {
-    if (answered || reviewSaving) return;
+    if (answered || reviewSaving || speechInput.listening || phraseStatus === 'loading') return;
     const nextVerdict = classifyReviewAnswer(input, word.surfaceForm, hintUsed);
+    setAnswerForResult(input);
     setAnswered(true);
     setVerdict(nextVerdict);
     setReviewError(null);
+    setGloss(null);
+    setHintOpen(false);
+    requestFeedback(nextVerdict, input);
 
     if (!srsLocked) {
       setSrsLocked(true);
@@ -242,16 +440,16 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
   }
 
   function handleRetryAnswer() {
+    feedbackRequestIdRef.current += 1;
     setRetryAttempt(true);
     setInput('');
+    setAnswerForResult('');
     setAnswered(false);
     setVerdict(null);
     setHintOpen(false);
     setHintUsed(false);
-  }
-
-  function handleSkip() {
-    goNext();
+    setGloss(null);
+    setFeedback(null);
   }
 
   function goNext() {
@@ -259,8 +457,9 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
       onExit();
       return;
     }
-    setIndex((current) => current + 1);
-    resetForNextCard();
+    const nextIndex = index + 1;
+    resetForNextCard(sessionWords[nextIndex]);
+    setIndex(nextIndex);
   }
 
   function speakText(text: string) {
@@ -275,9 +474,9 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
   }
 
   async function handleTapWord(tapped: string) {
-    const sentenceText = source;
-    if (!sentenceText) return;
-    const cacheKey = `${language}|${sentenceText}|${tapped.toLocaleLowerCase()}`;
+    if (!source || answered) return;
+    setHintOpen(false);
+    const cacheKey = `${language}|${source}|${tapped.toLocaleLowerCase()}`;
     const cached = glossCacheRef.current.get(cacheKey);
     if (cached) {
       setGloss({ status: 'ready', text: tapped, summary: cached });
@@ -286,9 +485,10 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
 
     setGloss({ status: 'loading', text: tapped });
     try {
-      const sentence = tokenizeParagraphs([sentenceText], languageConfig.bcp47)[0]?.sentences[0];
+      const sentence = tokenizeParagraphs([source], languageConfig.bcp47)[0]?.sentences[0];
       const target = sentence?.tokens.find(
-        (token) => token.type === 'word' && token.text.toLocaleLowerCase() === tapped.toLocaleLowerCase(),
+        (token) => token.type === 'word'
+          && token.text.toLocaleLowerCase() === tapped.toLocaleLowerCase(),
       );
       if (!sentence || !target) throw new Error('word token not found');
       const summary = await fetchAnnotationBasic(
@@ -298,25 +498,32 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
       );
       glossCacheRef.current.set(cacheKey, summary);
       setGloss({ status: 'ready', text: tapped, summary });
-    } catch (err) {
-      console.error(`Не удалось объяснить "${tapped}":`, err);
+    } catch (error) {
+      console.error(`Не удалось объяснить "${tapped}":`, error);
       setGloss({ status: 'error', text: tapped });
     }
   }
 
   const isSpeaking = (text: string) =>
     primaryPronunciation.isLoading(text) || openAiPronunciation.isLoading(text);
+  const resultPresentation = verdict
+    ? verdictPresentation(verdict, retryAttempt, hintUsed, answerForResult)
+    : null;
+  const deterministicResultText = hintUsed || !answerForResult.trim()
+    ? 'Ответ показан — повторим слово позже.'
+    : null;
 
   return (
     <div className="shell training-shell">
       <div className="training-top">
-        <button className="icon-btn" type="button" aria-label="Назад" onClick={onExit}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <div className="training-progress-track">
-          <div className="training-progress-fill" style={{ width: `${((index + 1) / sessionWords.length) * 100}%` }} />
+        <IconButton label="Завершить тренировку" className="training-exit-button" onClick={onExit}>
+          <CloseIcon />
+        </IconButton>
+        <div className="training-progress-track" aria-label={`Упражнение ${index + 1} из ${sessionWords.length}`}>
+          <div
+            className="training-progress-fill"
+            style={{ width: `${((index + 1) / sessionWords.length) * 100}%` }}
+          />
         </div>
         <span className="training-progress-label">
           {index + 1}/{sessionWords.length}
@@ -324,208 +531,259 @@ export function TrainingPracticeView({ words, onExit, onUpdateWord }: Props) {
       </div>
 
       <div className="training-card">
-        {translation && (
-          <p className="training-ru-sentence">
-            {ruBold ? (
+        {phraseStatus === 'loading' ? (
+          <div className="training-preparing" role="status" aria-live="polite">
+            <div className="training-skeleton training-skeleton-short" />
+            <div className="training-skeleton training-skeleton-long" />
+            <p>Готовим упражнение</p>
+          </div>
+        ) : (
+          <>
+            {!answered && (
               <>
-                {ruBold.before}
-                <b>{ruBold.bold}</b>
-                {ruBold.after}
-              </>
-            ) : (
-              translation
-            )}
-          </p>
-        )}
+                {translation && (
+                  <p className="training-ru-sentence">
+                    {ruBold ? (
+                      <>
+                        {ruBold.before}
+                        <b>{ruBold.bold}</b>
+                        {ruBold.after}
+                      </>
+                    ) : (
+                      translation
+                    )}
+                  </p>
+                )}
 
-        <div className="training-eyebrow-row">
-          <p className="training-eyebrow">Впиши пропущенное слово</p>
-          {phraseStatus === 'loading' && <span className="training-phrase-status">Готовим короткую фразу…</span>}
-          {phraseStatus === 'error' && <span className="training-phrase-status">Используем исходную фразу</span>}
-        </div>
+                <p className="training-instruction">Вставь пропущенное слово</p>
 
-        <p className="training-cloze">
-          {cloze ? (
-            <>
-              <ClozeWords text={cloze.before} onTapWord={handleTapWord} />
-              <input
-                className="training-blank"
-                value={input}
-                disabled={answered}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !answered) void handleCheck();
-                }}
-                placeholder="?"
-                autoComplete="off"
-                autoFocus
-              />
-              <ClozeWords text={cloze.after} onTapWord={handleTapWord} />
-            </>
-          ) : (
-            <>
-              <span className="training-fallback-label">{word.translation}: </span>
-              <input
-                className="training-blank"
-                value={input}
-                disabled={answered}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !answered) void handleCheck();
-                }}
-                placeholder="?"
-                autoComplete="off"
-                autoFocus
-              />
-            </>
-          )}
-        </p>
-
-        {gloss && (
-          <div className="training-gloss-pop" role="status">
-            {gloss.status === 'loading' && <span>Готовим объяснение для «{gloss.text}»…</span>}
-            {gloss.status === 'error' && <span>Не удалось объяснить «{gloss.text}».</span>}
-            {gloss.status === 'ready' && (
-              <span>
-                <b>{gloss.text}</b> — {gloss.summary.translation}
-              </span>
-            )}
-            {gloss.status === 'ready' && (
-              <button
-                className="training-mini-speaker"
-                type="button"
-                onClick={() => speakText(gloss.summary.audioText)}
-                aria-label={`Прослушать ${gloss.text}`}
-                disabled={isSpeaking(gloss.summary.audioText)}
-              >
-                {isSpeaking(gloss.summary.audioText) ? '…' : '🔊'}
-              </button>
-            )}
-            <button className="training-gloss-close" type="button" onClick={() => setGloss(null)} aria-label="Закрыть">
-              ✕
-            </button>
-          </div>
-        )}
-
-        <button
-          className={`training-hint-toggle ${hintOpen ? 'is-open' : ''}`}
-          type="button"
-          onClick={handleHintToggle}
-          disabled={answered}
-        >
-          {hintOpen ? 'Скрыть подсказку' : 'Подсказка (раскрыть слово)'}
-        </button>
-        {hintUsed && !answered && (
-          <p className="training-hint-cost">Уже засчитано как «не помню» для этой попытки — прятать/показывать можно свободно</p>
-        )}
-        {hintOpen && (
-          <div className="training-hint-box">
-            <span>
-              <b>{word.surfaceForm}</b> — {word.translation}
-            </span>
-            <button
-              className="training-mini-speaker"
-              type="button"
-              onClick={() => speakText(word.audioText ?? word.surfaceForm)}
-              aria-label={`Прослушать ${word.surfaceForm}`}
-              disabled={isSpeaking(word.audioText ?? word.surfaceForm)}
-            >
-              {isSpeaking(word.audioText ?? word.surfaceForm) ? '…' : '🔊'}
-            </button>
-          </div>
-        )}
-
-        {!answered && (
-          <>
-            <div className="training-action-row">
-              <button className="btn primary training-check-btn" type="button" onClick={() => void handleCheck()}>
-                Проверить
-              </button>
-              <button
-                className={`btn training-voice-btn ${speechInput.listening ? 'is-listening' : ''}`}
-                type="button"
-                disabled={!speechInput.supported}
-                title={speechInput.supported ? 'Продиктовать ответ' : 'Голосовой ввод не поддерживается этим браузером'}
-                onClick={() => {
-                  if (speechInput.listening) {
-                    speechInput.stop();
-                  } else {
-                    speechInput.start(languageConfig.bcp47, setInput);
-                  }
-                }}
-              >
-                {speechInput.listening ? 'Слушаю…' : 'Голос'}
-              </button>
-            </div>
-            {speechInput.error && <p className="training-inline-error">{speechInput.error}</p>}
-            <button className="training-skip-btn" type="button" onClick={handleSkip}>
-              Пропустить это слово
-            </button>
-          </>
-        )}
-
-        {answered && verdict && (
-          <>
-            <div className={`training-verdict training-verdict-${verdict}`}>
-              <p className="training-verdict-head">{verdictTitle(verdict, retryAttempt)}</p>
-              <p className="training-verdict-body">
-                {verdict === 'good'
-                  ? retryAttempt
-                    ? 'Ответ исправлен. Расписание уже учло только первую попытку.'
-                    : `Следующее повторение через ${reviewIntervalDays ?? 1} дн.`
-                  : verdict === 'almost'
-                    ? `Слово похоже, но форма не совпала с «${word.surfaceForm}».`
-                    : hintUsed
-                      ? 'Засчитано как «не помню» — подсказка была раскрыта в этой попытке.'
-                      : `Ожидалось «${word.surfaceForm}».`}
-              </p>
-            </div>
-
-            {reviewSaving && <p className="training-save-status">Сохраняем расписание…</p>}
-            {reviewError && (
-              <div className="training-save-error">
-                <span>{reviewError}</span>
-                <button type="button" onClick={() => void persistVerdict(verdict)}>
-                  Повторить сохранение
-                </button>
-              </div>
-            )}
-
-            {source && (
-              <div className="training-say-aloud">
-                <div>
-                  <p className="training-say-aloud-label">Проговори фразу целиком</p>
-                  <p className="training-say-aloud-text">{source}</p>
+                <div className="training-cloze">
+                  {cloze ? (
+                    <>
+                      <ClozeWords text={cloze.before} onTapWord={handleTapWord} />
+                      <TextInput
+                        autoSize
+                        measureValue={input || word.surfaceForm}
+                        shellClassName="training-answer-shell"
+                        className="training-answer-input"
+                        value={input}
+                        onChange={(event) => setInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') void handleCheck();
+                        }}
+                        aria-label={`Пропущенное слово: ${word.translation}`}
+                        autoComplete="off"
+                        autoFocus
+                      />
+                      <ClozeWords text={cloze.after} onTapWord={handleTapWord} />
+                    </>
+                  ) : (
+                    <div className="training-fallback-input">
+                      <span className="training-fallback-label">{word.translation}</span>
+                      <TextInput
+                        autoSize
+                        measureValue={input || word.surfaceForm}
+                        shellClassName="training-answer-shell"
+                        className="training-answer-input"
+                        value={input}
+                        onChange={(event) => setInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') void handleCheck();
+                        }}
+                        aria-label={`Переведи: ${word.translation}`}
+                        autoComplete="off"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
-                <button
-                  className="training-mini-speaker"
-                  type="button"
-                  onClick={() => speakText(source)}
-                  aria-label="Прослушать фразу целиком"
-                  disabled={isSpeaking(source)}
+              </>
+            )}
+
+            {!answered && (
+              <>
+                {gloss && (
+                  <div className="training-assistance-card training-gloss-card" role="status">
+                    <div className="training-assistance-content">
+                      {gloss.status === 'loading' && <span>Объясняем «{gloss.text}»…</span>}
+                      {gloss.status === 'error' && <span>Не удалось объяснить «{gloss.text}».</span>}
+                      {gloss.status === 'ready' && (
+                        <span><b>{gloss.text}</b> — {gloss.summary.translation}</span>
+                      )}
+                    </div>
+                    <div className="training-assistance-actions">
+                      {gloss.status === 'ready' && (
+                        <SpeakerButton
+                          label={`Прослушать ${gloss.text}`}
+                          loading={isSpeaking(gloss.summary.audioText)}
+                          onClick={() => speakText(gloss.summary.audioText)}
+                        />
+                      )}
+                      <IconButton label="Закрыть объяснение" onClick={() => setGloss(null)}>
+                        <CloseIcon />
+                      </IconButton>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  variant="ghost"
+                  className={`training-hint-toggle ${hintOpen ? 'is-open' : ''}`}
+                  onClick={handleHintToggle}
                 >
-                  {isSpeaking(source) ? '…' : '🔊'}
-                </button>
+                  {hintOpen ? 'Скрыть подсказку' : 'Подсказка'}
+                </Button>
+
+                {hintOpen && (
+                  <div className="training-assistance-card training-hint-card">
+                    <div className="training-assistance-content">
+                      <b>{word.surfaceForm}</b> — {word.translation}
+                    </div>
+                    <div className="training-assistance-actions">
+                      <SpeakerButton
+                        label={`Прослушать ${word.surfaceForm}`}
+                        loading={isSpeaking(word.audioText ?? word.surfaceForm)}
+                        onClick={() => speakText(word.audioText ?? word.surfaceForm)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="training-action-row">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="training-check-btn"
+                    disabled={speechInput.listening}
+                    onClick={() => void handleCheck()}
+                  >
+                    Проверить
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className={`training-voice-btn ${speechInput.listening ? 'is-listening' : ''}`}
+                    disabled={!speechInput.supported}
+                    aria-pressed={speechInput.listening}
+                    title={speechInput.supported ? undefined : 'Голосовой ввод не поддерживается этим браузером'}
+                    onClick={() => {
+                      if (speechInput.listening) {
+                        speechInput.stop();
+                      } else {
+                        speechInput.start(languageConfig.bcp47, setInput);
+                      }
+                    }}
+                  >
+                    {speechInput.listening ? <StopIcon /> : <MicrophoneIcon />}
+                    {speechInput.listening ? 'Завершить' : 'Сказать ответ'}
+                  </Button>
+                </div>
+                {speechInput.listening && (
+                  <p className="training-voice-help" role="status">
+                    Говорите — нажмите ещё раз, когда закончите
+                  </p>
+                )}
+                {speechInput.error && <p className="training-inline-error">{speechInput.error}</p>}
+                <Button variant="ghost" fullWidth className="training-skip-btn" onClick={goNext}>
+                  Пропустить слово
+                </Button>
+              </>
+            )}
+
+            {answered && verdict && resultPresentation && (
+              <div className="training-result-stack">
+                <FeedbackPanel
+                  tone={resultPresentation.tone}
+                  title={resultPresentation.title}
+                >
+                  {deterministicResultText ? (
+                    <p>{deterministicResultText}</p>
+                  ) : verdict === 'good' ? (
+                    <p>
+                      {retryAttempt
+                        ? 'Ответ исправлен. Расписание уже учло только первую попытку.'
+                        : `Следующее повторение через ${reviewIntervalDays ?? 1} дн.`}
+                    </p>
+                  ) : feedback?.status === 'loading' ? (
+                    <div className="training-feedback-loading" aria-label="Разбираем ответ">
+                      <span />
+                      <span />
+                    </div>
+                  ) : feedback?.status === 'ready' || feedback?.status === 'error' ? (
+                    <p>{feedback.explanation}</p>
+                  ) : (
+                    <p>{fallbackFeedback(verdict, word.surfaceForm)}</p>
+                  )}
+                </FeedbackPanel>
+
+                <section className="training-answer-comparison">
+                  <div className="training-answer-row">
+                    <span className="training-answer-label">Твой ответ</span>
+                    <span className="training-answer-value">{answerForResult.trim() || '—'}</span>
+                  </div>
+                  <div className="training-answer-row training-correct-row">
+                    <span className="training-answer-label">Правильно</span>
+                    <div className="training-answer-with-action">
+                      <span className="training-answer-value">{word.surfaceForm}</span>
+                      <SpeakerButton
+                        label={`Прослушать ${word.surfaceForm}`}
+                        loading={isSpeaking(word.audioText ?? word.surfaceForm)}
+                        onClick={() => speakText(word.audioText ?? word.surfaceForm)}
+                      />
+                    </div>
+                  </div>
+                  {source && (
+                    <div className="training-full-phrase">
+                      <div>
+                        <span className="training-answer-label">Проговори фразу целиком</span>
+                        <p>{source}</p>
+                      </div>
+                      <SpeakerButton
+                        label="Прослушать фразу целиком"
+                        loading={isSpeaking(source)}
+                        onClick={() => speakText(source)}
+                      />
+                    </div>
+                  )}
+                </section>
+
+                {reviewSaving && <p className="training-save-status">Сохраняем расписание…</p>}
+                {reviewError && (
+                  <div className="training-save-error">
+                    <span>{reviewError}</span>
+                    <button type="button" onClick={() => void persistVerdict(verdict)}>
+                      Повторить сохранение
+                    </button>
+                  </div>
+                )}
+
+                {(verdict === 'almost' || verdict === 'again') && !retryAttempt && (
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    fullWidth
+                    className="training-retry-btn"
+                    onClick={handleRetryAnswer}
+                  >
+                    Попробовать ещё раз
+                  </Button>
+                )}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="training-next-btn"
+                  onClick={goNext}
+                  disabled={reviewSaving || !!reviewError}
+                >
+                  Дальше →
+                </Button>
               </div>
             )}
 
-            {(verdict === 'almost' || verdict === 'again') && !retryAttempt && (
-              <button className="btn training-retry-btn" type="button" onClick={handleRetryAnswer}>
-                Попробовать ещё раз
-              </button>
-            )}
-            <button
-              className="btn primary training-next-btn"
-              type="button"
-              onClick={goNext}
-              disabled={reviewSaving || !!reviewError}
-            >
-              Дальше →
-            </button>
+            {audioError && <p className="training-inline-error">{audioError}</p>}
           </>
         )}
-
-        {audioError && <p className="training-inline-error">{audioError}</p>}
       </div>
     </div>
   );

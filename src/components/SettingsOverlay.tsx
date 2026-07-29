@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { listLanguageConfigs, type LanguageCode } from '../../lib/pipeline/languageConfig';
 import { CEFR_LEVELS, type CEFRLevel } from '../content-system/types';
 import { TOPICS, COUNTRIES } from '../content-system/catalog';
+import type { TrainingPhraseMode } from '../content-system/userTypes';
 import { DebugEventsOverlay } from './DebugEventsOverlay';
 
 const LANGUAGES = listLanguageConfigs();
@@ -19,6 +20,8 @@ type Props = {
   enabledCountryOrRegionIds: string[];
   onToggleTopic: (topicId: string) => void;
   onToggleCountry: (countryId: string) => void;
+  trainingPhraseMode: TrainingPhraseMode;
+  onChangeTrainingPhraseMode: (mode: TrainingPhraseMode) => void;
 };
 
 export function SettingsOverlay({
@@ -30,6 +33,8 @@ export function SettingsOverlay({
   enabledCountryOrRegionIds,
   onToggleTopic,
   onToggleCountry,
+  trainingPhraseMode,
+  onChangeTrainingPhraseMode,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [debugOpen, setDebugOpen] = useState(false);
@@ -128,6 +133,36 @@ export function SettingsOverlay({
                   </button>
                 );
               })}
+            </div>
+          </section>
+
+          <section className="settings-section">
+            <h3 className="settings-section-title">Эксперименты</h3>
+            <div className="form-field">
+              <span className="form-label" id="training-phrase-mode-label">
+                Фраза для тренировки
+              </span>
+              <div
+                className="input-kind-toggle"
+                role="group"
+                aria-labelledby="training-phrase-mode-label"
+              >
+                <button
+                  type="button"
+                  aria-pressed={trainingPhraseMode === 'source'}
+                  onClick={() => onChangeTrainingPhraseMode('source')}
+                >
+                  Из исходного текста
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={trainingPhraseMode === 'ai'}
+                  onClick={() => onChangeTrainingPhraseMode('ai')}
+                >
+                  Короткая AI-фраза
+                </button>
+              </div>
+              <span className="form-hint">Изменение применяется со следующего запуска тренировки.</span>
             </div>
           </section>
 

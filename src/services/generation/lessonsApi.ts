@@ -6,6 +6,10 @@
 import type { InputSource, GeneratedText } from '../../../lib/pipeline/generateText';
 import type { AnnotationTarget } from '../../../lib/pipeline/generateAnnotations';
 import type { GeneratedPracticePhrase, PracticePhraseRequest } from '../../../lib/pipeline/generatePracticePhrase';
+import type {
+  GeneratedPracticeFeedback,
+  PracticeFeedbackRequest,
+} from '../../../lib/pipeline/generatePracticeFeedback';
 import type { LanguageCode } from '../../../lib/pipeline/languageConfig';
 import type { AlignmentReport } from '../../../lib/pipeline/alignmentReport';
 import type { AudioProvider, AnnotationSummary, DetailSection, Lesson, Token } from '../../types/lesson';
@@ -57,6 +61,18 @@ export function fetchPracticePhrase(
     mode: 'practice-phrase',
     practice,
     level: practice.level,
+    language,
+  });
+}
+
+export function fetchPracticeFeedback(
+  feedback: PracticeFeedbackRequest,
+  language: LanguageCode,
+): Promise<GeneratedPracticeFeedback> {
+  return postJson('/api/generate-annotation', {
+    mode: 'practice-feedback',
+    feedback,
+    level: feedback.level,
     language,
   });
 }

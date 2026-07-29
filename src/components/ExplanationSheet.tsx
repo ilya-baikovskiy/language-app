@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import type { SheetSelection } from '../hooks/useSelectedAnnotation';
 import type { Annotation, DetailSection } from '../types/lesson';
 import { findWordAlignedIndex } from '../lib/wordAlign';
+import { SpeakerButton } from './ui/controls';
 
 type SpeakFn = (text: string, onError?: (error: Error) => void, contextText?: string) => void;
 type IsLoadingFn = (text: string) => boolean;
@@ -251,14 +252,10 @@ function AnnotationView({
             не связанный с блоком контекста. */}
         <div className="sheet-section-row">
           <p className="sheet-section-title">В контексте</p>
-          <button
-            className="icon-btn-sm"
-            type="button"
-            aria-label="Прослушать предложение"
+          <SpeakerButton
+            label="Прослушать предложение"
             onClick={() => onSpeak(context.source, onPlaybackError)}
-          >
-            <SpeakerIcon />
-          </button>
+          />
         </div>
         <div className="sheet-context-card">
           <p className="sheet-sentence">{highlightContext(context.source, context.selectedSource, context.relatedSource)}</p>
@@ -412,16 +409,11 @@ function UnitSpeakerButton({
 }) {
   const loading = isUnitLoading(text);
   return (
-    <button
-      className={`icon-btn-sm${loading ? ' is-loading' : ''}`}
-      type="button"
-      aria-label={label}
-      aria-busy={loading}
-      disabled={loading}
+    <SpeakerButton
+      label={label}
+      loading={loading}
       onClick={() => onSpeakUnit(text, onPlaybackError, contextText)}
-    >
-      <SpeakerIcon />
-    </button>
+    />
   );
 }
 
@@ -518,15 +510,6 @@ function SpinnerIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 100" />
-    </svg>
-  );
-}
-
-function SpeakerIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-      <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
-      <path d="M16.5 8.5a5 5 0 010 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }

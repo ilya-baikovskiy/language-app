@@ -10,12 +10,17 @@ import { z } from 'zod';
 import { cefrLevelSchema, type CEFRLevel } from './types';
 
 export const LOCAL_USER_ID = 'local-user';
+export const trainingPhraseModeSchema = z.enum(['source', 'ai']);
+export type TrainingPhraseMode = z.infer<typeof trainingPhraseModeSchema>;
 
 export const appPreferencesSchema = z.object({
   userId: z.string(),
   activeLanguage: z.string(),
   enabledTopicIds: z.array(z.string()),
   enabledCountryOrRegionIds: z.array(z.string()),
+  // Временный ручной эксперимент. `.default()` сохраняет обратную
+  // совместимость с уже лежащими в Blob preferences без этого поля.
+  trainingPhraseMode: trainingPhraseModeSchema.default('source'),
   createdAt: z.string(),
   updatedAt: z.string(),
   revision: z.number().int().nonnegative(),
@@ -53,6 +58,7 @@ export function createDefaultAppPreferences(userId: string, activeLanguage: stri
     activeLanguage,
     enabledTopicIds: [],
     enabledCountryOrRegionIds: [],
+    trainingPhraseMode: 'source',
     createdAt: now,
     updatedAt: now,
     revision: 1,

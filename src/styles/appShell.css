@@ -194,6 +194,18 @@
   color: #fff;
 }
 
+@media (max-width: 520px) {
+  .settings-section .input-kind-toggle {
+    display: flex;
+    width: 100%;
+  }
+  .settings-section .input-kind-toggle button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 9px;
+  }
+}
+
 /* ---------- прогресс генерации ---------- */
 .progress-list {
   display: flex;

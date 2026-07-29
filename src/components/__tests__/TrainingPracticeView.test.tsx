@@ -40,10 +40,11 @@ function makeWord(overrides: Partial<SavedWord> = {}): SavedWord {
 describe('TrainingPracticeView', () => {
   it('вырезает целевое слово из сохранённого предложения в пропуск, а не показывает его целиком', () => {
     const { container } = render(<TrainingPracticeView words={[makeWord()]} onExit={vi.fn()} />);
-    expect(screen.queryByText('κατασκευή')).toBeNull();
-    expect(screen.getByPlaceholderText('?')).toBeTruthy();
-    // Каждое слово — отдельный тапабельный <span>, поэтому сверяем по
-    // текстовому содержимому всей фразы, а не по одному узлу.
+    const input = screen.getByRole('textbox', { name: /Пропущенное слово/ }) as HTMLInputElement;
+    expect(input.value).toBe('');
+    expect(input.getAttribute('placeholder')).toBeNull();
+    // Mirror знает ожидаемую ширину, но скрыт от assistive technology.
+    expect(container.querySelector('.ui-text-input-mirror')?.textContent).toBe('κατασκευή');
     expect(container.querySelector('.training-cloze')?.textContent).toContain('βοηθά επίσης στην προστασία');
   });
 
@@ -102,42 +103,49 @@ describe('TrainingPracticeView', () => {
     const neighbor = screen.getAllByText('βοηθά')[0];
     fireEvent.click(neighbor);
     expect(await screen.findByText(/помогает/)).toBeTruthy();
-    expect(screen.getByPlaceholderText('?')).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: /Пропущенное слово/ })).toBeTruthy();
   });
 
-  it('раскрытие подсказки необратимо помечает попытку, даже после того как её снова спрятали', () => {
+  it('подсказка влияет на попытку без служебной надписи на рабочем экране', () => {
     render(<TrainingPracticeView words={[makeWord()]} onExit={vi.fn()} />);
     const hintBtn = screen.getByRole('button', { name: /Подсказка/ });
     fireEvent.click(hintBtn); // открыли
-    expect(screen.getByText(/уже засчитано/i)).toBeTruthy();
+    expect(screen.getByText('κατασκευή', { selector: 'b' })).toBeTruthy();
+    expect(screen.queryByText(/уже засчитано/i)).toBeNull();
     fireEvent.click(hintBtn); // спрятали обратно
-    expect(screen.getByText(/уже засчитано/i)).toBeTruthy(); // пометка осталась
+    expect(screen.queryByText(/уже засчитано/i)).toBeNull();
 
-    fireEvent.change(screen.getByPlaceholderText('?'), { target: { value: 'κατασκευή' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
     fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
-    expect(screen.getByText(/подсказка была раскрыта/i)).toBeTruthy();
+    expect(screen.getByText('Ответ показан — повторим слово позже.')).toBeTruthy();
   });
 
   it('точное совпадение формы — вердикт «Верно», расхождение — «Не совсем» с ожидаемым словом', () => {
     render(<TrainingPracticeView words={[makeWord()]} onExit={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText('?'), { target: { value: 'κατασκευή' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
     fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
-    expect(screen.getByText('✓ Верно!')).toBeTruthy();
+    expect(screen.getByText('✓ Верно')).toBeTruthy();
     expect(screen.getByText('Проговори фразу целиком')).toBeTruthy();
+    expect(screen.getByText('Твой ответ')).toBeTruthy();
+    expect(screen.getByText('Правильно')).toBeTruthy();
   });
 
-  it('вердикт «Не совсем» называет ожидаемое слово', () => {
+  it('вердикт «Не совсем» показывает ответ ученика и ожидаемое слово', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('offline', { status: 503 })));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     render(<TrainingPracticeView words={[makeWord()]} onExit={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText('?'), { target: { value: 'что-то другое' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'что-то другое' } });
     fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
     expect(screen.getByText('✕ Не совсем')).toBeTruthy();
-    expect(screen.getByText(/Ожидалось «κατασκευή»/)).toBeTruthy();
+    expect(screen.getByText('что-то другое', { selector: '.training-answer-value' })).toBeTruthy();
+    expect(screen.getByText('κατασκευή', { selector: '.training-answer-value' })).toBeTruthy();
+    expect(await screen.findByText(/В этом контексте нужна форма/)).toBeTruthy();
   });
 
   it('«Дальше» на последней карточке выходит из практики (onExit), не на несуществующую следующую', () => {
     const onExit = vi.fn();
     render(<TrainingPracticeView words={[makeWord()]} onExit={onExit} />);
-    fireEvent.change(screen.getByPlaceholderText('?'), { target: { value: 'κατασκευή' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
     fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
     fireEvent.click(screen.getByRole('button', { name: /Дальше/ }));
     expect(onExit).toHaveBeenCalledTimes(1);
@@ -145,8 +153,8 @@ describe('TrainingPracticeView', () => {
 
   it('без сохранённого предложения — запасной ввод по переводу без крэша', () => {
     render(<TrainingPracticeView words={[makeWord({ contextSource: undefined, contextTranslation: undefined })]} onExit={vi.fn()} />);
-    expect(screen.getByText(/конструкция:/)).toBeTruthy();
-    expect(screen.getByPlaceholderText('?')).toBeTruthy();
+    expect(screen.getByText('конструкция', { selector: '.training-fallback-label' })).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Переведи: конструкция' })).toBeTruthy();
   });
 
   it('первая попытка сохраняет новое SRS-расписание', async () => {
@@ -159,7 +167,7 @@ describe('TrainingPracticeView', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('?'), { target: { value: 'κατασκευή' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
     fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
 
     await waitFor(() => expect(onUpdateWord).toHaveBeenCalledTimes(1));
@@ -172,5 +180,103 @@ describe('TrainingPracticeView', () => {
   it('пустой список слов не крэшит экран', () => {
     render(<TrainingPracticeView words={[]} onExit={vi.fn()} />);
     expect(screen.getByText('Слов для тренировки нет.')).toBeTruthy();
+  });
+
+  it('source-режим выбирает точное предложение с целевой словоформой и не генерирует фразу', () => {
+    const fetchSpy = vi.fn(async (
+      _input: string | URL | Request,
+      _init?: RequestInit,
+    ) => new Response(
+      JSON.stringify({ audioUrl: 'https://example.test/clip.mp3' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    ));
+    vi.stubGlobal('fetch', fetchSpy);
+    const word = makeWord({
+      contextSource: 'Πρώτη πρόταση. Η κατασκευή είναι λευκή. Τρίτη πρόταση.',
+      contextTranslation: 'Первое предложение. Конструкция белая. Третье предложение.',
+    });
+
+    const { container } = render(
+      <TrainingPracticeView words={[word]} phraseMode="source" onExit={vi.fn()} />,
+    );
+
+    expect(container.querySelector('.training-ru-sentence')?.textContent).toBe('Конструкция белая.');
+    expect(container.querySelector('.training-cloze')?.textContent).toContain('Η κατασκευή είναι λευκή.');
+    expect(container.querySelector('.training-cloze')?.textContent).not.toContain('Πρώτη πρόταση');
+    const generatedPhraseRequest = fetchSpy.mock.calls.find(([, init]) => {
+      const body = typeof init?.body === 'string' ? JSON.parse(init.body) : {};
+      return body.mode === 'practice-phrase';
+    });
+    expect(generatedPhraseRequest).toBeUndefined();
+  });
+
+  it('AI-режим использует сохранённую practicePhrase и не меняет её на source', () => {
+    const word = makeWord({
+      practicePhrase: {
+        source: 'Αυτή είναι μια κατασκευή.',
+        translation: 'Это конструкция.',
+        promptVersion: 1,
+        generatedAt: new Date().toISOString(),
+      },
+    });
+    const { container } = render(
+      <TrainingPracticeView words={[word]} phraseMode="ai" onExit={vi.fn()} />,
+    );
+    expect(container.querySelector('.training-cloze')?.textContent).toContain('Αυτή είναι μια ');
+    expect(container.querySelector('.training-cloze')?.textContent).not.toContain('βοηθά');
+  });
+
+  it('AI-режим не показывает временный source, пока сохраняет отсутствующую фразу', async () => {
+    let resolvePhrase!: (response: Response) => void;
+    const phraseResponse = new Promise<Response>((resolve) => {
+      resolvePhrase = resolve;
+    });
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const body = typeof init?.body === 'string' ? JSON.parse(init.body) : {};
+      if (String(input) === '/api/generate-annotation' && body.mode === 'practice-phrase') {
+        return phraseResponse;
+      }
+      return new Response(
+        JSON.stringify({ audioUrl: 'https://example.test/clip.mp3' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }));
+    const onUpdateWord = vi.fn(async (word: SavedWord) => word);
+    const { container } = render(
+      <TrainingPracticeView
+        words={[makeWord()]}
+        phraseMode="ai"
+        onExit={vi.fn()}
+        onUpdateWord={onUpdateWord}
+      />,
+    );
+
+    expect(screen.getByText('Готовим упражнение')).toBeTruthy();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(container.textContent).not.toContain('Η κατασκευή τους βοηθά');
+
+    resolvePhrase(new Response(
+      JSON.stringify({
+        source: 'Αυτή είναι μια κατασκευή.',
+        translation: 'Это конструкция.',
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    ));
+
+    expect(await screen.findByRole('textbox', { name: /Пропущенное слово/ })).toBeTruthy();
+    expect(container.querySelector('.training-cloze')?.textContent).toContain('Αυτή είναι μια κατασκευή.');
+    expect(onUpdateWord).toHaveBeenCalledTimes(1);
+  });
+
+  it('длинная форма задаёт mirror-ширину input и остаётся внутри autosize shell', () => {
+    const word = makeWord({
+      surfaceForm: 'κατασκευάζονται',
+      translation: 'строятся',
+      contextSource: 'Τα σπίτια κατασκευάζονται εδώ.',
+      contextTranslation: 'Дома строятся здесь.',
+    });
+    const { container } = render(<TrainingPracticeView words={[word]} onExit={vi.fn()} />);
+    expect(container.querySelector('.ui-text-input-mirror')?.textContent).toBe('κατασκευάζονται');
+    expect(container.querySelector('.training-answer-shell.is-auto-size')).toBeTruthy();
   });
 });

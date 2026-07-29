@@ -10,7 +10,12 @@
 // «показать rетрай, не сломать экран»).
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { LOCAL_USER_ID, createDefaultAppPreferences, type AppPreferences } from '../content-system/userTypes';
+import {
+  LOCAL_USER_ID,
+  createDefaultAppPreferences,
+  type AppPreferences,
+  type TrainingPhraseMode,
+} from '../content-system/userTypes';
 import { BlobAppPreferencesRepository } from '../content-system/repositories/blobAppPreferencesRepository';
 import type { AppPreferencesRepository } from '../content-system/repositories';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
@@ -103,6 +108,21 @@ export function useAppPreferences(repository: AppPreferencesRepository = new Blo
     [persist],
   );
 
+  const setTrainingPhraseMode = useCallback(
+    (trainingPhraseMode: TrainingPhraseMode) => {
+      setPreferences((prev) => {
+        const next: AppPreferences = {
+          ...prev,
+          trainingPhraseMode,
+          updatedAt: new Date().toISOString(),
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
+
   return {
     preferences,
     loading,
@@ -110,5 +130,6 @@ export function useAppPreferences(repository: AppPreferencesRepository = new Blo
     setActiveLanguage,
     setEnabledTopicIds,
     setEnabledCountryOrRegionIds,
+    setTrainingPhraseMode,
   };
 }
