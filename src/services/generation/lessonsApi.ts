@@ -163,7 +163,11 @@ export type StartLessonEntry = {
   blueprintId: string;
 };
 
-export function startLesson(entry: StartLessonEntry): Promise<{ ok: boolean }> {
+// alreadyComplete — сервер нашёл уже сохранённый урок с этим id (и его аудио)
+// и восстановил запись индекса в 'ready' вместо того, чтобы затереть её
+// placeholder'ом. Клиент в этом случае обязан переиспользовать готовый урок, а
+// не генерировать заново поверх него (см. cardGeneration.ts).
+export function startLesson(entry: StartLessonEntry): Promise<{ ok: boolean; alreadyComplete?: boolean }> {
   return postJson('/api/lesson-status', { action: 'start', entry });
 }
 

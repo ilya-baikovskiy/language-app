@@ -43,21 +43,13 @@ export async function generateLessonFromCard(
   onProgress({ stage: 'starting' });
   const blueprint = buildLessonBlueprint(card, language, targetLevel);
 
-  // lesson_generation_requested fires here, not earlier — the brief is
-  // explicit that this must be "когда реально стартует генерация", not when
-  // an existing 'ready' lesson is found and opened without regenerating
-  // (see the early return above, which never reaches this point).
-  const startedAt = Date.now();
-  track(
-    'lesson_generation_requested',
-    { cardId: card.id, blueprintId: blueprint.id, language, level: targetLevel },
-    { cardId: card.id, lessonId, language },
-  );
-
-  let currentStage: GenerationStage = 'starting';
-  track('lesson_generation_stage_started', { lessonId, stage: currentStage }, { lessonId, cardId: card.id, language });
-
-  await lessonArtifactRepository.startLesson({
+  // startLesson идёт ПЕРЕД любым tracking'ом генерации, потому что он же
+  // отвечает на вопрос «а урок точно надо генерировать?». Статус в индексе
+  // этому вопросу не судья: 'creating'-запись вполне может соответствовать
+  // полностью сохранённому уроку (запись 'ready' в индексе теряется, если
+  // save-lesson и lesson-status пересеклись). Раньше мы в такой ситуации
+  // генерировали заново и затирали прочитанный пользователем текст.
+  const { alreadyComplete } = await lessonArtifactRepository.startLesson({
     id: lessonId,
     cardId: card.id,
     blueprintId: blueprint.id,
@@ -68,6 +60,33 @@ export async function generateLessonFromCard(
     // magnitude as generateText's own estimatedMinutes, not a measurement.
     estimatedMinutes: Math.round(blueprint.data.styleConstraints.targetWords / 130) || 1,
   });
+
+  if (alreadyComplete) {
+    // Сервер нашёл готовый урок и восстановил запись индекса в 'ready' —
+    // перечитываем её и открываем существующий текст.
+    const repairedSummaries = await lessonArtifactRepository.listLessons(LOCAL_USER_ID);
+    const repaired = repairedSummaries.find((s) => s.id === lessonId);
+    const lesson = await lessonArtifactRepository.getLesson(lessonId);
+    if (lesson && repaired?.audioUrl) {
+      return { lesson, audioUrl: repaired.audioUrl, lessonId };
+    }
+    // Восстановленную запись всё-таки не удалось прочитать — генерируем
+    // заново, это лучше, чем показать пользователю ошибку на пустом месте.
+  }
+
+  // lesson_generation_requested fires here, not earlier — the brief is
+  // explicit that this must be "когда реально стартует генерация", not when
+  // an existing lesson is found and opened without regenerating (see the two
+  // early returns above, which never reach this point).
+  const startedAt = Date.now();
+  track(
+    'lesson_generation_requested',
+    { cardId: card.id, blueprintId: blueprint.id, language, level: targetLevel },
+    { cardId: card.id, lessonId, language },
+  );
+
+  let currentStage: GenerationStage = 'starting';
+  track('lesson_generation_stage_started', { lessonId, stage: currentStage }, { lessonId, cardId: card.id, language });
 
   const { input, words } = blueprintToGenerationInput(blueprint.data);
 
