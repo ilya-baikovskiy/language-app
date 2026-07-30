@@ -26,9 +26,11 @@ import { composeFixedFeed } from '../content-system/feed';
 import { StaticSeedCardRepository } from '../content-system/repositories/staticSeedCardRepository';
 import { BlobGeneratedCardRepository } from '../content-system/repositories/blobGeneratedCardRepository';
 import { CompositeCardRepository } from '../content-system/repositories/compositeCardRepository';
+import { BlobLessonArtifactRepository } from '../content-system/repositories/lessonArtifactRepository';
 import { COUNTRIES, TOPICS } from '../content-system/catalog';
 import { track } from '../content-system/analytics/eventClient';
-import type { ContentCardRepository } from '../content-system/repositories';
+import { LOCAL_USER_ID } from '../content-system/userTypes';
+import type { ContentCardRepository, LessonArtifactRepository } from '../content-system/repositories';
 import type { CEFRLevel, ContentCard, FeedSlot } from '../content-system/types';
 import type { FeedSourceKind } from '../content-system/analyticsEvent';
 import type { LanguageCode } from '../../lib/pipeline/languageConfig';
@@ -46,10 +48,12 @@ export type UseFeedParams = {
   enabledCountryOrRegionIds: string[];
   cardRepository?: ContentCardRepository;
   generatedCardRepository?: BlobGeneratedCardRepository;
+  lessonArtifactRepository?: LessonArtifactRepository;
 };
 
 const DEFAULT_GENERATED_REPOSITORY = new BlobGeneratedCardRepository();
 const DEFAULT_REPOSITORY = new CompositeCardRepository(new StaticSeedCardRepository(), DEFAULT_GENERATED_REPOSITORY);
+const DEFAULT_LESSON_ARTIFACT_REPOSITORY = new BlobLessonArtifactRepository();
 const LOW_POOL_THRESHOLD = 8;
 const TOP_UP_DESIRED_COUNT = 20;
 // enabledTopicIds/enabledCountryOrRegionIds пустые ПО УМОЛЧАНИЮ (см.
@@ -69,6 +73,7 @@ export function useFeed({
   enabledCountryOrRegionIds,
   cardRepository = DEFAULT_REPOSITORY,
   generatedCardRepository = DEFAULT_GENERATED_REPOSITORY,
+  lessonArtifactRepository = DEFAULT_LESSON_ARTIFACT_REPOSITORY,
 }: UseFeedParams) {
   const [items, setItems] = useState<FeedDisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,10 +126,32 @@ export function useFeed({
     }
     const previousBatchId = feedBatchIdRef.current;
 
-    cardRepository
-      .listCandidates(query)
-      .then((cards) => {
+    Promise.all([
+      cardRepository.listCandidates(query),
+      // Best-effort: если библиотека недоступна, лента просто не исключает
+      // прочитанные карточки — это деградация, не критическая зависимость
+      // (тот же принцип, что у top-up ниже).
+      lessonArtifactRepository.listLessons(LOCAL_USER_ID).catch(() => []),
+    ])
+      .then(([allCards, lessonSummaries]) => {
         if (cancelled) return;
+        // Карточка, для которой уже есть урок на этом языке и уровне (готовый
+        // или ещё генерирующийся — 'creating' тоже не "непрочитанная"), не
+        // должна снова предлагаться в ленте: пользователь её уже читал/читает,
+        // она есть в «Мои тексты». 'failed' исключением не считаем — так
+        // карточку можно предложить и попробовать сгенерировать ещё раз.
+        const alreadyGenerated = new Set(
+          lessonSummaries
+            .filter(
+              (entry) =>
+                entry.cardId
+                && entry.status !== 'failed'
+                && entry.languageCode === activeLanguage
+                && entry.level === selectedLevel,
+            )
+            .map((entry) => entry.cardId as string),
+        );
+        const cards = allCards.filter((card) => !alreadyGenerated.has(card.id));
         // "Сколько ещё непоказанного осталось" считаем ДО этой партии (тот же
         // shownCardIds, что уже используется composeFixedFeed для anti-repeat) —
         // это здоровье пула на будущее, не то, что показано прямо сейчас.
@@ -209,7 +236,7 @@ export function useFeed({
     // его сюда зациклило бы загрузку при каждом успешном ответе. reloadNonce —
     // единственный способ форсировать перезапуск без смены query.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, cardRepository, reloadNonce, activeLanguage, selectedLevel]);
+  }, [query, cardRepository, lessonArtifactRepository, reloadNonce, activeLanguage, selectedLevel]);
 
   const refresh = useCallback(() => setReloadNonce((n) => n + 1), []);
 
