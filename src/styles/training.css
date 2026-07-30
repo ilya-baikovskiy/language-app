@@ -378,3 +378,131 @@
     padding-inline: 14px;
   }
 }
+
+/* ---------- Итоги сессии (см. TrainingSessionSummary.tsx, этап B плана) ---------- */
+
+.training-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.training-summary-head {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.training-summary-kicker {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.training-summary-badge {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.training-summary-score {
+  margin: 0;
+  font-family: var(--font-article);
+  font-size: 32px;
+  line-height: 1.15;
+}
+.training-summary-score b {
+  color: var(--success-strong);
+  font-weight: 400;
+}
+.training-summary-chips {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.training-vchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-variant-numeric: tabular-nums;
+}
+.training-vchip.is-good {
+  color: var(--success-strong);
+  background: var(--success-soft);
+  border-color: var(--success-border);
+}
+.training-vchip.is-warn {
+  color: var(--warning-strong);
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+}
+.training-vchip.is-bad {
+  color: var(--error-strong);
+  background: var(--error-soft);
+  border-color: var(--error-border);
+}
+.training-summary-scheduled {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+
+.training-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.training-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.training-summary-word {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.training-summary-target {
+  font-family: var(--font-article);
+  font-size: 17px;
+}
+.training-summary-translation {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.training-summary-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.training-summary-promote {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--success-strong);
+}
+.training-summary-verdict {
+  font-size: 15px;
+  font-weight: 700;
+}
+.training-summary-verdict.is-good { color: var(--success-strong); }
+.training-summary-verdict.is-warn { color: var(--warning-strong); }
+.training-summary-verdict.is-bad { color: var(--error-strong); }
+.training-summary-done {
+  margin: 0;
+}

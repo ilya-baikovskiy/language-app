@@ -13,6 +13,12 @@ export const LOCAL_USER_ID = 'local-user';
 export const trainingPhraseModeSchema = z.enum(['source', 'ai']);
 export type TrainingPhraseMode = z.infer<typeof trainingPhraseModeSchema>;
 
+// Дневная порция новых слов. Фиксированный набор вариантов, а не свободное
+// число: это настройка темпа, а не тонкая крутилка SRS.
+export const NEW_WORDS_PER_SESSION_OPTIONS = [5, 10, 20] as const;
+export const newWordsPerSessionSchema = z.union([z.literal(5), z.literal(10), z.literal(20)]);
+export type NewWordsPerSession = z.infer<typeof newWordsPerSessionSchema>;
+
 export const appPreferencesSchema = z.object({
   userId: z.string(),
   activeLanguage: z.string(),
@@ -21,6 +27,11 @@ export const appPreferencesSchema = z.object({
   // Временный ручной эксперимент. `.default()` сохраняет обратную
   // совместимость с уже лежащими в Blob preferences без этого поля.
   trainingPhraseMode: trainingPhraseModeSchema.default('source'),
+  // Сколько новых слов брать в одну сессию. `.default()` — та же причина, что
+  // выше: preferences, уже лежащие в Blob, этого поля не знают. 10 — прежнее
+  // захардкоженное значение NEW_WORDS_PER_SESSION, так что дефолт не меняет
+  // поведение для существующих пользователей.
+  newWordsPerSession: newWordsPerSessionSchema.default(10),
   createdAt: z.string(),
   updatedAt: z.string(),
   revision: z.number().int().nonnegative(),
@@ -59,6 +70,7 @@ export function createDefaultAppPreferences(userId: string, activeLanguage: stri
     enabledTopicIds: [],
     enabledCountryOrRegionIds: [],
     trainingPhraseMode: 'source',
+    newWordsPerSession: 10,
     createdAt: now,
     updatedAt: now,
     revision: 1,

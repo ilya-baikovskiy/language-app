@@ -11,7 +11,11 @@ type Props = {
   selection: SheetSelection | null;
   isOpen: boolean;
   onClose: () => void;
-  onContinue: () => void;
+  // Необязательные — «Продолжить отсюда» и сохранение имеют смысл только в
+  // ридере. Раздел «Учить» переиспользует этот же шит для карточки
+  // сохранённого слова (см. LearnWordCard.tsx) и передаёт вместо них свой
+  // футер: там слово уже сохранено, а продолжать чтение неоткуда.
+  onContinue?: () => void;
   // Предложение целиком — нарезка дорожки урока (там коартикуляция уместна и
   // ожидаема на слух).
   onSpeak: SpeakFn;
@@ -24,8 +28,14 @@ type Props = {
   onRetry: () => void;
   onLoadDetails: () => void;
   onRetryDetails: () => void;
-  isSaved: boolean;
-  onToggleSave: () => void;
+  isSaved?: boolean;
+  onToggleSave?: () => void;
+  // Подключаемая строка действий: если передана, полностью заменяет
+  // стандартный футер «сохранить + продолжить отсюда».
+  footer?: ReactNode;
+  // Блок под разбором, внутри той же прокрутки — сюда «Учить» кладёт статус,
+  // прогресс и свои действия.
+  children?: ReactNode;
 };
 
 // Bottom Sheet v2 (см. AI_PIPELINE.md, greek-bottom-sheet-handoff/). Контент не
@@ -48,6 +58,8 @@ export function ExplanationSheet({
   onRetryDetails,
   isSaved,
   onToggleSave,
+  footer,
+  children,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -112,6 +124,8 @@ export function ExplanationSheet({
               />
             )}
 
+            {selection?.kind === 'annotation' && children}
+
             {selection?.kind === 'loading' && (
               <>
                 <div className="sheet-top">
@@ -160,23 +174,28 @@ export function ExplanationSheet({
           )}
 
           {/* Футер эталона — ровно два элемента: сохранение иконкой слева и
-              широкое основное действие справа. */}
-          <div className="sheet-footer">
-            {selection?.kind === 'annotation' && (
-              <button
-                className={`act-btn icon-only save${isSaved ? ' is-saved' : ''}`}
-                type="button"
-                aria-pressed={isSaved}
-                aria-label={isSaved ? 'Убрать из сохранённого' : 'Сохранить слово'}
-                onClick={onToggleSave}
-              >
-                <BookmarkIcon filled={isSaved} />
-              </button>
-            )}
-            <button className="act-btn primary wide" type="button" onClick={onContinue}>
-              Продолжить отсюда
-            </button>
-          </div>
+              широкое основное действие справа. Раздел «Учить» подменяет его
+              целиком через проп footer. */}
+          {footer ?? (
+            <div className="sheet-footer">
+              {selection?.kind === 'annotation' && onToggleSave && (
+                <button
+                  className={`act-btn icon-only save${isSaved ? ' is-saved' : ''}`}
+                  type="button"
+                  aria-pressed={isSaved}
+                  aria-label={isSaved ? 'Убрать из сохранённого' : 'Сохранить слово'}
+                  onClick={onToggleSave}
+                >
+                  <BookmarkIcon filled={Boolean(isSaved)} />
+                </button>
+              )}
+              {onContinue && (
+                <button className="act-btn primary wide" type="button" onClick={onContinue}>
+                  Продолжить отсюда
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { classifyReviewAnswer, scheduleNext, type ReviewVerdict } from '../content-system/srs';
+import { classifyReviewAnswer, isDue, scheduleNext, wordStatus, type ReviewVerdict } from '../content-system/srs';
+import { TrainingSessionSummary, type SessionOutcome } from './TrainingSessionSummary';
 import {
   PRACTICE_PHRASE_PROMPT_VERSION,
   type SavedWord,
@@ -32,10 +33,6 @@ type Props = {
   phraseMode?: TrainingPhraseMode;
   onExit: () => void;
   onUpdateWord?: (word: SavedWord) => Promise<SavedWord>;
-  // Повторение вне расписания (очередь на сегодня пуста, но хочется ещё
-  // потренироваться) — SRS-интервалы не пересчитываются и не сохраняются,
-  // только кэш practicePhrase по-прежнему пишется через onUpdateWord.
-  freePractice?: boolean;
 };
 
 type Cloze = { before: string; blank: string; after: string };
@@ -158,9 +155,23 @@ export function TrainingPracticeView({
   phraseMode = 'source',
   onExit,
   onUpdateWord,
-  freePractice = false,
 }: Props) {
   const [sessionWords, setSessionWords] = useState(words);
+  // Какие слова были «к повтору» на момент старта сессии — единственный
+  // критерий, обновлять ли расписание. Замораживается вместе с очередью:
+  // dueAt меняется только нашей же записью, поэтому пересчитывать его на
+  // каждый ответ незачем, а зафиксированный набор не «уплывает» посреди сессии.
+  //
+  // Это заменяет прежний сессионный флаг freePractice: тренировка вне
+  // расписания — не отдельный режим, а просто случай, когда к повтору не было
+  // ничего. Тот же механизм автоматически делает учебной и мини-сессию
+  // «Повторить ошибки» (там dueAt уже уехал в будущее первой попыткой).
+  const [dueWordIds, setDueWordIds] = useState(
+    () => new Set(words.filter((word) => isDue(word)).map((word) => word.id)),
+  );
+  // Итоги по одному на слово, в порядке прохождения — основа экрана итогов.
+  const [outcomes, setOutcomes] = useState<SessionOutcome[]>([]);
+  const [finished, setFinished] = useState(false);
   const [index, setIndex] = useState(0);
   const [frozenPhrase, setFrozenPhrase] = useState<FrozenPhrase | null>(
     () => availableFrozenPhrase(words[0], phraseMode),
@@ -330,6 +341,22 @@ export function TrainingPracticeView({
     primaryPronunciation.prefetch(word.audioText ?? word.surfaceForm);
   }, [primaryPronunciation, word]);
 
+  if (finished) {
+    return (
+      <TrainingSessionSummary
+        outcomes={outcomes}
+        onRepeatMistakes={() => {
+          const mistakeIds = new Set(
+            outcomes.filter((o) => o.verdict !== 'good').map((o) => o.wordId),
+          );
+          const mistakes = sessionWords.filter((item) => mistakeIds.has(item.id));
+          if (mistakes.length > 0) restartWith(mistakes);
+        }}
+        onDone={onExit}
+      />
+    );
+  }
+
   if (!word) {
     return (
       <div className="shell">
@@ -341,6 +368,20 @@ export function TrainingPracticeView({
 
   function replaceSessionWord(nextWord: SavedWord) {
     setSessionWords((current) => current.map((item) => (item.id === nextWord.id ? nextWord : item)));
+  }
+
+  // Перезапуск на подмножестве слов — «Повторить ошибки» с экрана итогов.
+  // dueWordIds пересчитывается заново: у только что отвеченных слов dueAt уже
+  // уехал в будущее, поэтому мини-сессия автоматически учебная и расписание
+  // второй раз не трогает.
+  function restartWith(nextWords: SavedWord[]) {
+    setSessionWords(nextWords);
+    setDueWordIds(new Set(nextWords.filter((item) => isDue(item)).map((item) => item.id)));
+    setOutcomes([]);
+    setFinished(false);
+    setIndex(0);
+    preparedWordIdRef.current = null;
+    resetForNextCard(nextWords[0]);
   }
 
   function resetForNextCard(nextWord: SavedWord) {
@@ -373,12 +414,15 @@ export function TrainingPracticeView({
     setHintUsed(true);
   }
 
-  async function persistVerdict(nextVerdict: ReviewVerdict) {
-    if (freePractice) return;
+  // Возвращает сохранённое слово, если расписание реально обновилось — итоги
+  // сессии считают по этому, а не по вердикту: у слова не к повтору вердикт
+  // есть, а записи расписания нет.
+  async function persistVerdict(nextVerdict: ReviewVerdict): Promise<SavedWord | undefined> {
+    if (!dueWordIds.has(word.id)) return undefined;
     const now = new Date();
     const nextReview = scheduleNext(word.review, nextVerdict, now);
     setReviewIntervalDays(nextReview.intervalDays);
-    if (!onUpdateWord) return;
+    if (!onUpdateWord) return undefined;
     setReviewSaving(true);
     setReviewError(null);
     const nextWord: SavedWord = {
@@ -389,6 +433,7 @@ export function TrainingPracticeView({
     try {
       const stored = await onUpdateWord(nextWord);
       replaceSessionWord(stored);
+      return stored;
     } catch (error) {
       console.error('Не удалось сохранить результат тренировки:', error);
       setReviewError('Не удалось сохранить результат. Проверь соединение и повтори.');
@@ -450,9 +495,25 @@ export function TrainingPracticeView({
     setHintOpen(false);
     requestFeedback(nextVerdict, input);
 
+    // Итог записывается ровно один раз на слово — на той попытке, которая
+    // засчитывается. «Попробовать ещё раз» учебный и итоги не меняет, ровно
+    // как и расписание.
     if (!srsLocked) {
       setSrsLocked(true);
-      await persistVerdict(nextVerdict).catch(() => {});
+      const statusBefore = wordStatus(word);
+      const stored = await persistVerdict(nextVerdict).catch(() => undefined);
+      const statusAfter = stored ? wordStatus(stored) : statusBefore;
+      setOutcomes((prev) => [
+        ...prev,
+        {
+          wordId: word.id,
+          surfaceForm: word.surfaceForm,
+          translation: word.translation,
+          verdict: nextVerdict,
+          scheduleUpdated: Boolean(stored),
+          promotedTo: statusAfter !== statusBefore ? statusAfter : null,
+        },
+      ]);
     }
   }
 
@@ -471,7 +532,10 @@ export function TrainingPracticeView({
 
   function goNext() {
     if (index + 1 >= sessionWords.length) {
-      onExit();
+      // Итоги вместо молчаливого выхода. Если ни одного ответа не было (все
+      // слова пропустили) — показывать нечего, выходим сразу.
+      if (outcomes.length === 0) onExit();
+      else setFinished(true);
       return;
     }
     const nextIndex = index + 1;
@@ -738,8 +802,8 @@ export function TrainingPracticeView({
                     <p>{deterministicResultText}</p>
                   ) : verdict === 'good' ? (
                     <p>
-                      {freePractice
-                        ? 'Тренировка вне расписания — SRS не обновлялся.'
+                      {!dueWordIds.has(word.id)
+                        ? 'Вне расписания — расписание не изменилось.'
                         : retryAttempt
                           ? 'Ответ исправлен. Расписание уже учло только первую попытку.'
                           : `Следующее повторение через ${reviewIntervalDays ?? 1} дн.`}

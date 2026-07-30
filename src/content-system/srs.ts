@@ -103,8 +103,36 @@ export function scheduleNext(
   };
 }
 
-function isNewWord(word: SavedWord): boolean {
+export function isNewWord(word: SavedWord): boolean {
   return !word.review.lastReviewedAt && word.review.repetitions === 0 && word.review.intervalDays === 0;
+}
+
+// Слово «к повтору» — единственный критерий, по которому тренировка решает,
+// обновлять ли расписание (см. TrainingPracticeView). Тот же предикат
+// фильтрует очередь ниже, чтобы список в «Учить» и сессия не расходились в
+// том, что считается сегодняшним.
+export function isDue(word: SavedWord, now: Date = new Date()): boolean {
+  return new Date(word.review.dueAt).getTime() <= now.getTime();
+}
+
+export type WordStatus = 'new' | 'learning' | 'known';
+
+// Порог «зрелой» карточки из Anki: интервал от трёх недель означает, что слово
+// переживает забывание без напоминаний. Не терминальное состояние — ошибка в
+// повторе сбрасывает intervalDays и слово снова становится 'learning'.
+export const MATURE_INTERVAL_DAYS = 21;
+
+// Аналог Anki leech: слово, которое стабильно не запоминается. Не статус, а
+// пометка поверх 'learning' — сигнал сбросить прогресс или удалить слово.
+export const LEECH_LAPSES = 4;
+
+export function wordStatus(word: SavedWord): WordStatus {
+  if (isNewWord(word)) return 'new';
+  return word.review.intervalDays >= MATURE_INTERVAL_DAYS ? 'known' : 'learning';
+}
+
+export function isLeech(word: SavedWord): boolean {
+  return word.review.lapses >= LEECH_LAPSES;
 }
 
 // Все уже изучавшиеся due-слова идут в сессию без лимита. Новых — максимум
@@ -114,7 +142,7 @@ export function selectPracticeQueue(
   now: Date = new Date(),
   newWordLimit: number = NEW_WORDS_PER_SESSION,
 ): SavedWord[] {
-  const due = words.filter((word) => new Date(word.review.dueAt).getTime() <= now.getTime());
+  const due = words.filter((word) => isDue(word, now));
   const reviews = due
     .filter((word) => !isNewWord(word))
     .sort((a, b) => a.review.dueAt.localeCompare(b.review.dueAt));

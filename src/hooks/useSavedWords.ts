@@ -53,6 +53,7 @@ export type SaveWordInput = {
   contextTranslation?: string;
   relatedSource?: string | null;
   relatedTranslation?: string | null;
+  hint?: SavedWord['hint'];
 };
 
 // Легаси-записи не знают свой язык (SavedUnit его не хранил, см. старый
@@ -155,6 +156,7 @@ export function useSavedWords(repository: SavedWordRepository = DEFAULT_REPOSITO
         contextTranslation: input.contextTranslation,
         relatedSource: input.relatedSource ?? null,
         relatedTranslation: input.relatedTranslation ?? null,
+        hint: input.hint ?? null,
         annotationPromptVersion: ANNOTATION_PROMPT_VERSION,
         lessonId: input.lessonId,
         tokenId: input.tokenId,
@@ -188,5 +190,24 @@ export function useSavedWords(repository: SavedWordRepository = DEFAULT_REPOSITO
     [repository, savedWords],
   );
 
-  return { savedWords, loading, isSaved, toggleSave, updateWord };
+  // Явное удаление из раздела «Учить» (карточка слова). Отдельно от
+  // toggleSave: тот работает по lessonId+tokenId и переключает состояние, а
+  // здесь удаляется конкретная уже сохранённая запись по её id.
+  const removeWord = useCallback(
+    async (id: string): Promise<void> => {
+      const previous = savedWords.find((word) => word.id === id);
+      setSavedWords((current) => current.filter((word) => word.id !== id));
+      try {
+        await repository.remove(LOCAL_USER_ID, id);
+      } catch (err) {
+        // Возвращаем слово на место: молча пропавшая из списка запись, которая
+        // вернётся после перезагрузки, хуже честной ошибки.
+        if (previous) setSavedWords((current) => [...current, previous]);
+        throw err;
+      }
+    },
+    [repository, savedWords],
+  );
+
+  return { savedWords, loading, isSaved, toggleSave, updateWord, removeWord };
 }
