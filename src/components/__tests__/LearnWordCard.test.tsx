@@ -165,4 +165,60 @@ describe('LearnWordCard', () => {
     expect(screen.queryByText('Продолжить отсюда')).toBeNull();
     expect(screen.getByRole('button', { name: 'Тренировать сейчас' })).toBeTruthy();
   });
+
+  it('предлагает обновить разбор у слова без hint и молчит, когда всё актуально', () => {
+    const { unmount } = render(
+      <LearnWordCard word={makeWord({ annotationPromptVersion: 2 })} {...noopProps()} />,
+    );
+    // annotationPromptVersion=2 совпадает с текущим, но hint отсутствует
+    // (undefined, не сохранялся) — карточка всё равно предлагает обновить.
+    expect(screen.getByText('Обновить разбор')).toBeTruthy();
+    expect(screen.getByText(/появления слот-подсказки/)).toBeTruthy();
+    unmount();
+
+    render(
+      <LearnWordCard
+        word={makeWord({ annotationPromptVersion: 2, hint: null })}
+        {...noopProps()}
+      />,
+    );
+    // hint===null — AI явно решил, что подсказки нет, это не «устарело».
+    expect(screen.queryByText('Обновить разбор')).toBeNull();
+  });
+
+  it('«Обновить разбор» перегенерирует тир 1 и сохраняет hint + новую версию промпта', async () => {
+    const fetchSpy = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = typeof init?.body === 'string' ? JSON.parse(init.body) : {};
+      expect(body.tier).toBe('basic');
+      return new Response(
+        JSON.stringify({
+          partOfSpeech: 'существительное',
+          displayForm: 'κατασκευή',
+          translation: 'конструкция (обновлено)',
+          audioText: 'κατασκευή',
+          hint: { label: 'в этой фразе', source: 'η κατασκευή', translation: 'конструкция' },
+          context: {
+            source: 'Η κατασκευή τους βοηθά επίσης στην προστασία από τον δυνατό άνεμο.',
+            translation: 'Их конструкция также помогает защититься от сильного ветра.',
+            selectedSource: 'κατασκευή',
+            selectedTranslation: 'конструкция (обновлено)',
+          },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    const onUpdateWord = vi.fn(async (word: SavedWord) => word);
+    const word = makeWord({ annotationPromptVersion: 1 });
+    render(<LearnWordCard word={word} onClose={vi.fn()} onTrain={vi.fn()} onDelete={vi.fn()} onUpdateWord={onUpdateWord} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Обновить разбор' }));
+
+    await waitFor(() => expect(onUpdateWord).toHaveBeenCalledTimes(1));
+    const stored = onUpdateWord.mock.calls[0][0];
+    expect(stored.translation).toBe('конструкция (обновлено)');
+    expect(stored.hint).toEqual({ label: 'в этой фразе', source: 'η κατασκευή', translation: 'конструкция' });
+    expect(stored.annotationPromptVersion).toBe(2);
+    expect(screen.queryByText('Обновить разбор')).toBeNull();
+  });
 });

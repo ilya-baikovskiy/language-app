@@ -16,8 +16,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUnitPronunciation } from '../hooks/useUnitPronunciation';
-import { fetchAnnotationDetails } from '../services/generation/lessonsApi';
+import { fetchAnnotationBasic, fetchAnnotationDetails } from '../services/generation/lessonsApi';
 import { isDue, isLeech, wordStatus, type WordStatus } from '../content-system/srs';
+import { ANNOTATION_PROMPT_VERSION } from '../hooks/useSavedWords';
 import { createInitialReviewState, type SavedWord } from '../content-system/savedWord';
 import { getLanguageConfig, type LanguageCode } from '../../lib/pipeline/languageConfig';
 import { tokenizeParagraphs } from '../../lib/pipeline/tokenize';
@@ -70,12 +71,31 @@ type Props = {
   onDelete: (word: SavedWord) => void;
 };
 
+// Разбор заморожен в момент сохранения (см. ANNOTATION_PROMPT_VERSION в
+// useSavedWords.ts) — намеренно, чтобы карточка и уже пройденная тренировка не
+// разъезжались молча. Слово «устарело», если промпт с тех пор менялся, или
+// если оно сохранено ДО появления поля hint: `hint === undefined` значит «его
+// никогда не забирали», `hint === null` — «AI явно решил, что подсказки нет»,
+// это разные вещи.
+function isOutdated(word: SavedWord): boolean {
+  return word.annotationPromptVersion !== ANNOTATION_PROMPT_VERSION || word.hint === undefined;
+}
+
+// Токен-цель ищем по тексту, не по id: id из локальной токенизации не
+// совпадают с tokenId урока (тот же приём, что в loadDetails ниже).
+function findTargetToken(sentence: ReturnType<typeof tokenizeParagraphs>[number]['sentences'][number] | undefined, surfaceForm: string) {
+  return sentence?.tokens.find(
+    (token) => token.type === 'word' && token.text.toLocaleLowerCase() === surfaceForm.toLocaleLowerCase(),
+  );
+}
+
 export function LearnWordCard({ word, onClose, onTrain, onUpdateWord, onDelete }: Props) {
   const language = word.language as LanguageCode;
   const [details, setDetails] = useState<{ sections: DetailSection[] } | undefined>();
   const [detailsStatus, setDetailsStatus] = useState<DetailsStatus>('idle');
   const [confirming, setConfirming] = useState<'reset' | 'delete' | null>(null);
   const [busy, setBusy] = useState(false);
+  const [refreshStatus, setRefreshStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
 
   const pronunciation = useUnitPronunciation(language, word.audioProvider ?? 'openai');
   // Одна временная точка на карточку, обновляется при смене данных слова
@@ -124,10 +144,7 @@ export function LearnWordCard({ word, onClose, onTrain, onUpdateWord, onDelete }
     // Целевой токен ищем по тексту: id токенов из локальной токенизации не
     // совпадают с tokenId урока, а тир 2 адресует цель именно внутри
     // переданного предложения.
-    const target = sentence?.tokens.find(
-      (token) => token.type === 'word'
-        && token.text.toLocaleLowerCase() === word.surfaceForm.toLocaleLowerCase(),
-    );
+    const target = findTargetToken(sentence, word.surfaceForm);
     if (!sentence || !target) {
       setDetailsStatus('error');
       return;
@@ -148,6 +165,50 @@ export function LearnWordCard({ word, onClose, onTrain, onUpdateWord, onDelete }
     setDetailsStatus('idle');
     loadDetails();
   }, [loadDetails]);
+
+  // Осознанное действие, а не тихий автодобор при открытии карточки: перевод
+  // мог измениться с прошлого промпта (см. isOutdated), а тренировка уже идёт
+  // по старой формулировке. Пользователь явно жмёт «Обновить» и видит новый
+  // результат — не рассинхрон между карточкой и засчитанным прогрессом.
+  async function handleRefreshAnnotation() {
+    const source = word.contextSource;
+    if (!source) {
+      setRefreshStatus('error');
+      return;
+    }
+    setRefreshStatus('loading');
+    const sentence = tokenizeParagraphs([source], getLanguageConfig(language).bcp47)[0]?.sentences[0];
+    const target = findTargetToken(sentence, word.surfaceForm);
+    if (!sentence || !target) {
+      setRefreshStatus('error');
+      return;
+    }
+    try {
+      const summary = await fetchAnnotationBasic({ tokenId: target.id, sentence }, word.level ?? 'A2', language);
+      await onUpdateWord({
+        ...word,
+        surfaceForm: summary.displayForm,
+        partOfSpeech: summary.partOfSpeech,
+        translation: summary.translation,
+        audioText: summary.audioText,
+        hint: summary.hint,
+        contextSource: summary.context.source,
+        contextTranslation: summary.context.translation,
+        relatedSource: summary.context.relatedSource ?? null,
+        relatedTranslation: summary.context.relatedTranslation ?? null,
+        annotationPromptVersion: ANNOTATION_PROMPT_VERSION,
+        updatedAt: new Date().toISOString(),
+      });
+      // Тир 2 сгенерирован по старому разбору — сбрасываем, чтобы «Подробнее»
+      // при следующем открытии подтянул детали заново, в согласии с новым тиром 1.
+      setDetails(undefined);
+      setDetailsStatus('idle');
+      setRefreshStatus('done');
+    } catch (error) {
+      console.error('Не удалось обновить разбор слова:', error);
+      setRefreshStatus('error');
+    }
+  }
 
   async function handleReset() {
     setBusy(true);
@@ -204,6 +265,22 @@ export function LearnWordCard({ word, onClose, onTrain, onUpdateWord, onDelete }
           <span className="learn-card-next">{formatNextReview(word, now)}</span>
         </div>
         <p className="learn-card-progress">{formatProgress(word)}</p>
+
+        {refreshStatus !== 'done' && isOutdated(word) && (
+          <div className="learn-card-outdated">
+            <p>
+              {word.hint === undefined
+                ? 'Слово сохранено до появления слот-подсказки — обновите разбор, чтобы её увидеть.'
+                : 'Разбор собран старой версией промпта — можно обновить перевод и форму.'}
+            </p>
+            <Button disabled={refreshStatus === 'loading'} onClick={() => void handleRefreshAnnotation()}>
+              {refreshStatus === 'loading' ? 'Обновляем…' : 'Обновить разбор'}
+            </Button>
+            {refreshStatus === 'error' && (
+              <p className="learn-card-outdated-error">Не удалось обновить — попробуй ещё раз.</p>
+            )}
+          </div>
+        )}
 
         {confirming === null ? (
           <div className="learn-card-actions">
