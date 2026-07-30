@@ -6,7 +6,7 @@
 // getByRole сами бросают, если не нашли, этого достаточно как assertion;
 // для "нет на экране" — queryBy* + toBeNull.
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrainingPracticeView } from '../TrainingPracticeView';
 import type { SavedWord } from '../../content-system/savedWord';
 
@@ -15,6 +15,30 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
+
+// jsdom не реализует canvas 2D-контекст (нет пакета `canvas`), а TextInput
+// с autoSize меряет ширину именно через canvas.measureText (см.
+// components/ui/controls.tsx — заменили эвристику по "ch", которая резала
+// текст в реальном браузере для непропорциональных греческих слов). Без
+// стаба getContext('2d') шумит в консоли "Not implemented" и ширина всегда
+// падает на нижний предел — стаб делает измерение детерминированным
+// (8px на символ), чтобы тест реально проверял "длиннее слово — шире поле".
+const MOCK_PX_PER_CHAR = 8;
+beforeEach(() => {
+  // restoreAllMocks() в afterEach снимает и этот стаб — восстанавливаем на
+  // каждый тест, а не один раз при загрузке модуля.
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((contextId: string) => {
+    if (contextId !== '2d') return null;
+    return { measureText: (text: string) => ({ width: text.length * MOCK_PX_PER_CHAR }) };
+  }) as typeof HTMLCanvasElement.prototype.getContext);
+});
+
+function autoSizeWidthPx(text: string): number {
+  const floor = Math.max(3, 0) * MOCK_PX_PER_CHAR; // AUTO_SIZE_MIN_CHARS.length === 3
+  const content = text.length * MOCK_PX_PER_CHAR;
+  const horizontalPadding = 11 * 2 + 1 * 2 + 4;
+  return Math.max(floor, content) + horizontalPadding;
+}
 
 function makeWord(overrides: Partial<SavedWord> = {}): SavedWord {
   const now = new Date().toISOString();
@@ -43,9 +67,9 @@ describe('TrainingPracticeView', () => {
     const input = screen.getByRole('textbox', { name: /Пропущенное слово/ }) as HTMLInputElement;
     expect(input.value).toBe('');
     expect(input.getAttribute('placeholder')).toBeNull();
-    // Ширина обёртки отмерена в ch от ожидаемого слова (пока поле пустое).
+    // Ширина обёртки отмерена canvas.measureText от ожидаемого слова (пока поле пустое).
     const shell = container.querySelector<HTMLElement>('.training-answer-shell');
-    expect(shell?.style.width).toBe(`${'κατασκευή'.length + 1.5}ch`);
+    expect(shell?.style.width).toBe(`${autoSizeWidthPx('κατασκευή')}px`);
     expect(container.querySelector('.training-cloze')?.textContent).toContain('βοηθά επίσης στην προστασία');
   });
 
@@ -129,6 +153,21 @@ describe('TrainingPracticeView', () => {
     expect(screen.getByText('Проговори фразу целиком')).toBeTruthy();
     expect(screen.getByText('Твой ответ')).toBeTruthy();
     expect(screen.getByText('Правильно')).toBeTruthy();
+  });
+
+  it('русский перевод остаётся виден и после ответа, а не пропадает вместе с упражнением', () => {
+    const { container } = render(<TrainingPracticeView words={[makeWord()]} onExit={vi.fn()} />);
+    const ruText = () => container.querySelector('.training-ru-sentence')?.textContent;
+    expect(ruText()).toBe('Их конструкция также помогает защититься от сильного ветра.');
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'κατασκευή' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(screen.getByText('✓ Верно')).toBeTruthy();
+    // Тот же перевод — не подсказка постфактум (попытка уже оценена), а
+    // способ убедиться, что ответ, угаданный или расслышанный голосом,
+    // реально понят, а не просто случайно совпал по буквам.
+    expect(ruText()).toBe('Их конструкция также помогает защититься от сильного ветра.');
   });
 
   it('вердикт «Не совсем» показывает ответ ученика и ожидаемое слово', async () => {
@@ -272,7 +311,7 @@ describe('TrainingPracticeView', () => {
     expect(onUpdateWord).toHaveBeenCalledTimes(1);
   });
 
-  it('длинная форма задаёт широкую ch-ширину input, короткая — минимальную', () => {
+  it('длинная форма задаёт широкое поле, короткая — падает на нижний предел', () => {
     const longWord = makeWord({
       surfaceForm: 'κατασκευάζονται',
       translation: 'строятся',
@@ -281,14 +320,14 @@ describe('TrainingPracticeView', () => {
     });
     const { container: longContainer } = render(<TrainingPracticeView words={[longWord]} onExit={vi.fn()} />);
     const longShell = longContainer.querySelector<HTMLElement>('.training-answer-shell');
-    expect(longShell?.style.width).toBe(`${'κατασκευάζονται'.length + 1.5}ch`);
+    expect(longShell?.style.width).toBe(`${autoSizeWidthPx('κατασκευάζονται')}px`);
 
     const shortWord = makeWord({ surfaceForm: 'το', translation: 'это' });
     const { container: shortContainer } = render(<TrainingPracticeView words={[shortWord]} onExit={vi.fn()} />);
     const shortShell = shortContainer.querySelector<HTMLElement>('.training-answer-shell');
-    // 2-буквенное слово + паддинг всё равно даёт заметно узкое поле, но не
-    // уже гарантированного минимума (см. controls.tsx: AUTO_SIZE_MIN_CH=3).
-    expect(shortShell?.style.width).toBe('3.5ch');
+    // 2-буквенное слово короче нижнего предела (см. controls.tsx:
+    // AUTO_SIZE_MIN_CHARS='000', 3 символа) — падает на пол, а не сжимается сильнее.
+    expect(shortShell?.style.width).toBe(`${autoSizeWidthPx('το')}px`);
   });
 
   // Пословное правило SRS (см. LEARN_SECTION_PLAN.md, этап A): расписание

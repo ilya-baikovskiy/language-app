@@ -641,22 +641,26 @@ export function TrainingPracticeView({
           </div>
         ) : (
           <>
+            {/* Русский перевод остаётся виден и после ответа — не подсказка
+                (сама попытка уже сделана и оценена), а способ убедиться, что
+                угаданный/расслышанный голосом ответ правда понят, а не просто
+                совпал по буквам. */}
+            {translation && (
+              <p className="training-ru-sentence">
+                {ruBold ? (
+                  <>
+                    {ruBold.before}
+                    <b>{ruBold.bold}</b>
+                    {ruBold.after}
+                  </>
+                ) : (
+                  translation
+                )}
+              </p>
+            )}
+
             {!answered && (
               <>
-                {translation && (
-                  <p className="training-ru-sentence">
-                    {ruBold ? (
-                      <>
-                        {ruBold.before}
-                        <b>{ruBold.bold}</b>
-                        {ruBold.after}
-                      </>
-                    ) : (
-                      translation
-                    )}
-                  </p>
-                )}
-
                 <p className="training-instruction">Вставь пропущенное слово</p>
 
                 <div className="training-cloze">
