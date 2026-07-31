@@ -62,11 +62,24 @@ export function useSpeechInput() {
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    // abort() выше не гарантирует, что колбэки старой сессии не долетят
+    // позже (mobile Safari особенно любит это — там распознавание идёт через
+    // сеть, и события старого объекта могут прийти уже после того, как
+    // recognitionRef успел указывать на новый). Без этой проверки повторный
+    // быстрый тап «Сказать ответ» иногда путал состояние: onend старой сессии
+    // гасил listening для новой, и слово не подхватывалось с первого раза —
+    // ровно то, что и наблюдалось на практике.
     recognition.onresult = (event) => {
+      if (recognitionRef.current !== recognition) return;
       const transcript = event.results[0]?.[0]?.transcript?.trim();
-      if (transcript) onTranscript(transcript);
+      // toLocaleLowerCase — распознавание обычно капитализирует первое слово
+      // фразы (это не то же самое, что реальный регистр целевой формы),
+      // а сверка ответа и так регистронезависима — просто не вводить
+      // пользователя в заблуждение видом ответа.
+      if (transcript) onTranscript(transcript.toLocaleLowerCase(bcp47));
     };
     recognition.onerror = (event) => {
+      if (recognitionRef.current !== recognition) return;
       const message =
         event.error === 'not-allowed'
           ? 'Нет доступа к микрофону'
@@ -77,6 +90,7 @@ export function useSpeechInput() {
       setListening(false);
     };
     recognition.onend = () => {
+      if (recognitionRef.current !== recognition) return;
       setListening(false);
       recognitionRef.current = null;
     };

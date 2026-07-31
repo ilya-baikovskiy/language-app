@@ -10,12 +10,12 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useFeed } from '../useFeed';
 import { __resetAnalyticsClientForTests } from '../../content-system/analytics/eventClient';
-import type { ContentCardRepository } from '../../content-system/repositories';
+import type { ContentCardRepository, LessonArtifactRepository } from '../../content-system/repositories';
 import type {
   BlobGeneratedCardRepository,
   GenerateAndTopUpRequest,
 } from '../../content-system/repositories/blobGeneratedCardRepository';
-import type { ContentCard } from '../../content-system/types';
+import type { ContentCard, LessonSummary } from '../../content-system/types';
 
 // Без vitest test.globals (проект их не включает — см. vite.config.ts)
 // @testing-library/react не регистрирует свой автоматический afterEach(cleanup)
@@ -66,7 +66,15 @@ function makeMockRepos(cards: ContentCard[]) {
   };
   const generateAndTopUp = vi.fn(async (_request: GenerateAndTopUpRequest): Promise<ContentCard[]> => []);
   const generatedCardRepository = { generateAndTopUp } as unknown as BlobGeneratedCardRepository;
-  return { cardRepository, generatedCardRepository, listCandidates, generateAndTopUp };
+  // По умолчанию — ни один урок ещё не сгенерирован, лента ничего не исключает.
+  const lessonArtifactRepository: LessonArtifactRepository = {
+    saveLesson: vi.fn(),
+    getLesson: vi.fn(async () => null),
+    listLessons: vi.fn(async () => []),
+    startLesson: vi.fn(async () => ({ alreadyComplete: false })),
+    markLessonFailed: vi.fn(),
+  };
+  return { cardRepository, generatedCardRepository, lessonArtifactRepository, listCandidates, generateAndTopUp };
 }
 
 const baseParams = {
@@ -79,9 +87,9 @@ const baseParams = {
 describe('useFeed — Pipeline A top-up trigger', () => {
   it('запускает generateAndTopUp, когда непоказанных карточек меньше порога', async () => {
     const threeCards = [makeCard('a'), makeCard('b'), makeCard('c')]; // 3 < LOW_POOL_THRESHOLD(8)
-    const { cardRepository, generatedCardRepository, generateAndTopUp } = makeMockRepos(threeCards);
+    const { cardRepository, generatedCardRepository, lessonArtifactRepository, generateAndTopUp } = makeMockRepos(threeCards);
 
-    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository }));
+    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     await waitFor(() => expect(generateAndTopUp).toHaveBeenCalledTimes(1));
@@ -97,9 +105,9 @@ describe('useFeed — Pipeline A top-up trigger', () => {
 
   it('НЕ запускает top-up, когда карточек уже достаточно', async () => {
     const healthyPool = Array.from({ length: 10 }, (_, i) => makeCard(`card-${i}`));
-    const { cardRepository, generatedCardRepository, generateAndTopUp } = makeMockRepos(healthyPool);
+    const { cardRepository, generatedCardRepository, lessonArtifactRepository, generateAndTopUp } = makeMockRepos(healthyPool);
 
-    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository }));
+    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     // Даём эффектам отработать полностью — если бы триггер должен был
@@ -114,10 +122,10 @@ describe('useFeed — Pipeline A top-up trigger', () => {
     // ещё не заходил в настройки. Первая версия триггера требовала непустые
     // списки и поэтому НИКОГДА не срабатывала для дефолтных настроек.
     const threeCards = [makeCard('a'), makeCard('b'), makeCard('c')];
-    const { cardRepository, generatedCardRepository, generateAndTopUp } = makeMockRepos(threeCards);
+    const { cardRepository, generatedCardRepository, lessonArtifactRepository, generateAndTopUp } = makeMockRepos(threeCards);
 
     const { result } = renderHook(() =>
-      useFeed({ ...baseParams, enabledTopicIds: [], enabledCountryOrRegionIds: [], cardRepository, generatedCardRepository }),
+      useFeed({ ...baseParams, enabledTopicIds: [], enabledCountryOrRegionIds: [], cardRepository, generatedCardRepository, lessonArtifactRepository }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
     await waitFor(() => expect(generateAndTopUp).toHaveBeenCalledTimes(1));
@@ -129,7 +137,7 @@ describe('useFeed — Pipeline A top-up trigger', () => {
 
   it('после успешного top-up перезагружает ленту и подхватывает новые карточки', async () => {
     const threeCards = [makeCard('a'), makeCard('b'), makeCard('c')];
-    const { cardRepository, generatedCardRepository, listCandidates, generateAndTopUp } = makeMockRepos(threeCards);
+    const { cardRepository, generatedCardRepository, lessonArtifactRepository, listCandidates, generateAndTopUp } = makeMockRepos(threeCards);
 
     const addedCards = [makeCard('gen-1'), makeCard('gen-2')];
     generateAndTopUp.mockResolvedValueOnce(addedCards);
@@ -137,7 +145,7 @@ describe('useFeed — Pipeline A top-up trigger', () => {
     // как реально вело бы себя CompositeCardRepository после пополнения.
     listCandidates.mockResolvedValueOnce(threeCards).mockResolvedValueOnce([...threeCards, ...addedCards]);
 
-    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository }));
+    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await waitFor(() => expect(generateAndTopUp).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(listCandidates).toHaveBeenCalledTimes(2));
@@ -145,9 +153,9 @@ describe('useFeed — Pipeline A top-up trigger', () => {
 
   it('не повторяет top-up для того же набора фильтров при повторном рендере/refresh', async () => {
     const threeCards = [makeCard('a'), makeCard('b'), makeCard('c')];
-    const { cardRepository, generatedCardRepository, generateAndTopUp } = makeMockRepos(threeCards);
+    const { cardRepository, generatedCardRepository, lessonArtifactRepository, generateAndTopUp } = makeMockRepos(threeCards);
 
-    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository }));
+    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await waitFor(() => expect(generateAndTopUp).toHaveBeenCalledTimes(1));
 
@@ -162,9 +170,9 @@ describe('useFeed — Pipeline A top-up trigger', () => {
 
   it('«Предложить другие» реально запрашивает карточки заново (anti-repeat из composeFixedFeed)', async () => {
     const healthyPool = Array.from({ length: 10 }, (_, i) => makeCard(`card-${i}`));
-    const { cardRepository, generatedCardRepository, listCandidates } = makeMockRepos(healthyPool);
+    const { cardRepository, generatedCardRepository, lessonArtifactRepository, listCandidates } = makeMockRepos(healthyPool);
 
-    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository }));
+    const { result } = renderHook(() => useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(listCandidates).toHaveBeenCalledTimes(1);
     const firstBatchIds = result.current.items.map((item) => item.card.id);
@@ -179,5 +187,106 @@ describe('useFeed — Pipeline A top-up trigger', () => {
     // подобрать другую пятёрку, а не повторить то же самое.
     const secondBatchIds = result.current.items.map((item) => item.card.id);
     expect(secondBatchIds).not.toEqual(firstBatchIds);
+  });
+});
+
+describe('useFeed — карточки с уже сгенерированным уроком не предлагаются повторно', () => {
+  it('исключает карточку, для которой на этом языке и уровне уже есть готовый или генерирующийся урок', async () => {
+    const cards = [makeCard('croissants'), makeCard('other')];
+    const { cardRepository, generatedCardRepository } = makeMockRepos(cards);
+    const lessonArtifactRepository: LessonArtifactRepository = {
+      saveLesson: vi.fn(),
+      getLesson: vi.fn(async () => null),
+      listLessons: vi.fn(async (): Promise<LessonSummary[]> => [
+        {
+          id: 'card-croissants-el-A2',
+          title: 'Круассаны',
+          level: 'A2',
+          estimatedMinutes: 3,
+          languageCode: 'el',
+          lessonUrl: 'https://blob.test/lesson.json',
+          audioUrl: 'https://blob.test/audio.mp3',
+          createdAt: '2026-07-29T00:00:00.000Z',
+          status: 'ready',
+          cardId: 'croissants',
+        },
+      ]),
+      startLesson: vi.fn(async () => ({ alreadyComplete: false })),
+      markLessonFailed: vi.fn(),
+    };
+
+    const { result } = renderHook(() =>
+      useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const ids = result.current.items.map((item) => item.card.id);
+    expect(ids).not.toContain('croissants');
+    expect(ids).toContain('other');
+  });
+
+  it('не исключает урок с тем же cardId на другом языке/уровне — это разные тексты', async () => {
+    const cards = [makeCard('croissants')];
+    const { cardRepository, generatedCardRepository } = makeMockRepos(cards);
+    const lessonArtifactRepository: LessonArtifactRepository = {
+      saveLesson: vi.fn(),
+      getLesson: vi.fn(async () => null),
+      listLessons: vi.fn(async (): Promise<LessonSummary[]> => [
+        {
+          id: 'card-croissants-fr-B1',
+          title: 'Круассаны',
+          level: 'B1',
+          languageCode: 'fr',
+          estimatedMinutes: 3,
+          lessonUrl: 'https://blob.test/lesson.json',
+          audioUrl: 'https://blob.test/audio.mp3',
+          createdAt: '2026-07-29T00:00:00.000Z',
+          status: 'ready',
+          cardId: 'croissants',
+        },
+      ]),
+      startLesson: vi.fn(async () => ({ alreadyComplete: false })),
+      markLessonFailed: vi.fn(),
+    };
+
+    // baseParams — el/A2, а сохранённый урок — fr/B1.
+    const { result } = renderHook(() =>
+      useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.items.map((item) => item.card.id)).toContain('croissants');
+  });
+
+  it('не исключает урок со статусом failed — карточку можно предложить снова', async () => {
+    const cards = [makeCard('croissants')];
+    const { cardRepository, generatedCardRepository } = makeMockRepos(cards);
+    const lessonArtifactRepository: LessonArtifactRepository = {
+      saveLesson: vi.fn(),
+      getLesson: vi.fn(async () => null),
+      listLessons: vi.fn(async (): Promise<LessonSummary[]> => [
+        {
+          id: 'card-croissants-el-A2',
+          title: 'Круассаны',
+          level: 'A2',
+          languageCode: 'el',
+          estimatedMinutes: 3,
+          lessonUrl: '',
+          audioUrl: '',
+          createdAt: '2026-07-29T00:00:00.000Z',
+          status: 'failed',
+          cardId: 'croissants',
+        },
+      ]),
+      startLesson: vi.fn(async () => ({ alreadyComplete: false })),
+      markLessonFailed: vi.fn(),
+    };
+
+    const { result } = renderHook(() =>
+      useFeed({ ...baseParams, cardRepository, generatedCardRepository, lessonArtifactRepository }),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.items.map((item) => item.card.id)).toContain('croissants');
   });
 });
